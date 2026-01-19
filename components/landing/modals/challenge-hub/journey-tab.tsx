@@ -107,7 +107,7 @@ export function JourneyTab({ dayStreak, totalPoints, cumulativeStats }: JourneyT
       ) : (
         <>
           {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {stats.map((stat, i) => (
               <div key={i} className="athletic-card p-4 pl-6 text-center">
                 <div className="p-2 bg-secondary w-fit mx-auto mb-2">

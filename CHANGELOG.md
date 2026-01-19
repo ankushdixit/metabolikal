@@ -56,3 +56,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Elite Programs Modal**: Fixed "MOST POPULAR" badge positioning - added proper spacing and z-index to prevent clipping
 
 - **Transformations Modal**: Changed YouTube videos section from horizontal page overflow to contained horizontal scroll with shorts-style aspect ratio (9:16)
+
+- **Modal Layout Improvements**: Restructured all 13 modals for better UX:
+  - Fixed header shift issue on scroll by using flex layout instead of sticky positioning
+  - Close button now stays fixed relative to modal frame (absolute positioning)
+  - Separated scrollable content from modal frame using `flex-1 overflow-y-auto`
+  - Added `overflow-x-hidden` to prevent horizontal scrolling on mobile
+
+- **Modal Responsiveness**: Improved mobile experience across all modals:
+  - Challenge Hub: Stats bar now uses 2-column grid on mobile, abbreviated tab labels
+  - Journey Tab: Responsive grid layout for stats
+  - Calendar Tab: Responsive legend wrapping
+  - Real Results Modal: Edge-to-edge YouTube carousel, smaller video cards on mobile
+
+- **Footer Button Styling**: Changed "Take Assessment" button to secondary style for visual hierarchy
