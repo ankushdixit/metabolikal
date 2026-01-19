@@ -29,11 +29,62 @@ import {
   EliteProgramsModal,
   HighPerformerTrapModal,
   EliteLifestylesModal,
+  AssessmentModal,
+  CalculatorModal,
+  ResultsModal,
+  BodyFatGuideModal,
 } from "@/components/landing/modals";
 import { useModalContext } from "@/contexts/modal-context";
+import { useAssessment } from "@/hooks/use-assessment";
+import { useCalculator, calculateHealthScore, Goal } from "@/hooks/use-calculator";
+import { CalculatorFormData } from "@/lib/validations";
+import { useState } from "react";
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
+
+  // Assessment flow state
+  const { scores, updateScore, lifestyleScore } = useAssessment();
+  const [calculatorData, setCalculatorData] = useState<CalculatorFormData | null>(null);
+  const calculatorResults = useCalculator(
+    calculatorData
+      ? {
+          gender: calculatorData.gender,
+          age: calculatorData.age,
+          weightKg: calculatorData.weightKg,
+          heightCm: calculatorData.heightCm,
+          bodyFatPercent: calculatorData.bodyFatPercent,
+          activityLevel: calculatorData.activityLevel,
+          goal: calculatorData.goal,
+          goalWeightKg: calculatorData.goalWeightKg,
+          medicalConditions: calculatorData.medicalConditions,
+        }
+      : null
+  );
+
+  const healthScore = calculatorResults
+    ? calculateHealthScore(
+        lifestyleScore,
+        calculatorResults.metabolicImpactPercent,
+        calculatorResults.targetCalories
+      )
+    : 0;
+
+  // Handler for when assessment continues to calculator
+  const handleAssessmentContinue = () => {
+    openModal("calculator");
+  };
+
+  // Handler for when calculator completes
+  const handleCalculatorComplete = (data: CalculatorFormData) => {
+    setCalculatorData(data);
+    openModal("results");
+  };
+
+  // Handler for body fat guide from calculator
+  const handleOpenBodyFatGuide = () => {
+    openModal("body-fat-guide");
+  };
 
   return (
     <div className="relative">
@@ -89,7 +140,10 @@ export default function LandingPage() {
                   <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </button>
 
-                <button className="btn-athletic group flex items-center justify-center gap-3 px-8 py-5 bg-secondary text-foreground">
+                <button
+                  onClick={() => openModal("assessment")}
+                  className="btn-athletic group flex items-center justify-center gap-3 px-8 py-5 bg-secondary text-foreground"
+                >
                   <Target className="h-5 w-5 text-primary" />
                   Take Assessment
                 </button>
@@ -97,7 +151,10 @@ export default function LandingPage() {
 
               {/* Third CTA */}
               <div className="animate-slide-power delay-400 mt-6">
-                <button className="text-sm font-bold text-primary hover:text-accent tracking-wider uppercase group flex items-center gap-2">
+                <button
+                  onClick={() => openModal("assessment")}
+                  className="text-sm font-bold text-primary hover:text-accent tracking-wider uppercase group flex items-center gap-2"
+                >
                   <Trophy className="h-4 w-4" />
                   Start 30-Day Challenge
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -366,11 +423,17 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <button className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground">
+            <button
+              onClick={() => openModal("method")}
+              className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground"
+            >
               How It Works
             </button>
 
-            <button className="btn-athletic group flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power">
+            <button
+              onClick={() => openModal("assessment")}
+              className="btn-athletic group flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
+            >
               <Flame className="h-5 w-5" />
               Launch Challenge Hub
               <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -420,6 +483,32 @@ export default function LandingPage() {
         open={activeModal === "elite-lifestyles"}
         onOpenChange={(open) => !open && closeModal()}
         onOpenCalendly={() => openModal("calendly")}
+      />
+      <AssessmentModal
+        open={activeModal === "assessment"}
+        onOpenChange={(open) => !open && closeModal()}
+        scores={scores}
+        onScoreChange={updateScore}
+        onContinue={handleAssessmentContinue}
+      />
+      <CalculatorModal
+        open={activeModal === "calculator"}
+        onOpenChange={(open) => !open && closeModal()}
+        onCalculate={handleCalculatorComplete}
+        onOpenBodyFatGuide={handleOpenBodyFatGuide}
+      />
+      <ResultsModal
+        open={activeModal === "results"}
+        onOpenChange={(open) => !open && closeModal()}
+        results={calculatorResults}
+        lifestyleScore={lifestyleScore}
+        healthScore={healthScore}
+        goal={(calculatorData?.goal as Goal) || "fat_loss"}
+        onBookCall={() => openModal("calendly")}
+      />
+      <BodyFatGuideModal
+        open={activeModal === "body-fat-guide"}
+        onOpenChange={(open) => !open && closeModal()}
       />
     </div>
   );

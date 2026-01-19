@@ -11,6 +11,9 @@ export type ModalType =
   | "body-fat-guide"
   | "high-performer-trap"
   | "elite-lifestyles"
+  | "assessment"
+  | "calculator"
+  | "results"
   | null;
 
 interface ModalContextType {
