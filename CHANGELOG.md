@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript database types (`lib/database.types.ts`) with full type safety
 - Database indexes for optimized queries on client_id, day_number, logged_at, submitted_at
 - Schema integration tests verifying table structure, constraints, and RLS policies
+- Landing page with Modern Athletic design theme (`app/(public)/page.tsx`)
+- Public layout with header and footer components (`app/(public)/layout.tsx`)
+- Landing page header with mobile menu toggle (`components/landing/header.tsx`)
+- Landing page footer with social icons (`components/landing/footer.tsx`)
+- Athletic design system with custom CSS utilities in `app/globals.css`
+- Unit tests for landing page components (50 tests total)
 
 ### Changed
 
