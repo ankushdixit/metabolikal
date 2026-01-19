@@ -1,4 +1,5 @@
 # METABOLI-K-AL Landing Page Copy
+
 ## All Text Content for Rebuild
 
 ---
@@ -19,12 +20,14 @@ The structured lifestyle reset engineered for high-performing professionals. Rep
 METABOLIKAL (with K as accent)
 
 **Navigation:**
+
 - Home
 - Transformations
 - About
 - Challenge
 
 **Buttons:**
+
 - Take Assessment
 - Book a Call
 
@@ -36,6 +39,7 @@ METABOLIKAL (with K as accent)
 Menu
 
 **Items:**
+
 - Home
 - Transformations
 - About
@@ -64,6 +68,7 @@ Menu
 - Complete assessment to see your score
 
 **Breakdown:**
+
 - Day Streak
 - Assessment
 - Calculator
@@ -99,6 +104,7 @@ Prove Your Consistency - Earn Your Personalized Metaboli-k-al Plan
 Reprogram your rhythm. Master your metabolism.
 
 **Feature Stats:**
+
 - 4 Phases | COMPLETE SYSTEM
 - 180 Minutes | WEEKLY TRAINING
 - Zero Burnout | SUSTAINABLE INTENSITY
@@ -147,6 +153,7 @@ ABOUT METABOLI-K-AL
 Because Metabolism is King — and you deserve a sovereign approach to transformation
 
 **Quick Links:**
+
 - Meet Shivashish Sinha - The Creator
 - The Metaboli-k-al Method
 - Metaboli-k-al transformation programs
@@ -174,12 +181,15 @@ It's the sovereign force that determines whether you command your day or merely 
 THE METABOLI-K-AL DIFFERENCE
 
 ### Card 1: Personal, Not Automated
+
 Every elite client works directly with Shivashish. No bots, no copy-paste programs—just personalized guidance from start to finish to match your metabolic path.
 
 ### Card 2: Science-Based, Tested
+
 This isn't trendy—it's tested. Each step grounded in real-world application, based on rigorous science with hundreds of high-performers who took their physiology to the next level.
 
 ### Card 3: Built for Elite Lifestyles
+
 No extreme protocols, no unsustainable demands. Every strategy is designed to integrate your executive lifestyle with maximum performance and consistency.
 
 **Bottom Statement:**
@@ -205,6 +215,7 @@ How the 30-Day Challenge Works
 Launch 30-Day Challenge Hub
 
 **Tags:**
+
 - Science-Backed
 - Personalized
 - Sustainable
@@ -217,21 +228,25 @@ Launch 30-Day Challenge Hub
 Reset Your Rhythm, Reclaim Your Life
 
 **Social:**
+
 - YouTube (@Metabolikal_1)
 - Instagram (@metabolikal)
 
 **Quick Links:**
+
 - Home
 - Transformations
 - About
 - Challenge
 
 **Programs:**
+
 - Elite Programs
 - The Method
 - 30-Day Hall of Fame
 
 **Get Started:**
+
 - Take Assessment
 - Book Strategy Call
 
@@ -249,34 +264,42 @@ METABOLI-K-AL Assessment
 Complete your lifestyle assessment to discover your metabolic health score and personalized action plan.
 
 ### Slider 1: Sleep & Recovery
+
 - Low: Tossing, turning, waking tired
 - High: 8h deep sleep, wake refreshed
 
 ### Slider 2: Body Confidence
+
 - Low: Avoid mirrors, hide body
 - High: Command presence
 
 ### Slider 3: Nutrition Strategy Mastery
+
 - Low: Stress eating, guilt cycles
 - High: Fuel for performance
 
 ### Slider 4: Mental Clarity
+
 - Low: Foggy, slow decisions
 - High: Laser-sharp execution
 
 ### Slider 5: Stress Management
+
 - Low: Reactive, overwhelmed
 - High: Calm under pressure
 
 ### Slider 6: Support System
+
 - Low: Isolated, going solo
 - High: Elite peer support
 
 ### Slider 7: Hydration
+
 - Low: Barely drinking, dehydrated
 - High: Optimal hydration (3-4L/day)
 
 **Buttons:**
+
 - Cancel
 - Continue to Calculator
 
@@ -291,6 +314,7 @@ Metabolic Calculator
 Enter your physical metrics to calculate your personalized metabolic numbers.
 
 **Fields:**
+
 - Gender (Male, Female)
 - Age (years)
 - Current Weight (kg)
@@ -301,6 +325,7 @@ Enter your physical metrics to calculate your personalized metabolic numbers.
 - Goal Weight (kg) - "This will help us calculate your estimated timeline to reach your goal."
 
 **Activity Levels:**
+
 - Sedentary (little or no exercise)
 - Lightly Active (1-3 days/week)
 - Moderately Active (3-5 days/week)
@@ -329,6 +354,7 @@ Your medical information is private and never shared.
 This calculator provides estimates only and does not replace professional medical advice. Always consult your healthcare provider.
 
 **Buttons:**
+
 - Cancel
 - Calculate Results
 
@@ -340,6 +366,7 @@ This calculator provides estimates only and does not replace professional medica
 Your METABOLI-K-AL Results
 
 **Buttons:**
+
 - Share Results
 - Book Metabolic Breakthrough Call
 
@@ -360,6 +387,7 @@ Connect With Our Community
 See daily transformation stories, client wins, and metabolic breakthroughs on our social channels
 
 **Instagram Cards:**
+
 1. Before & After Stories - Real clients, real results, real transformations
 2. Client Wins - Daily posts of metabolic breakthroughs
 3. Learn & Level Up - Metabolic tips & transformation strategies
@@ -392,10 +420,12 @@ After years of trying every diet, workout plan, and productivity hack, I discove
 This revelation led to my own transformation—but more importantly, it revealed the elite system that works for people like us: driven, ambitious, and unwilling to compromise excellence.
 
 **Credentials:**
+
 - Specialization: High-Performing Professionals | Executive Health
 - Philosophy: Reset Your Rhythm, Reclaim Your Life
 
 **Social Links:**
+
 - Follow My Journey (Instagram)
 - Watch, Learn & Level Up (YouTube)
 
@@ -416,46 +446,55 @@ Beyond Fat Loss: Executive Metabolic Mastery
 "Elite transformation isn't about restriction. It's about optimization. We coach high-performers to master their metabolic operating system—not fight against it. Executive-grade results demand executive-grade protocols."
 
 ### Phase 0: BASELINE & AUDIT
+
 **Subtitle:** Foundation Phase
 **Purpose:** Establish your metabolic baseline and strategy roadmap.
 **Includes:**
+
 - Lifestyle & rhythm audit
 - Goal-setting & optimization framework
 - Personalized metabolic strategy
-**Outcome:** Clarity. Direction. Measurable success metrics.
-**Duration:** 4–5 days
+  **Outcome:** Clarity. Direction. Measurable success metrics.
+  **Duration:** 4–5 days
 
 ### Phase 1: REBALANCE
+
 **Subtitle:** Reset Phase
 **Purpose:** Eliminate inefficiencies, stabilize energy, and reset internal systems for executive-grade biological balance.
 **Tools:**
+
 - Glucose optimization protocols
 - Premium anti-inflammatory nutrition
 - Circadian rhythm & sleep optimization
 - Executive movement & mindfulness
-**Outcome:** Stable energy, reduced cravings, sharp focus, and restorative recovery.
+  **Outcome:** Stable energy, reduced cravings, sharp focus, and restorative recovery.
 
 ### Phase 2: REWIRE
+
 **Subtitle:** Building Phase
 **Purpose:** Build elite consistency, metabolic strength, and emotional resilience.
 **Tools:**
+
 - Strength & mobility protocols
 - Macro precision & timing
 - High-performer routines
 - Executive consistency systems
-**Outcome:** Peak metabolic performance, elite focus, and unshakable discipline.
+  **Outcome:** Peak metabolic performance, elite focus, and unshakable discipline.
 
 ### Phase 3: REINFORCE
+
 **Subtitle:** Freedom Phase
 **Purpose:** Integrate elite habits into your lifestyle — where performance becomes effortless.
 **Tools:**
+
 - Executive dining & social protocols
 - Strategic fasting & nutrition timing
 - Performance journaling
 - Identity-based transformation
-**Outcome:** Freedom with food, confidence in body, mastery over energy, and sustained elite identity.
+  **Outcome:** Freedom with food, confidence in body, mastery over energy, and sustained elite identity.
 
 ### The 5 Pillars of Metabolikal Transformation
+
 Our comprehensive framework addresses every aspect of metabolic health for sustainable transformation.
 
 1. **Metabolic Reset Protocol** - Advanced strategies to restore optimal metabolic function, hormone balance, and cellular energy production.
@@ -475,47 +514,55 @@ Elite Transformation Programs
 Three premium tiers of coaching designed for professional lifestyles and high-performance transformation goals. All programs include the Performance Protocol.
 
 ### Core Reset
+
 **Type:** MONTHLY COACHING
 **Level:** Starting Point
 **What You Get:**
+
 - Personalized onboarding & comprehensive assessment
 - Weekly routines & progress tracking
 - WhatsApp daily check-ins & accountability
 - Custom food strategy for your lifestyle integration
 - 4 phase progression system
-**Perfect for:** Executives ready to establish foundational health habits and see initial transformation results.
+  **Perfect for:** Executives ready to establish foundational health habits and see initial transformation results.
 
 ### Rhythm Rewire (MOST POPULAR)
+
 **Type:** QUARTERLY INTENSIVE
 **Level:** Complete System
 **Everything in Core Reset +**
+
 - Bi-weekly 1:1 coaching calls with Shivashish
 - Periodized training programs (4-phase system)
 - Executive stress management toolkit
 - Sleep optimization & leadership integration
 - Bounce-back protocols for setbacks
-**Perfect for:** Busy executives who want complete transformation with structured support and accountability.
+  **Perfect for:** Busy executives who want complete transformation with structured support and accountability.
 
 ### The Fulmane Experience
+
 **Type:** 4-MONTH ELITE MENTORSHIP
 **Level:** Elite Level
 **Everything in Rhythm Rewire +**
+
 - Weekly 1:1 strategy sessions with Shivashish
 - Access to exclusive content library
 - 24/7 WhatsApp priority support
 - Leadership & executive identity coaching
 - VIP priority support & direct access
-**Perfect for:** C-suite executives who want the ultimate transformation experience with maximum support.
+  **Perfect for:** C-suite executives who want the ultimate transformation experience with maximum support.
 
 ### All Programs Include:
 
 **The METABOLI-K-AL Method:**
+
 - Comprehensive metabolic assessment
 - 60/40 lifestyle optimization system
 - Executive-specific nutrition protocols
 - Strategic movement programming
 
 **Performance Integration:**
+
 - Executive performance optimization
 - Travel and business meal strategies
 - Stress management for leaders
@@ -539,6 +586,7 @@ Body Fat Percentage Guide
 Use this visual guide to estimate your body fat percentage. Remember, this is just an estimate - professional assessment methods like DEXA scans or BodPod are more accurate.
 
 ### Men's Body Fat % Ranges:
+
 - 5-9% Essential - Extremely lean, visible striations, minimal fat. Typical for competitive bodybuilders during peak.
 - 10-14% Athletic - Clear muscle definition, visible abs, athletic appearance. Typical for fitness models and athletes.
 - 15-19% Fitness - Good muscle tone, some ab definition, healthy appearance. Typical for active individuals.
@@ -546,6 +594,7 @@ Use this visual guide to estimate your body fat percentage. Remember, this is ju
 - 25%+ Elevated - Significant fat storage, reduced muscle visibility, higher health risk category.
 
 ### Women's Body Fat % Ranges:
+
 - 10-14% Essential - Extremely lean, visible muscle striations, minimal curves. Typical for competitive athletes.
 - 15-19% Athletic - Toned appearance, visible muscle definition, athletic curves. Typical for fitness competitors.
 - 20-24% Fitness - Healthy curves, good muscle tone, fit appearance. Optimal for most active women.
@@ -553,6 +602,7 @@ Use this visual guide to estimate your body fat percentage. Remember, this is ju
 - 32%+ Elevated - Significant fat storage, reduced muscle definition, higher health risk category.
 
 ### Quick Estimation Tips:
+
 - Visible Abs: Generally indicates 10-15% (men) or 15-20% (women)
 - Muscle Definition: Clear muscle separation suggests 12-18% (men) or 18-24% (women)
 - Soft Appearance: Minimal muscle visibility suggests 20%+ (men) or 30%+ (women)
@@ -574,21 +624,27 @@ Welcome to Your Transformation Journey!
 The 30-Day METABOLI-K-AL Challenge is a science-backed, gamified program designed to help you build sustainable metabolic health habits. Track daily metrics, earn points, and transform your health one day at a time.
 
 ### Step 1: Complete Prerequisites
+
 Take the Health Assessment and complete the Advanced Calculator to personalize your targets (protein goals require your weight data).
 
 ### Step 2: Track 5 Daily Metrics
+
 Log your Steps, Water Intake, Floors Climbed, Protein, and Sleep Hours every day. Each metric has specific targets to hit.
 
 ### Step 3: Earn Points Daily
+
 Earn up to 150 points per day (15pts per metric + 15pts check-in). Points are awarded once per day based on your performance.
 
 ### Step 4: Progressive Targets
+
 Each day's target increases by 10% based on your previous day's achievement, helping you build sustainable progress gradually.
 
 ### Step 5: Unlock New Weeks
+
 Complete 90% of each week to unlock the next. This ensures you build strong habits before advancing.
 
 ### Key Features:
+
 1. **Same-Day Edits** - Edit your log unlimited times on the same day. Points adjust automatically.
 2. **Progressive Targets** - Tomorrow's target = Today's achievement × 1.10 (gradual 10% increase)
 3. **Week Unlocking** - Complete 90% of each week to unlock the next (Week 1 always open)
@@ -597,6 +653,7 @@ Complete 90% of each week to unlock the next. This ensures you build strong habi
 6. **Completion Certificate** - Earn a personalized certificate after completing all 30 days!
 
 ### Tips for Success:
+
 - Log daily - Consistency is key! Try to log around the same time each day.
 - Start small - Don't worry about hitting max targets day 1. Focus on building the habit.
 - Use edits wisely - Forgot something? Edit your log on the same day (locks at midnight).
@@ -620,17 +677,20 @@ Launch Challenge Hub Now
 30-Day METABOLI-K-AL Challenge Hub
 
 **Stats Labels:**
+
 - Current Day
 - Total Points
 - Week Unlocked
 - Completion
 
 **Tabs:**
+
 - Today's Tasks
 - Journey So Far
 - 30-Day Calendar
 
 ### Today's Tasks Tab:
+
 Day [X] - Daily Tasks
 Complete all tasks to earn maximum points and unlock tomorrow!
 
@@ -643,6 +703,7 @@ Track daily to earn maximum points!
 
 **Reflection Section:**
 Daily Reflection
+
 - How are you feeling today? (e.g., Energized, Tired, Motivated...)
 - What's your focus for tomorrow? (e.g., Hit my step goal, Drink more water...)
 
@@ -655,16 +716,19 @@ Save Today's Progress
 Points will be finalized tomorrow. You can edit today's log anytime!
 
 ### Journey So Far Tab:
+
 Your Journey So Far
 Track your progress and celebrate your wins!
 
 **Stats:**
+
 - Day Streak
 - Total Points
 - Total Steps
 - Total Water
 
 ### 30-Day Calendar Tab:
+
 30-Day Challenge Calendar
 Track your progress and see what's unlocked
 
@@ -679,6 +743,7 @@ Complete 90% of this week's tasks to unlock the next 7 days!
 Day [X]
 
 **Buttons:**
+
 - View Today's Tasks
 - Open Challenge Hub
 
@@ -706,6 +771,7 @@ They're lacking a METABOLIC OPERATING SYSTEM designed for their demands.
 ### Ready to Break Free From the Trap?
 
 **Buttons:**
+
 - Claim Your FREE Strategy Session
 - Take the Metabolic Assessment
 - Start the 30-Day Challenge

@@ -1,81 +1,25 @@
 import {
   refineDataProvider,
+  createRefineDataProvider,
   refineResources,
   refineOptions,
   refineRouterProvider,
 } from "../refine";
 
 describe("refineDataProvider", () => {
-  describe("getList", () => {
-    it("throws helpful error with resource name", async () => {
-      await expect(
-        refineDataProvider.getList({
-          resource: "users",
-        })
-      ).rejects.toThrow('Data provider not configured. Attempted getList for "users".');
-    });
-
-    it("includes setup instructions in error", async () => {
-      await expect(
-        refineDataProvider.getList({
-          resource: "users",
-        })
-      ).rejects.toThrow("See lib/refine.tsx and ARCHITECTURE.md for setup instructions.");
+  describe("createRefineDataProvider", () => {
+    it("returns null when environment variables are not set", () => {
+      // In test environment without Supabase env vars, should return null
+      const provider = createRefineDataProvider();
+      // Since env vars are not set in tests, this should be null
+      expect(provider).toBeNull();
     });
   });
 
-  describe("getOne", () => {
-    it("throws helpful error with resource and id", async () => {
-      await expect(
-        refineDataProvider.getOne({
-          resource: "users",
-          id: 1,
-          meta: {},
-        })
-      ).rejects.toThrow('Attempted getOne for "users" with id "1"');
-    });
-  });
-
-  describe("create", () => {
-    it("throws helpful error", async () => {
-      await expect(
-        refineDataProvider.create({
-          resource: "users",
-          variables: { name: "Test" },
-          meta: {},
-        })
-      ).rejects.toThrow('Attempted create for "users"');
-    });
-  });
-
-  describe("update", () => {
-    it("throws helpful error with resource and id", async () => {
-      await expect(
-        refineDataProvider.update({
-          resource: "users",
-          id: 1,
-          variables: { name: "Updated" },
-          meta: {},
-        })
-      ).rejects.toThrow('Attempted update for "users" with id "1"');
-    });
-  });
-
-  describe("deleteOne", () => {
-    it("throws helpful error with resource and id", async () => {
-      await expect(
-        refineDataProvider.deleteOne({
-          resource: "users",
-          id: 1,
-          meta: {},
-        })
-      ).rejects.toThrow('Attempted deleteOne for "users" with id "1"');
-    });
-  });
-
-  describe("getApiUrl", () => {
-    it("returns empty string", () => {
-      expect(refineDataProvider.getApiUrl()).toBe("");
+  describe("refineDataProvider export", () => {
+    it("is null when env vars are not configured", () => {
+      // The exported refineDataProvider should be null in test env
+      expect(refineDataProvider).toBeNull();
     });
   });
 });

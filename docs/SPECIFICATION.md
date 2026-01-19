@@ -1,4 +1,5 @@
 # METABOLI-K-AL / Metabolical.com
+
 ## Complete Project Specification
 
 **Version:** 3.0
@@ -34,14 +35,15 @@
 
 This project consists of two interconnected but distinct parts:
 
-| Part | Name | Purpose | Audience |
-|------|------|---------|----------|
-| **Part 1** | METABOLI-K-AL Landing Page | Lead generation, brand awareness, free tools | Public visitors, potential clients |
-| **Part 2** | Metabolical Client Platform | Client management, diet/workout tracking | Existing clients, admin/coach |
+| Part       | Name                        | Purpose                                      | Audience                           |
+| ---------- | --------------------------- | -------------------------------------------- | ---------------------------------- |
+| **Part 1** | METABOLI-K-AL Landing Page  | Lead generation, brand awareness, free tools | Public visitors, potential clients |
+| **Part 2** | Metabolical Client Platform | Client management, diet/workout tracking     | Existing clients, admin/coach      |
 
 ### 1.2 Brand Identity
 
 **Brand Name:** METABOLI-K-AL (stylized with K emphasized)
+
 - Logo: Circular logo with "METABOLIKAL" text
 - Tagline: "You Don't Need More Hustle, You Need Rhythm"
 - Secondary tagline: "Reprogram your rhythm. Master your metabolism."
@@ -63,31 +65,34 @@ This project consists of two interconnected but distinct parts:
 
 The landing page is a single-page application with the following sections (in order):
 
-| # | Section ID | Section Name | Type |
-|---|------------|--------------|------|
-| 1 | `home` | Hero Section | On Page |
-| 2 | `transformations` | Real Transformations | On Page |
-| 3 | - | Revelation Section | On Page |
-| 4 | `about` | About METABOLI-K-AL | On Page |
-| 5 | - | The Difference Section | On Page |
-| 6 | `challenge` | Metabolic Challenge | On Page |
-| 7 | - | Footer | Footer |
+| #   | Section ID        | Section Name           | Type    |
+| --- | ----------------- | ---------------------- | ------- |
+| 1   | `home`            | Hero Section           | On Page |
+| 2   | `transformations` | Real Transformations   | On Page |
+| 3   | -                 | Revelation Section     | On Page |
+| 4   | `about`           | About METABOLI-K-AL    | On Page |
+| 5   | -                 | The Difference Section | On Page |
+| 6   | `challenge`       | Metabolic Challenge    | On Page |
+| 7   | -                 | Footer                 | Footer  |
 
 ### 2.2 Header Component
 
 **Elements:**
+
 - Logo (circular image + text: METABOLI**K**AL)
 - Desktop Navigation: Home, Transformations, About, Challenge
 - Header Buttons: "Take Assessment", "Book a Call"
 - Mobile hamburger menu
 
 **Mobile Menu Items:**
+
 - Home, Transformations, About, Challenge
 - Take Assessment, Book a Call, 30-Day Challenge
 
 ### 2.3 Floating UI Elements (Trays)
 
 #### 2.3.1 Quick Access Tray (Left Side)
+
 - Toggle button with chevron icon
 - Slides out to reveal quick action buttons:
   1. Real Results
@@ -96,6 +101,7 @@ The landing page is a single-page application with the following sections (in or
   4. Metaboli-k-al Transformation Programs
 
 #### 2.3.2 Points Tray (Right Side - Top)
+
 - Shows gamification stats:
   - Total Points
   - Metabolic Health Score (/100)
@@ -107,12 +113,14 @@ The landing page is a single-page application with the following sections (in or
   - Daily Visit Points
 
 #### 2.3.3 Day Counter Tray (Right Side - Bottom)
+
 - Shows current challenge day
 - Quick links: View Today's Tasks, Open Challenge Hub
 
 ### 2.4 Hero Section
 
 **Content:**
+
 - Main Quote (in quotation marks, attributed to founder)
 - Subtitle explaining what METABOLI-K-AL is
 - Three CTA buttons (stacked):
@@ -128,6 +136,7 @@ The landing page is a single-page application with the following sections (in or
 ### 2.5 Transformations Section
 
 **Content:**
+
 - Title: "REAL PEOPLE. REAL TRANSFORMATIONS."
 - Subtitle about executives mastering metabolic systems
 - Button: "View Transformation Gallery" (opens modal)
@@ -135,6 +144,7 @@ The landing page is a single-page application with the following sections (in or
 ### 2.6 Revelation Section
 
 **Content:**
+
 - Badge: "THE REVELATION"
 - Title: "YOU DON'T LACK DISCIPLINE. YOUR SYSTEM LACKS CALIBRATION."
 - Intro text about high-performers
@@ -145,6 +155,7 @@ The landing page is a single-page application with the following sections (in or
 ### 2.7 About Section
 
 **Content:**
+
 - Title: "ABOUT METABOLI-K-AL"
 - Subtitle about metabolism being king
 - Three quick link buttons:
@@ -153,12 +164,14 @@ The landing page is a single-page application with the following sections (in or
   3. Metaboli-k-al Transformation Programs
 
 **Accordion Cards:**
+
 1. THE DISCOVERY - About founding story and science
 2. WHY WE'RE METABOLI-K-AL - Brand philosophy
 
 ### 2.8 Difference Section
 
 **Content:**
+
 - Title: "THE METABOLI-K-AL DIFFERENCE"
 - Accordion Cards:
   1. Personal, Not Automated
@@ -169,6 +182,7 @@ The landing page is a single-page application with the following sections (in or
 ### 2.9 Challenge Section
 
 **Content:**
+
 - Badge: "STILL NOT SURE?, TAKE THE CHALLENGE"
 - Title: "START YOUR METABOLIC CHALLENGE"
 - Subtitle about professionals transforming
@@ -180,6 +194,7 @@ The landing page is a single-page application with the following sections (in or
 ### 2.10 Footer
 
 **Sections:**
+
 1. Logo + tagline + social links (YouTube, Instagram)
 2. Quick Links: Home, Transformations, About, Challenge
 3. Programs: Elite Programs, The Method, 30-Day Hall of Fame
@@ -187,6 +202,7 @@ The landing page is a single-page application with the following sections (in or
 5. Copyright + social links
 
 **Social Links:**
+
 - YouTube: @Metabolikal_1
 - Instagram: @metabolikal
 
@@ -220,31 +236,31 @@ The landing page is a single-page application with the following sections (in or
 
 **Form Fields:**
 
-| Field | Type | Options/Placeholder |
-|-------|------|---------------------|
-| Gender | Select | Male, Female |
-| Age | Number | "Enter your age" |
-| Current Weight | Number (kg) | "Enter your weight" |
-| Height | Number (cm) | "Enter your height" |
-| Body Fat % | Number (optional) | Link to guide modal |
-| Activity Level | Select | Sedentary, Lightly Active, Moderately Active, Very Active, Extremely Active |
-| Goal | Select | Fat Loss, Maintain Weight, Muscle Gain |
-| Goal Weight | Number (kg) | "Enter your target weight" |
+| Field          | Type              | Options/Placeholder                                                         |
+| -------------- | ----------------- | --------------------------------------------------------------------------- |
+| Gender         | Select            | Male, Female                                                                |
+| Age            | Number            | "Enter your age"                                                            |
+| Current Weight | Number (kg)       | "Enter your weight"                                                         |
+| Height         | Number (cm)       | "Enter your height"                                                         |
+| Body Fat %     | Number (optional) | Link to guide modal                                                         |
+| Activity Level | Select            | Sedentary, Lightly Active, Moderately Active, Very Active, Extremely Active |
+| Goal           | Select            | Fat Loss, Maintain Weight, Muscle Gain                                      |
+| Goal Weight    | Number (kg)       | "Enter your target weight"                                                  |
 
 **Medical Conditions Section:**
 Checkboxes with metabolic impact percentages:
 
-| Condition | Description | Impact |
-|-----------|-------------|--------|
-| Hypothyroidism | Underactive Thyroid | -8% |
-| PCOS | Polycystic Ovary Syndrome (Female only) | -10% |
-| Type 2 Diabetes | - | -12% |
-| Insulin Resistance | Pre-diabetes | -10% |
-| Sleep Apnea | Poor recovery | -7% |
-| Metabolic Syndrome | - | -15% |
-| On Thyroid Medication | Managed | -3% |
-| Chronic Fatigue Syndrome | - | -8% |
-| None of the above | No conditions | 0% |
+| Condition                | Description                             | Impact |
+| ------------------------ | --------------------------------------- | ------ |
+| Hypothyroidism           | Underactive Thyroid                     | -8%    |
+| PCOS                     | Polycystic Ovary Syndrome (Female only) | -10%   |
+| Type 2 Diabetes          | -                                       | -12%   |
+| Insulin Resistance       | Pre-diabetes                            | -10%   |
+| Sleep Apnea              | Poor recovery                           | -7%    |
+| Metabolic Syndrome       | -                                       | -15%   |
+| On Thyroid Medication    | Managed                                 | -3%    |
+| Chronic Fatigue Syndrome | -                                       | -8%    |
+| None of the above        | No conditions                           | 0%     |
 
 **Display:** Show "Estimated Metabolic Impact: X%"
 **Privacy Notice:** Medical information is private and never shared
@@ -267,6 +283,7 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** Transformation gallery and social proof
 
 **Sections:**
+
 1. YouTube Videos carousel - transformation stories
 2. Main results image (before/after transformations)
 3. Social media connection section
@@ -283,6 +300,7 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** Founder bio and credentials
 
 **Content:**
+
 - Expert photo
 - Name: Shivashish Sinha
 - Title: Founder & Metabolic Transformation Specialist
@@ -300,19 +318,21 @@ Checkboxes with metabolic impact percentages:
 
 **Phases:**
 
-| Phase | Name | Subtitle | Duration |
-|-------|------|----------|----------|
-| 0 | BASELINE & AUDIT | Foundation Phase | 4-5 days |
-| 1 | REBALANCE | Reset Phase | - |
-| 2 | REWIRE | Building Phase | - |
-| 3 | REINFORCE | Freedom Phase | - |
+| Phase | Name             | Subtitle         | Duration |
+| ----- | ---------------- | ---------------- | -------- |
+| 0     | BASELINE & AUDIT | Foundation Phase | 4-5 days |
+| 1     | REBALANCE        | Reset Phase      | -        |
+| 2     | REWIRE           | Building Phase   | -        |
+| 3     | REINFORCE        | Freedom Phase    | -        |
 
 **Each phase includes:**
+
 - Purpose statement
 - Tools/Includes list
 - Outcome statement
 
 **5 Pillars Section:**
+
 1. Metabolic Reset Protocol
 2. Rhythm-Based Nutrition
 3. Strategic Movement Design
@@ -327,17 +347,19 @@ Checkboxes with metabolic impact percentages:
 
 **Programs:**
 
-| Program | Type | Level | Highlight |
-|---------|------|-------|-----------|
-| Core Reset | Monthly Coaching | Starting Point | - |
-| Rhythm Rewire | Quarterly Intensive | Complete System | MOST POPULAR badge |
-| The Fulmane Experience | 4-Month Elite Mentorship | Elite Level | - |
+| Program                | Type                     | Level           | Highlight          |
+| ---------------------- | ------------------------ | --------------- | ------------------ |
+| Core Reset             | Monthly Coaching         | Starting Point  | -                  |
+| Rhythm Rewire          | Quarterly Intensive      | Complete System | MOST POPULAR badge |
+| The Fulmane Experience | 4-Month Elite Mentorship | Elite Level     | -                  |
 
 **Each program includes:**
+
 - What You Get list
 - Perfect For description
 
 **All Programs Include Section:**
+
 - The METABOLI-K-AL Method features
 - Performance Integration features
 
@@ -376,6 +398,7 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** Explain how the challenge works
 
 **5 Steps:**
+
 1. Complete Prerequisites (Assessment + Calculator)
 2. Track 5 Daily Metrics
 3. Earn Points Daily (max 150/day)
@@ -403,17 +426,20 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** 30-day challenge tracking interface
 
 **Overview Stats:**
+
 - Current Day
 - Total Points
 - Week Unlocked
 - Completion %
 
 **3 Tabs:**
+
 1. **Today's Tasks** - Daily metric tracking form
 2. **Journey So Far** - Progress summary
 3. **30-Day Calendar** - Visual calendar view
 
 **Today's Tasks Tab:**
+
 - 5 metric input fields (Steps, Water, Floors, Protein, Sleep)
 - Daily reflection fields
 - Points display
@@ -435,14 +461,17 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** Pain point awareness content
 
 **3 Trap Items:**
+
 1. Decision Fatigue Hits at 3PM
 2. Peak Performance Inconsistency
 3. "Tried Everything" Frustration
 
 **Revelation Section:**
+
 - Statement about needing a METABOLIC OPERATING SYSTEM
 
 **3 CTAs:**
+
 1. Claim Your FREE Strategy Session
 2. Take the Metabolic Assessment
 3. Start the 30-Day Challenge
@@ -454,6 +483,7 @@ Checkboxes with metabolic impact percentages:
 **Purpose:** Target audience identification
 
 **6 Lifestyle Cards:**
+
 1. C-SUITE EXECUTIVES
 2. HIGH-PERFORMANCE ENTREPRENEURS
 3. GLOBAL PROFESSIONALS
@@ -482,14 +512,15 @@ Private platform for paying clients to access personalized diet plans, workout r
 
 ### 3.2 User Roles
 
-| Role | Access |
-|------|--------|
+| Role        | Access                                              |
+| ----------- | --------------------------------------------------- |
 | Admin/Coach | All client data, check-in review, plan modification |
-| Client | Own data only: diet plan, workout plan, check-ins |
+| Client      | Own data only: diet plan, workout plan, check-ins   |
 
 ### 3.3 Core Modules
 
 #### 3.3.1 Authentication Module
+
 - Client login with email/password
 - Admin login
 - Session management (localStorage/sessionStorage)
@@ -498,6 +529,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 #### 3.3.2 Nutrition Module
 
 **Daily Meal Structure (7 meals):**
+
 1. Workout Time (configurable)
 2. Pre-Workout Meal
 3. Post-Workout Meal
@@ -507,6 +539,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 7. Dinner
 
 **Features:**
+
 - Default food items per meal
 - Click to view alternatives (5-8 per meal)
 - Color-coded calorie system:
@@ -521,6 +554,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 #### 3.3.3 Workout Module
 
 **Exercise Entry Fields:**
+
 - Exercise name
 - Sets and reps (e.g., 3 sets × 12 reps)
 - Duration (for cardio/timed)
@@ -529,6 +563,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 - Video links (optional)
 
 **Features:**
+
 - Completion checkboxes
 - Progress indicator (e.g., 5/8 exercises done)
 - Workout history log
@@ -537,34 +572,40 @@ Private platform for paying clients to access personalized diet plans, workout r
 
 **Client Check-In Form Fields:**
 
-*Basic Metrics:*
+_Basic Metrics:_
+
 - Date of check-in
 - Current weight
 - Body measurements (chest, waist, hips, arms, thighs)
 - Body fat % (optional)
 
-*Progress Photos:*
+_Progress Photos:_
+
 - Front view
 - Side view
 - Back view
 
-*Subjective Feedback (1-10 scales):*
+_Subjective Feedback (1-10 scales):_
+
 - Energy levels
 - Sleep quality
 - Stress levels
 - Overall mood
 
-*Compliance:*
+_Compliance:_
+
 - Diet adherence %
 - Workout adherence %
 - Challenges faced (text)
 
-*Goals & Notes:*
+_Goals & Notes:_
+
 - Progress toward goals (text)
 - Questions for coach (text)
 - Additional comments (text)
 
 **Admin Review Dashboard:**
+
 - Client selector (dropdown/search)
 - Check-in history sorted by date
 - Side-by-side metric comparison
@@ -576,6 +617,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 ### 3.4 Client Dashboard
 
 **Upon Login Display:**
+
 - Today's Overview: Day number, date
 - Calorie Summary: Consumed vs. remaining
 - Protein Progress: Visual progress bar
@@ -586,6 +628,7 @@ Private platform for paying clients to access personalized diet plans, workout r
   - Log food
 
 **Navigation Menu:**
+
 - Dashboard (home)
 - Diet Plan (daily view)
 - Workout Plan (daily view)
@@ -602,6 +645,7 @@ Private platform for paying clients to access personalized diet plans, workout r
 This project will be built using **Solokit's Dashboard Refine stack** - a production-ready CRUD-first framework perfect for this application.
 
 **Why Dashboard Refine:**
+
 - Built-in CRUD operations for diet plans, workouts, check-ins, food database
 - Admin dashboard features (sidebar, tables, filtering) for coach interface
 - shadcn/ui components included for beautiful, accessible UI
@@ -611,25 +655,25 @@ This project will be built using **Solokit's Dashboard Refine stack** - a produc
 
 ### 4.2 Core Technologies
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Next.js** | 16.x | Full-stack React framework |
-| **React** | 19.x | UI library |
-| **TypeScript** | 5.x | Type safety |
-| **Refine** | 5.x | CRUD framework with hooks |
-| **shadcn/ui** | latest | UI component library |
-| **Tailwind CSS** | 4.x | Utility-first styling |
-| **Zod** | 4.x | Schema validation |
-| **React Hook Form** | latest | Form management |
+| Technology          | Version | Purpose                    |
+| ------------------- | ------- | -------------------------- |
+| **Next.js**         | 16.x    | Full-stack React framework |
+| **React**           | 19.x    | UI library                 |
+| **TypeScript**      | 5.x     | Type safety                |
+| **Refine**          | 5.x     | CRUD framework with hooks  |
+| **shadcn/ui**       | latest  | UI component library       |
+| **Tailwind CSS**    | 4.x     | Utility-first styling      |
+| **Zod**             | 4.x     | Schema validation          |
+| **React Hook Form** | latest  | Form management            |
 
 ### 4.3 Backend & Database
 
-| Technology | Purpose |
-|------------|---------|
-| **Supabase** | Backend-as-a-Service |
-| **PostgreSQL** | Database (via Supabase) |
-| **Supabase Auth** | Authentication & user management |
-| **Supabase Storage** | File uploads (progress photos) |
+| Technology            | Purpose                            |
+| --------------------- | ---------------------------------- |
+| **Supabase**          | Backend-as-a-Service               |
+| **PostgreSQL**        | Database (via Supabase)            |
+| **Supabase Auth**     | Authentication & user management   |
+| **Supabase Storage**  | File uploads (progress photos)     |
 | **Supabase Realtime** | Real-time subscriptions (optional) |
 
 ### 4.4 Refine Data Provider
@@ -644,25 +688,25 @@ export const refineDataProvider = dataProvider(supabaseClient);
 
 ### 4.5 Key Refine Hooks
 
-| Hook | Use Case |
-|------|----------|
-| `useList()` | Fetch diet plans, workouts, check-ins with filtering |
-| `useOne()` | Get single client, single check-in |
-| `useCreate()` | Submit check-ins, log food |
-| `useUpdate()` | Update diet selections, mark exercises complete |
-| `useDelete()` | Remove food logs |
-| `useForm()` | Check-in form, assessment form |
-| `useTable()` | Admin client list, check-in history |
+| Hook          | Use Case                                             |
+| ------------- | ---------------------------------------------------- |
+| `useList()`   | Fetch diet plans, workouts, check-ins with filtering |
+| `useOne()`    | Get single client, single check-in                   |
+| `useCreate()` | Submit check-ins, log food                           |
+| `useUpdate()` | Update diet selections, mark exercises complete      |
+| `useDelete()` | Remove food logs                                     |
+| `useForm()`   | Check-in form, assessment form                       |
+| `useTable()`  | Admin client list, check-in history                  |
 
 ### 4.6 External Services
 
-| Service | Purpose |
-|---------|---------|
-| **Supabase** | Auth, Database, Storage (all-in-one) |
-| **Calendly** | Strategy call booking (embed) |
-| **Vercel** | Deployment & hosting |
-| **Google Tag Manager** | Analytics |
-| **Google AdSense** | Monetization (optional) |
+| Service                | Purpose                              |
+| ---------------------- | ------------------------------------ |
+| **Supabase**           | Auth, Database, Storage (all-in-one) |
+| **Calendly**           | Strategy call booking (embed)        |
+| **Vercel**             | Deployment & hosting                 |
+| **Google Tag Manager** | Analytics                            |
+| **Google AdSense**     | Monetization (optional)              |
 
 ### 4.7 Project Structure
 
@@ -766,23 +810,24 @@ metabolikal/
 
 ### 4.10 Responsive Breakpoints
 
-| Breakpoint | Target | Tailwind Class |
-|------------|--------|----------------|
-| Mobile | < 640px | `sm:` |
-| Tablet | 640px - 1024px | `md:` / `lg:` |
-| Desktop | > 1024px | `xl:` |
+| Breakpoint | Target         | Tailwind Class |
+| ---------- | -------------- | -------------- |
+| Mobile     | < 640px        | `sm:`          |
+| Tablet     | 640px - 1024px | `md:` / `lg:`  |
+| Desktop    | > 1024px       | `xl:`          |
 
 ### 4.11 Deployment
 
-| Environment | Platform | URL |
-|-------------|----------|-----|
-| Production | Vercel | metabolikal.com |
-| Preview | Vercel | pr-*.vercel.app |
-| Database | Supabase | [project].supabase.co |
+| Environment | Platform | URL                   |
+| ----------- | -------- | --------------------- |
+| Production  | Vercel   | metabolikal.com       |
+| Preview     | Vercel   | pr-\*.vercel.app      |
+| Database    | Supabase | [project].supabase.co |
 
 ### 4.12 Quality Tier
 
 Using **Solokit Tier 4: Production-Ready** which includes:
+
 - Linting & formatting (ESLint, Prettier)
 - Type checking (TypeScript strict mode)
 - Unit tests (Vitest)
@@ -828,22 +873,22 @@ Using **Solokit Tier 4: Production-Ready** which includes:
 
 ### 5.3 Button Styles
 
-| Type | Style |
-|------|-------|
-| Primary | Solid fill, shadow, pulse animation |
-| Secondary | Outline with hover fill |
-| Gold/Premium | Gold gradient with glow |
-| Green CTA | Green gradient (challenge) |
+| Type         | Style                               |
+| ------------ | ----------------------------------- |
+| Primary      | Solid fill, shadow, pulse animation |
+| Secondary    | Outline with hover fill             |
+| Gold/Premium | Gold gradient with glow             |
+| Green CTA    | Green gradient (challenge)          |
 
 ### 5.4 Animation Effects
 
-| Effect | Usage |
-|--------|-------|
-| pulse-glow | Primary CTAs |
-| pulse-glow-green | Challenge CTA |
-| pulse-glow-gold | Premium buttons |
-| floating | Decorative elements |
-| success-pulse | Completion indicators |
+| Effect           | Usage                 |
+| ---------------- | --------------------- |
+| pulse-glow       | Primary CTAs          |
+| pulse-glow-green | Challenge CTA         |
+| pulse-glow-gold  | Premium buttons       |
+| floating         | Decorative elements   |
+| success-pulse    | Completion indicators |
 
 ---
 
@@ -1246,22 +1291,24 @@ $$ LANGUAGE plpgsql;
 ### 9.1 BMR Calculation
 
 **Mifflin-St Jeor Equation:**
+
 - Men: BMR = (10 × weight) + (6.25 × height) - (5 × age) + 5
 - Women: BMR = (10 × weight) + (6.25 × height) - (5 × age) - 161
 
 **With Body Fat (Katch-McArdle):**
+
 - Lean Mass = weight × (1 - bodyFat/100)
 - BMR = 370 + (21.6 × leanMass)
 
 ### 9.2 Activity Multipliers
 
-| Level | Multiplier |
-|-------|------------|
-| Sedentary | 1.2 |
-| Lightly Active | 1.375 |
-| Moderately Active | 1.55 |
-| Very Active | 1.725 |
-| Extremely Active | 1.9 |
+| Level             | Multiplier |
+| ----------------- | ---------- |
+| Sedentary         | 1.2        |
+| Lightly Active    | 1.375      |
+| Moderately Active | 1.55       |
+| Very Active       | 1.725      |
+| Extremely Active  | 1.9        |
 
 ### 9.3 TDEE Calculation
 
@@ -1274,10 +1321,10 @@ Apply metabolic impact as multiplier:
 
 ### 9.5 Goal-Based Calorie Targets
 
-| Goal | Adjustment |
-|------|------------|
-| Fat Loss | TDEE - 500 calories |
-| Maintain | TDEE |
+| Goal        | Adjustment          |
+| ----------- | ------------------- |
+| Fat Loss    | TDEE - 500 calories |
+| Maintain    | TDEE                |
 | Muscle Gain | TDEE + 300 calories |
 
 ### 9.6 Lifestyle Score Calculation
@@ -1447,30 +1494,30 @@ Formula in metabolikal-final.js
 
 ### 11.1 Landing Page Metrics
 
-| Metric | Target |
-|--------|--------|
-| Assessment completion rate | > 50% |
-| Calculator completion rate | > 40% |
-| Challenge signup rate | > 30% |
-| Strategy call booking rate | > 10% |
+| Metric                     | Target |
+| -------------------------- | ------ |
+| Assessment completion rate | > 50%  |
+| Calculator completion rate | > 40%  |
+| Challenge signup rate      | > 30%  |
+| Strategy call booking rate | > 10%  |
 
 ### 11.2 Client Platform Metrics
 
-| Metric | Target |
-|--------|--------|
-| Daily active users | 80%+ of client base |
-| Check-in completion rate | 90%+ |
-| Food logging frequency | 5+ days/week |
-| Coach review time | < 5 minutes/client |
+| Metric                   | Target              |
+| ------------------------ | ------------------- |
+| Daily active users       | 80%+ of client base |
+| Check-in completion rate | 90%+                |
+| Food logging frequency   | 5+ days/week        |
+| Coach review time        | < 5 minutes/client  |
 
 ### 11.3 Business Metrics
 
-| Metric | Target |
-|--------|--------|
+| Metric                        | Target        |
+| ----------------------------- | ------------- |
 | Time saved on data management | 80% reduction |
-| Client retention increase | +25% |
-| Client capacity increase | 2x |
-| Client satisfaction score | 4.5+/5.0 |
+| Client retention increase     | +25%          |
+| Client capacity increase      | 2x            |
+| Client satisfaction score     | 4.5+/5.0      |
 
 ---
 
@@ -1479,6 +1526,7 @@ Formula in metabolikal-final.js
 ### Existing Assets to Preserve
 
 **Images:**
+
 - metabolikal-logo-ultimate.png (main logo)
 - metabolikal-logo-circular.png
 - metabolikal-logo-alt.png
@@ -1500,6 +1548,7 @@ Formula in metabolikal-final.js
 ### Static Website Limitations
 
 **Cannot Implement:**
+
 - Secure server-side authentication
 - Encrypted password storage
 - Server-side file processing
@@ -1507,6 +1556,7 @@ Formula in metabolikal-final.js
 - Role-based access control enforcement
 
 **Recommended for Production:**
+
 - Migrate to proper backend (Node.js, Python, PHP)
 - Use JWT or session-based authentication
 - Implement password hashing (bcrypt)

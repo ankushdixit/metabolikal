@@ -98,14 +98,14 @@ See ARCHITECTURE.md for complete code patterns and examples.
 
 ### File Organization
 
-| New Code Type           | Location               |
-| ----------------------- | ---------------------- |
-| Resource pages          | `app/(dashboard)/`     |
-| Shared components       | `components/`          |
-| UI primitives           | `components/ui/`       |
-| Form components         | `components/forms/`    |
-| Refine config           | `lib/refine.tsx`       |
-| Validation schemas      | `lib/validations.ts`   |
+| New Code Type      | Location             |
+| ------------------ | -------------------- |
+| Resource pages     | `app/(dashboard)/`   |
+| Shared components  | `components/`        |
+| UI primitives      | `components/ui/`     |
+| Form components    | `components/forms/`  |
+| Refine config      | `lib/refine.tsx`     |
+| Validation schemas | `lib/validations.ts` |
 
 ### Code Patterns
 
@@ -614,37 +614,37 @@ git commit --no-verify
 
 ### Solokit Commands (Slash Commands)
 
-| Command                     | Description                    |
-| --------------------------- | ------------------------------ |
-| `/work-list`                | List all work items            |
-| `/work-show <id>`           | Show work item details         |
-| `/work-new`                 | Create new work item           |
-| `/work-update <id>`         | Update work item               |
-| `/work-delete <id>`         | Delete work item               |
-| `/work-graph`               | Visualize dependencies         |
-| `/work-next`                | Get next recommended work item |
-| `/start [id]`               | Start a session                |
-| `/status`                   | Check session status           |
-| `/validate`                 | Validate quality gates         |
-| `/end`                      | End session                    |
-| `/learn`                    | Capture a learning             |
-| `/learn-show`               | View learnings                 |
-| `/learn-search <query>`     | Search learnings               |
+| Command                 | Description                    |
+| ----------------------- | ------------------------------ |
+| `/work-list`            | List all work items            |
+| `/work-show <id>`       | Show work item details         |
+| `/work-new`             | Create new work item           |
+| `/work-update <id>`     | Update work item               |
+| `/work-delete <id>`     | Delete work item               |
+| `/work-graph`           | Visualize dependencies         |
+| `/work-next`            | Get next recommended work item |
+| `/start [id]`           | Start a session                |
+| `/status`               | Check session status           |
+| `/validate`             | Validate quality gates         |
+| `/end`                  | End session                    |
+| `/learn`                | Capture a learning             |
+| `/learn-show`           | View learnings                 |
+| `/learn-search <query>` | Search learnings               |
 
 ### Key Files
 
-| File                                     | Purpose                                       |
-| ---------------------------------------- | --------------------------------------------- |
-| `CLAUDE.md`                              | AI guidance (this file)                       |
-| `ARCHITECTURE.md`                        | Stack architecture guide (detailed patterns)  |
-| `README.md`                              | Project quick start                           |
-| `.session/guides/PRD_WRITING_GUIDE.md`   | PRD authoring guide (MUST follow for PRDs)    |
-| `.session/guides/STACK_GUIDE.md`         | Stack selection and capabilities guide        |
-| `.session/tracking/work_items.json`      | Work item data (use `sk` commands)            |
-| `.session/tracking/learnings.json`       | Captured learnings (use `sk` commands)        |
-| `.session/specs/`                        | Work item specifications                      |
-| `.session/briefings/`                    | Session briefings                             |
-| `.session/history/`                      | Session summaries                             |
+| File                                   | Purpose                                      |
+| -------------------------------------- | -------------------------------------------- |
+| `CLAUDE.md`                            | AI guidance (this file)                      |
+| `ARCHITECTURE.md`                      | Stack architecture guide (detailed patterns) |
+| `README.md`                            | Project quick start                          |
+| `.session/guides/PRD_WRITING_GUIDE.md` | PRD authoring guide (MUST follow for PRDs)   |
+| `.session/guides/STACK_GUIDE.md`       | Stack selection and capabilities guide       |
+| `.session/tracking/work_items.json`    | Work item data (use `sk` commands)           |
+| `.session/tracking/learnings.json`     | Captured learnings (use `sk` commands)       |
+| `.session/specs/`                      | Work item specifications                     |
+| `.session/briefings/`                  | Session briefings                            |
+| `.session/history/`                    | Session summaries                            |
 
 ### Development Commands
 
