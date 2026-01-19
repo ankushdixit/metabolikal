@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "5.2.2",
+    "@radix-ui/react-dialog": "1.1.15",
     "@refinedev/cli": "2.16.50",
     "@refinedev/core": "5.0.5",
     "@refinedev/nextjs-router": "7.0.4",

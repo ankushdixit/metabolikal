@@ -9,6 +9,8 @@
  * - Energy and motion-focused animations
  */
 
+"use client";
+
 import {
   ArrowRight,
   Flame,
@@ -19,8 +21,20 @@ import {
   Dumbbell,
   ChevronRight,
 } from "lucide-react";
+import {
+  CalendlyModal,
+  RealResultsModal,
+  MeetExpertModal,
+  MethodModal,
+  EliteProgramsModal,
+  HighPerformerTrapModal,
+  EliteLifestylesModal,
+} from "@/components/landing/modals";
+import { useModalContext } from "@/contexts/modal-context";
 
 export default function LandingPage() {
+  const { activeModal, openModal, closeModal } = useModalContext();
+
   return (
     <div className="relative">
       {/* Hero Section */}
@@ -66,7 +80,10 @@ export default function LandingPage() {
 
               {/* CTAs */}
               <div className="animate-slide-power delay-300 mt-10 flex flex-col sm:flex-row gap-3">
-                <button className="btn-athletic group flex items-center justify-center gap-3 px-8 py-5 gradient-electric text-black glow-power">
+                <button
+                  onClick={() => openModal("calendly")}
+                  className="btn-athletic group flex items-center justify-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
+                >
                   <Flame className="h-5 w-5" />
                   Get Free Strategy Session
                   <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -150,7 +167,10 @@ export default function LandingPage() {
             See the results of executives who mastered their metabolic operating system
           </p>
 
-          <button className="btn-athletic group flex items-center gap-3 px-8 py-4 bg-secondary text-foreground">
+          <button
+            onClick={() => openModal("real-results")}
+            className="btn-athletic group flex items-center gap-3 px-8 py-4 bg-secondary text-foreground"
+          >
             View Transformation Gallery
             <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </button>
@@ -180,12 +200,18 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground">
+              <button
+                onClick={() => openModal("high-performer-trap")}
+                className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground"
+              >
                 The High-Performer Trap
                 <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
 
-              <button className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground">
+              <button
+                onClick={() => openModal("elite-lifestyles")}
+                className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground"
+              >
                 See Who We Work With
                 <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
@@ -213,14 +239,24 @@ export default function LandingPage() {
 
           {/* Quick Links */}
           <div className="flex flex-wrap gap-3 mb-16">
-            {["Meet the Expert", "The Method", "Elite Programs"].map((item) => (
-              <button
-                key={item}
-                className="btn-athletic px-6 py-3 text-sm bg-secondary text-foreground"
-              >
-                {item}
-              </button>
-            ))}
+            <button
+              onClick={() => openModal("meet-expert")}
+              className="btn-athletic px-6 py-3 text-sm bg-secondary text-foreground"
+            >
+              Meet the Expert
+            </button>
+            <button
+              onClick={() => openModal("method")}
+              className="btn-athletic px-6 py-3 text-sm bg-secondary text-foreground"
+            >
+              The Method
+            </button>
+            <button
+              onClick={() => openModal("elite-programs")}
+              className="btn-athletic px-6 py-3 text-sm bg-secondary text-foreground"
+            >
+              Elite Programs
+            </button>
           </div>
 
           {/* Accordions */}
@@ -354,6 +390,37 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Modals */}
+      <CalendlyModal
+        open={activeModal === "calendly"}
+        onOpenChange={(open) => !open && closeModal()}
+      />
+      <RealResultsModal
+        open={activeModal === "real-results"}
+        onOpenChange={(open) => !open && closeModal()}
+      />
+      <MeetExpertModal
+        open={activeModal === "meet-expert"}
+        onOpenChange={(open) => !open && closeModal()}
+        onOpenCalendly={() => openModal("calendly")}
+      />
+      <MethodModal open={activeModal === "method"} onOpenChange={(open) => !open && closeModal()} />
+      <EliteProgramsModal
+        open={activeModal === "elite-programs"}
+        onOpenChange={(open) => !open && closeModal()}
+        onOpenCalendly={() => openModal("calendly")}
+      />
+      <HighPerformerTrapModal
+        open={activeModal === "high-performer-trap"}
+        onOpenChange={(open) => !open && closeModal()}
+        onOpenCalendly={() => openModal("calendly")}
+      />
+      <EliteLifestylesModal
+        open={activeModal === "elite-lifestyles"}
+        onOpenChange={(open) => !open && closeModal()}
+        onOpenCalendly={() => openModal("calendly")}
+      />
     </div>
   );
 }
