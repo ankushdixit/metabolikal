@@ -598,11 +598,11 @@ This template uses **Tailwind CSS v4** with CSS-first configuration. The compreh
 
 ### Configuration Files
 
-| File | Purpose |
-| ---- | ------- |
-| `app/globals.css` | Main CSS with `@import "tailwindcss"`, `@theme` block, and shadcn/ui color tokens |
-| `tailwind.config.ts` | Minimal config (only needed for plugins) |
-| `postcss.config.mjs` | PostCSS configuration with `@tailwindcss/postcss` |
+| File                 | Purpose                                                                           |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `app/globals.css`    | Main CSS with `@import "tailwindcss"`, `@theme` block, and shadcn/ui color tokens |
+| `tailwind.config.ts` | Minimal config (only needed for plugins)                                          |
+| `postcss.config.mjs` | PostCSS configuration with `@tailwindcss/postcss`                                 |
 
 ### Color System
 
@@ -629,17 +629,17 @@ The template includes a complete shadcn/ui color system defined in `globals.css`
 
 The theme generates these utility classes:
 
-| Utility | Usage |
-| ------- | ----- |
-| `bg-background`, `text-foreground` | Base colors |
-| `bg-primary`, `text-primary-foreground` | Primary actions |
-| `bg-secondary`, `text-secondary-foreground` | Secondary actions |
-| `bg-destructive`, `text-destructive-foreground` | Destructive actions |
-| `bg-muted`, `text-muted-foreground` | Muted/disabled states |
-| `bg-accent`, `text-accent-foreground` | Accent/highlight |
-| `bg-card`, `text-card-foreground` | Card components |
-| `bg-popover`, `text-popover-foreground` | Popover/dropdown |
-| `border-border`, `bg-input`, `ring-ring` | Form elements |
+| Utility                                         | Usage                 |
+| ----------------------------------------------- | --------------------- |
+| `bg-background`, `text-foreground`              | Base colors           |
+| `bg-primary`, `text-primary-foreground`         | Primary actions       |
+| `bg-secondary`, `text-secondary-foreground`     | Secondary actions     |
+| `bg-destructive`, `text-destructive-foreground` | Destructive actions   |
+| `bg-muted`, `text-muted-foreground`             | Muted/disabled states |
+| `bg-accent`, `text-accent-foreground`           | Accent/highlight      |
+| `bg-card`, `text-card-foreground`               | Card components       |
+| `bg-popover`, `text-popover-foreground`         | Popover/dropdown      |
+| `border-border`, `bg-input`, `ring-ring`        | Form elements         |
 
 ### Dark Mode
 
@@ -656,7 +656,7 @@ Dark mode is implemented via the `.dark` class on the `<html>` or `<body>` eleme
 To toggle dark mode programmatically:
 
 ```typescript
-document.documentElement.classList.toggle('dark');
+document.documentElement.classList.toggle("dark");
 ```
 
 ### Adding Custom Colors
@@ -691,13 +691,13 @@ Use via utilities: `rounded-lg`, `rounded-md`, `rounded-sm`.
 
 ### Key Differences from Tailwind v3
 
-| v3 Pattern | v4 Pattern |
-| ---------- | ---------- |
-| `@tailwind base/components/utilities` | `@import "tailwindcss"` |
-| `tailwind.config.ts` theme.extend.colors | `@theme { --color-*: value }` in CSS |
-| `hsl(var(--primary))` in config | `--color-primary: hsl(...)` directly in CSS |
-| `content: [...]` in config | Automatic content detection |
-| `darkMode: "class"` in config | `.dark { }` CSS overrides |
+| v3 Pattern                               | v4 Pattern                                  |
+| ---------------------------------------- | ------------------------------------------- |
+| `@tailwind base/components/utilities`    | `@import "tailwindcss"`                     |
+| `tailwind.config.ts` theme.extend.colors | `@theme { --color-*: value }` in CSS        |
+| `hsl(var(--primary))` in config          | `--color-primary: hsl(...)` directly in CSS |
+| `content: [...]` in config               | Automatic content detection                 |
+| `darkMode: "class"` in config            | `.dark { }` CSS overrides                   |
 
 ## Resources
 

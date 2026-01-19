@@ -42,7 +42,57 @@ Visit http://localhost:3000
 ```bash
 # Copy environment template
 cp .env.local.example .env.local
-# Edit .env.local with your database connection and other settings
+# Edit .env.local with your Supabase credentials
+```
+
+### Supabase Configuration
+
+This project uses [Supabase](https://supabase.com) as the backend. You need to configure the following environment variables:
+
+```bash
+# Required - Get these from your Supabase project dashboard
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Optional - For admin operations
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+To get these values:
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to Project Settings > API
+3. Copy the Project URL and anon public key
+
+### Health Check
+
+The application exposes a health check endpoint at `/api/health`:
+
+```bash
+# Check application health
+curl http://localhost:3000/api/health
+```
+
+Response when healthy:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-01-19T10:00:00.000Z",
+  "database": "connected"
+}
+```
+
+Response when database is unreachable (HTTP 503):
+
+```json
+{
+  "status": "degraded",
+  "timestamp": "2026-01-19T10:00:00.000Z",
+  "database": "disconnected"
+}
 ```
 
 ## Testing

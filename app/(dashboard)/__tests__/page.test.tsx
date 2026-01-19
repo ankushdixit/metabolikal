@@ -37,9 +37,7 @@ describe("DashboardPage Component", () => {
 
   it("renders guidance about data provider", () => {
     render(<DashboardPage />);
-    expect(
-      screen.getByText("Configure your data provider in lib/refine.tsx.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Configure your data provider in lib/refine.tsx.")).toBeInTheDocument();
   });
 
   it("has grid layout for cards", () => {
