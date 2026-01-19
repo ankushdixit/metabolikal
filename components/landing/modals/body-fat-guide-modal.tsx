@@ -98,8 +98,8 @@ const ESTIMATION_TIPS = [
 export function BodyFatGuideModal({ open, onOpenChange }: BodyFatGuideModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
+      <DialogContent className="max-w-3xl max-h-[90vh] bg-card p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Body Fat Percentage <span className="gradient-athletic">Guide</span>
           </DialogTitle>
@@ -109,88 +109,90 @@ export function BodyFatGuideModal({ open, onOpenChange }: BodyFatGuideModalProps
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-8">
-          {/* Men's Ranges */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                Men&apos;s Body Fat % Ranges
-              </h3>
-            </div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            {/* Men's Ranges */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Men&apos;s Body Fat % Ranges
+                </h3>
+              </div>
 
-            <div className="space-y-3">
-              {MEN_RANGES.map((item) => (
-                <div key={item.range} className="athletic-card p-4 pl-8 flex gap-4">
-                  <div className="flex-shrink-0 w-20">
-                    <span className="text-lg font-black text-primary">{item.range}</span>
-                    <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {item.category}
-                    </span>
+              <div className="space-y-3">
+                {MEN_RANGES.map((item) => (
+                  <div key={item.range} className="athletic-card p-4 pl-8 flex gap-4">
+                    <div className="flex-shrink-0 w-20">
+                      <span className="text-lg font-black text-primary">{item.range}</span>
+                      <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {item.category}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-muted-foreground flex-1">
+                      {item.description}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-muted-foreground flex-1">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
 
-          {/* Women's Ranges */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                Women&apos;s Body Fat % Ranges
-              </h3>
-            </div>
+            {/* Women's Ranges */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Women&apos;s Body Fat % Ranges
+                </h3>
+              </div>
 
-            <div className="space-y-3">
-              {WOMEN_RANGES.map((item) => (
-                <div key={item.range} className="athletic-card p-4 pl-8 flex gap-4">
-                  <div className="flex-shrink-0 w-20">
-                    <span className="text-lg font-black text-primary">{item.range}</span>
-                    <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {item.category}
-                    </span>
+              <div className="space-y-3">
+                {WOMEN_RANGES.map((item) => (
+                  <div key={item.range} className="athletic-card p-4 pl-8 flex gap-4">
+                    <div className="flex-shrink-0 w-20">
+                      <span className="text-lg font-black text-primary">{item.range}</span>
+                      <span className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {item.category}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-muted-foreground flex-1">
+                      {item.description}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-muted-foreground flex-1">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
 
-          {/* Quick Estimation Tips */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                Quick Estimation Tips
-              </h3>
-            </div>
+            {/* Quick Estimation Tips */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Quick Estimation Tips
+                </h3>
+              </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              {ESTIMATION_TIPS.map((tip) => (
-                <div key={tip.indicator} className="athletic-card p-4 pl-8">
-                  <h4 className="font-black uppercase tracking-wide text-sm mb-1">
-                    {tip.indicator}
-                  </h4>
-                  <p className="text-sm font-bold text-muted-foreground">{tip.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {ESTIMATION_TIPS.map((tip) => (
+                  <div key={tip.indicator} className="athletic-card p-4 pl-8">
+                    <h4 className="font-black uppercase tracking-wide text-sm mb-1">
+                      {tip.indicator}
+                    </h4>
+                    <p className="text-sm font-bold text-muted-foreground">{tip.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-          {/* Close Button */}
-          <div className="pt-4 border-t border-border">
-            <button
-              onClick={() => onOpenChange(false)}
-              className="btn-athletic w-full px-6 py-4 bg-secondary text-foreground"
-            >
-              Close Guide
-            </button>
+            {/* Close Button */}
+            <div className="pt-4 border-t border-border">
+              <button
+                onClick={() => onOpenChange(false)}
+                className="btn-athletic w-full px-6 py-4 bg-secondary text-foreground"
+              >
+                Close Guide
+              </button>
+            </div>
           </div>
         </div>
       </DialogContent>

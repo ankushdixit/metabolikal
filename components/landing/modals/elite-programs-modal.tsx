@@ -92,8 +92,8 @@ export function EliteProgramsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
+      <DialogContent className="max-w-5xl max-h-[90vh] bg-card p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Elite Transformation <span className="gradient-athletic">Programs</span>
           </DialogTitle>
@@ -103,118 +103,122 @@ export function EliteProgramsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-8">
-          {/* Program Cards */}
-          <div className="grid md:grid-cols-3 gap-4 pt-4">
-            {PROGRAMS.map((program) => (
-              <div
-                key={program.name}
-                className={`athletic-card p-6 pl-8 relative overflow-visible ${
-                  program.popular ? "glow-power mt-2" : ""
-                }`}
-              >
-                {program.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 gradient-electric text-black text-xs font-black tracking-wider flex items-center gap-1 whitespace-nowrap">
-                    <Star className="h-3 w-3" />
-                    MOST POPULAR
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            {/* Program Cards */}
+            <div className="grid md:grid-cols-3 gap-4 pt-4">
+              {PROGRAMS.map((program) => (
+                <div
+                  key={program.name}
+                  className={`athletic-card p-6 pl-8 relative overflow-visible ${
+                    program.popular ? "glow-power mt-2" : ""
+                  }`}
+                >
+                  {program.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 gradient-electric text-black text-xs font-black tracking-wider flex items-center gap-1 whitespace-nowrap">
+                      <Star className="h-3 w-3" />
+                      MOST POPULAR
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <p className="text-xs font-black tracking-wider text-primary uppercase mb-1">
+                      {program.type}
+                    </p>
+                    <h3 className="text-xl font-black uppercase tracking-tight">{program.name}</h3>
+                    <p className="text-sm text-muted-foreground font-bold">{program.level}</p>
                   </div>
-                )}
 
-                <div className="mb-4">
-                  <p className="text-xs font-black tracking-wider text-primary uppercase mb-1">
-                    {program.type}
-                  </p>
-                  <h3 className="text-xl font-black uppercase tracking-tight">{program.name}</h3>
-                  <p className="text-sm text-muted-foreground font-bold">{program.level}</p>
+                  {program.includesLabel && (
+                    <p className="text-xs font-black text-primary mb-3">{program.includesLabel}</p>
+                  )}
+
+                  <ul className="space-y-2 mb-6">
+                    {program.features.map((feature, i) => (
+                      <li
+                        key={i}
+                        className="text-sm font-bold text-muted-foreground flex items-start gap-2"
+                      >
+                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
+                      Perfect For
+                    </p>
+                    <p className="text-sm font-bold">{program.perfectFor}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* All Programs Include Section */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  All Programs Include
+                </h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="athletic-card p-6 pl-8">
+                  <h4 className="font-black uppercase tracking-wide mb-4">
+                    The METABOLI-K-AL Method
+                  </h4>
+                  <ul className="space-y-2">
+                    {COMMON_FEATURES.method.map((item, i) => (
+                      <li
+                        key={i}
+                        className="text-sm font-bold text-muted-foreground flex items-center gap-2"
+                      >
+                        <span className="w-1.5 h-1.5 bg-primary" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {program.includesLabel && (
-                  <p className="text-xs font-black text-primary mb-3">{program.includesLabel}</p>
-                )}
-
-                <ul className="space-y-2 mb-6">
-                  {program.features.map((feature, i) => (
-                    <li
-                      key={i}
-                      className="text-sm font-bold text-muted-foreground flex items-start gap-2"
-                    >
-                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
-                    Perfect For
-                  </p>
-                  <p className="text-sm font-bold">{program.perfectFor}</p>
+                <div className="athletic-card p-6 pl-8">
+                  <h4 className="font-black uppercase tracking-wide mb-4">
+                    Performance Integration
+                  </h4>
+                  <ul className="space-y-2">
+                    {COMMON_FEATURES.performance.map((item, i) => (
+                      <li
+                        key={i}
+                        className="text-sm font-bold text-muted-foreground flex items-center gap-2"
+                      >
+                        <span className="w-1.5 h-1.5 bg-primary" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            ))}
-          </div>
+            </section>
 
-          {/* All Programs Include Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                All Programs Include
+            {/* CTA Section */}
+            <section className="pt-6 border-t border-border text-center">
+              <h3 className="text-xl font-black uppercase tracking-tight mb-2">
+                Ready to Transform Your Executive Performance?
               </h3>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="athletic-card p-6 pl-8">
-                <h4 className="font-black uppercase tracking-wide mb-4">
-                  The METABOLI-K-AL Method
-                </h4>
-                <ul className="space-y-2">
-                  {COMMON_FEATURES.method.map((item, i) => (
-                    <li
-                      key={i}
-                      className="text-sm font-bold text-muted-foreground flex items-center gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 bg-primary" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="athletic-card p-6 pl-8">
-                <h4 className="font-black uppercase tracking-wide mb-4">Performance Integration</h4>
-                <ul className="space-y-2">
-                  {COMMON_FEATURES.performance.map((item, i) => (
-                    <li
-                      key={i}
-                      className="text-sm font-bold text-muted-foreground flex items-center gap-2"
-                    >
-                      <span className="w-1.5 h-1.5 bg-primary" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="pt-6 border-t border-border text-center">
-            <h3 className="text-xl font-black uppercase tracking-tight mb-2">
-              Ready to Transform Your Executive Performance?
-            </h3>
-            <p className="text-muted-foreground font-bold text-sm mb-6 max-w-2xl mx-auto">
-              Every program is personally designed and coached by Shivashish. No generic plans, no
-              junior coaches—just elite transformation guidance.
-            </p>
-            <button
-              onClick={handleCalendlyClick}
-              className="btn-athletic group inline-flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
-            >
-              Book Your Strategy Session
-              <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </button>
-          </section>
+              <p className="text-muted-foreground font-bold text-sm mb-6 max-w-2xl mx-auto">
+                Every program is personally designed and coached by Shivashish. No generic plans, no
+                junior coaches—just elite transformation guidance.
+              </p>
+              <button
+                onClick={handleCalendlyClick}
+                className="btn-athletic group inline-flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
+              >
+                Book Your Strategy Session
+                <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </button>
+            </section>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

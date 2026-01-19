@@ -64,7 +64,7 @@ export function CalendarTab({
       </div>
 
       {/* Week Unlock Status */}
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-2">
         <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
           Week {weekUnlocked > 4 ? "5 (All)" : weekUnlocked} Unlocked
         </span>
@@ -74,9 +74,9 @@ export function CalendarTab({
       </div>
 
       {/* Calendar Grid */}
-      <div className="athletic-card p-4 pl-6">
+      <div className="athletic-card p-3 sm:p-4 pl-4 sm:pl-6">
         {/* Week Labels */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
           {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
             <div key={i} className="text-center text-xs font-black text-muted-foreground uppercase">
               {day}
@@ -85,7 +85,7 @@ export function CalendarTab({
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {calendarDays.map((day) => {
             const status = getDayStatus(day);
             const isSelected = selectedDay === day;
@@ -122,21 +122,21 @@ export function CalendarTab({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t border-border">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-primary flex-shrink-0" />
             <span className="text-xs font-bold text-muted-foreground">Completed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-secondary ring-2 ring-primary" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-secondary ring-2 ring-primary flex-shrink-0" />
             <span className="text-xs font-bold text-muted-foreground">Current</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-secondary" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-secondary flex-shrink-0" />
             <span className="text-xs font-bold text-muted-foreground">Upcoming</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-muted" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted flex-shrink-0" />
             <span className="text-xs font-bold text-muted-foreground">Locked</span>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function CalendarTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
             <div className="bg-secondary p-3">
               <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
                 Steps

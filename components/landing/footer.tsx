@@ -150,7 +150,7 @@ export function Footer() {
             <div className="space-y-3">
               <button
                 onClick={() => openModal("assessment")}
-                className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide block text-left cursor-pointer"
+                className="btn-athletic px-6 py-3 text-sm bg-secondary text-foreground w-full"
               >
                 Take Assessment
               </button>

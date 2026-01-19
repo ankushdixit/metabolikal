@@ -52,8 +52,8 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-card p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             30-Day <span className="gradient-athletic">METABOLI-K-AL</span> Challenge Hub
           </DialogTitle>
@@ -62,7 +62,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
           </DialogDescription>
 
           {/* Stats Bar */}
-          <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-border">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-secondary">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -113,56 +113,59 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
           </div>
         </DialogHeader>
 
-        <div className="p-6 pt-4">
-          {/* Tab Navigation */}
-          <div className="flex gap-2 mb-6 overflow-x-auto">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  btn-athletic flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 sm:p-6 pt-4">
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                  btn-athletic flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap flex-shrink-0
                   ${
                     activeTab === tab.id
                       ? "gradient-electric text-black"
                       : "bg-secondary text-foreground hover:bg-secondary/80"
                   }
                 `}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                >
+                  <tab.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
+                </button>
+              ))}
+            </div>
 
-          {/* Tab Content */}
-          <div className="min-h-[400px]">
-            {activeTab === "tasks" && (
-              <TodaysTasks
-                currentDay={currentDay}
-                todayProgress={todayProgress}
-                onSave={handleSaveProgress}
-                canEdit={canEditDay(currentDay)}
-              />
-            )}
+            {/* Tab Content */}
+            <div className="min-h-[400px]">
+              {activeTab === "tasks" && (
+                <TodaysTasks
+                  currentDay={currentDay}
+                  todayProgress={todayProgress}
+                  onSave={handleSaveProgress}
+                  canEdit={canEditDay(currentDay)}
+                />
+              )}
 
-            {activeTab === "journey" && (
-              <JourneyTab
-                dayStreak={dayStreak}
-                totalPoints={totalPoints}
-                cumulativeStats={cumulativeStats}
-              />
-            )}
+              {activeTab === "journey" && (
+                <JourneyTab
+                  dayStreak={dayStreak}
+                  totalPoints={totalPoints}
+                  cumulativeStats={cumulativeStats}
+                />
+              )}
 
-            {activeTab === "calendar" && (
-              <CalendarTab
-                currentDay={currentDay}
-                weekUnlocked={weekUnlocked}
-                allProgress={allProgress}
-                isDayUnlocked={isDayUnlocked}
-                getDayProgress={getDayProgress}
-              />
-            )}
+              {activeTab === "calendar" && (
+                <CalendarTab
+                  currentDay={currentDay}
+                  weekUnlocked={weekUnlocked}
+                  allProgress={allProgress}
+                  isDayUnlocked={isDayUnlocked}
+                  getDayProgress={getDayProgress}
+                />
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

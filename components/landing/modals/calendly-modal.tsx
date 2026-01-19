@@ -68,8 +68,8 @@ export function CalendlyModal({ open, onOpenChange }: CalendlyModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-card p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Book Your Strategy Call
           </DialogTitle>
@@ -77,7 +77,9 @@ export function CalendlyModal({ open, onOpenChange }: CalendlyModalProps) {
             Let&apos;s engineer your metabolic transformation
           </DialogDescription>
         </DialogHeader>
-        <div id="calendly-embed" className="min-h-[600px] w-full" />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div id="calendly-embed" className="min-h-[600px] w-full" />
+        </div>
       </DialogContent>
     </Dialog>
   );

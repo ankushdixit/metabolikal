@@ -124,8 +124,8 @@ const PILLARS = [
 export function MethodModal({ open, onOpenChange }: MethodModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-card p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             The <span className="gradient-athletic">METABOLI-K-AL</span> Method
           </DialogTitle>
@@ -134,112 +134,117 @@ export function MethodModal({ open, onOpenChange }: MethodModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-8">
-          {/* Intro Quote */}
-          <div className="athletic-card p-6 pl-8">
-            <blockquote className="text-muted-foreground font-bold italic leading-relaxed">
-              &ldquo;Elite transformation isn&apos;t about restriction. It&apos;s about
-              optimization. We coach high-performers to master their metabolic operating system—not
-              fight against it. Executive-grade results demand executive-grade protocols.&rdquo;
-            </blockquote>
-          </div>
-
-          {/* Phases Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                The 4-Phase System
-              </h3>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            {/* Intro Quote */}
+            <div className="athletic-card p-6 pl-8">
+              <blockquote className="text-muted-foreground font-bold italic leading-relaxed">
+                &ldquo;Elite transformation isn&apos;t about restriction. It&apos;s about
+                optimization. We coach high-performers to master their metabolic operating
+                system—not fight against it. Executive-grade results demand executive-grade
+                protocols.&rdquo;
+              </blockquote>
             </div>
 
-            <div className="space-y-6">
-              {PHASES.map((phase) => (
-                <div key={phase.number} className="athletic-card p-6 pl-8">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="p-3 bg-secondary flex-shrink-0">
-                      <phase.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="text-xs font-black tracking-wider text-primary">
-                          PHASE {phase.number}
-                        </span>
-                        {phase.duration && (
-                          <span className="px-2 py-0.5 text-xs font-bold bg-secondary text-muted-foreground">
-                            {phase.duration}
-                          </span>
-                        )}
+            {/* Phases Section */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  The 4-Phase System
+                </h3>
+              </div>
+
+              <div className="space-y-6">
+                {PHASES.map((phase) => (
+                  <div key={phase.number} className="athletic-card p-6 pl-8">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3 bg-secondary flex-shrink-0">
+                        <phase.icon className="h-6 w-6 text-primary" />
                       </div>
-                      <h4 className="text-xl font-black uppercase tracking-tight">{phase.title}</h4>
-                      <p className="text-sm text-muted-foreground font-bold">{phase.subtitle}</p>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="text-xs font-black tracking-wider text-primary">
+                            PHASE {phase.number}
+                          </span>
+                          {phase.duration && (
+                            <span className="px-2 py-0.5 text-xs font-bold bg-secondary text-muted-foreground">
+                              {phase.duration}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-xl font-black uppercase tracking-tight">
+                          {phase.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground font-bold">{phase.subtitle}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
+                          Purpose
+                        </span>
+                        <p className="text-sm font-bold">{phase.purpose}</p>
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
+                          Includes
+                        </span>
+                        <ul className="space-y-1">
+                          {phase.includes.map((item, i) => (
+                            <li
+                              key={i}
+                              className="text-sm font-bold text-muted-foreground flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 bg-primary" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
+                          Outcome
+                        </span>
+                        <p className="text-sm font-bold text-primary">{phase.outcome}</p>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </section>
 
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
-                        Purpose
-                      </span>
-                      <p className="text-sm font-bold">{phase.purpose}</p>
-                    </div>
+            {/* Five Pillars Section */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  The 5 Pillars of Metabolikal Transformation
+                </h3>
+              </div>
+              <p className="text-muted-foreground font-bold text-sm mb-6">
+                Our comprehensive framework addresses every aspect of metabolic health for
+                sustainable transformation.
+              </p>
 
-                    <div>
-                      <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
-                        Includes
-                      </span>
-                      <ul className="space-y-1">
-                        {phase.includes.map((item, i) => (
-                          <li
-                            key={i}
-                            className="text-sm font-bold text-muted-foreground flex items-center gap-2"
-                          >
-                            <span className="w-1.5 h-1.5 bg-primary" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+              <div className="grid md:grid-cols-2 gap-4">
+                {PILLARS.map((pillar, i) => (
+                  <div key={i} className="athletic-card p-6 pl-8 hover:glow-power transition-all">
+                    <div className="p-2 bg-secondary w-fit mb-4">
+                      <pillar.icon className="h-5 w-5 text-primary" />
                     </div>
-
-                    <div>
-                      <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-2">
-                        Outcome
-                      </span>
-                      <p className="text-sm font-bold text-primary">{phase.outcome}</p>
-                    </div>
+                    <h4 className="font-black uppercase tracking-wide mb-2">{pillar.title}</h4>
+                    <p className="text-sm text-muted-foreground font-bold leading-relaxed">
+                      {pillar.description}
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Five Pillars Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-1 gradient-electric" />
-              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                The 5 Pillars of Metabolikal Transformation
-              </h3>
-            </div>
-            <p className="text-muted-foreground font-bold text-sm mb-6">
-              Our comprehensive framework addresses every aspect of metabolic health for sustainable
-              transformation.
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {PILLARS.map((pillar, i) => (
-                <div key={i} className="athletic-card p-6 pl-8 hover:glow-power transition-all">
-                  <div className="p-2 bg-secondary w-fit mb-4">
-                    <pillar.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h4 className="font-black uppercase tracking-wide mb-2">{pillar.title}</h4>
-                  <p className="text-sm text-muted-foreground font-bold leading-relaxed">
-                    {pillar.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
