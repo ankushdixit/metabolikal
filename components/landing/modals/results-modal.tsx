@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Flame,
   Activity,
@@ -119,12 +125,15 @@ export function ResultsModal({
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Your <span className="gradient-athletic">METABOLI-K-AL</span> Results
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
+            Your personalized metabolic profile and recommendations.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-8">
           {/* Health Score Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 Your Health Score
@@ -133,7 +142,7 @@ export function ResultsModal({
 
             <div className="grid sm:grid-cols-2 gap-4">
               {/* Metabolic Health Score */}
-              <div className="athletic-card p-6 pl-10 text-center">
+              <div className="athletic-card p-6 pl-8 text-center">
                 <div className="text-6xl font-black gradient-athletic bg-clip-text text-transparent">
                   {healthScore}
                 </div>
@@ -144,7 +153,7 @@ export function ResultsModal({
               </div>
 
               {/* Lifestyle Score */}
-              <div className="athletic-card p-6 pl-10 text-center">
+              <div className="athletic-card p-6 pl-8 text-center">
                 <div className="text-6xl font-black text-primary">{lifestyleScore}</div>
                 <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mt-2">
                   Lifestyle Score
@@ -157,7 +166,7 @@ export function ResultsModal({
           {/* Insights Section */}
           <section>
             <div
-              className={`athletic-card p-6 pl-10 ${
+              className={`athletic-card p-6 pl-8 ${
                 insights.level === "urgent"
                   ? "border-l-amber-500"
                   : insights.level === "moderate"
@@ -203,7 +212,7 @@ export function ResultsModal({
 
           {/* Metabolic Numbers Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 Your Metabolic Numbers

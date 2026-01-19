@@ -131,7 +131,10 @@ export function Footer() {
                 </button>
               </li>
               <li>
-                <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer">
+                <button
+                  onClick={() => openModal("assessment")}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer"
+                >
                   30-Day Challenge
                 </button>
               </li>
@@ -145,7 +148,10 @@ export function Footer() {
               Start Now
             </h4>
             <div className="space-y-3">
-              <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide block text-left cursor-pointer">
+              <button
+                onClick={() => openModal("assessment")}
+                className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide block text-left cursor-pointer"
+              >
                 Take Assessment
               </button>
               <button

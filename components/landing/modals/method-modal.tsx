@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Target,
   RefreshCw,
@@ -120,17 +126,17 @@ export function MethodModal({ open, onOpenChange }: MethodModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card p-0">
         <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
-          <DialogTitle className="text-3xl font-black uppercase tracking-tight">
+          <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             The <span className="gradient-athletic">METABOLI-K-AL</span> Method
           </DialogTitle>
-          <p className="text-muted-foreground font-bold mt-2">
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Beyond Fat Loss: Executive Metabolic Mastery
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-10">
+        <div className="p-6 space-y-8">
           {/* Intro Quote */}
-          <div className="athletic-card p-6 pl-10">
+          <div className="athletic-card p-6 pl-8">
             <blockquote className="text-muted-foreground font-bold italic leading-relaxed">
               &ldquo;Elite transformation isn&apos;t about restriction. It&apos;s about
               optimization. We coach high-performers to master their metabolic operating system—not
@@ -140,7 +146,7 @@ export function MethodModal({ open, onOpenChange }: MethodModalProps) {
 
           {/* Phases Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 The 4-Phase System
@@ -149,7 +155,7 @@ export function MethodModal({ open, onOpenChange }: MethodModalProps) {
 
             <div className="space-y-6">
               {PHASES.map((phase) => (
-                <div key={phase.number} className="athletic-card p-6 pl-10">
+                <div key={phase.number} className="athletic-card p-6 pl-8">
                   <div className="flex items-start gap-4 mb-4">
                     <div className="p-3 bg-secondary flex-shrink-0">
                       <phase.icon className="h-6 w-6 text-primary" />
@@ -222,7 +228,7 @@ export function MethodModal({ open, onOpenChange }: MethodModalProps) {
 
             <div className="grid md:grid-cols-2 gap-4">
               {PILLARS.map((pillar, i) => (
-                <div key={i} className="athletic-card p-6 pl-10 hover:glow-power transition-all">
+                <div key={i} className="athletic-card p-6 pl-8 hover:glow-power transition-all">
                   <div className="p-2 bg-secondary w-fit mb-4">
                     <pillar.icon className="h-5 w-5 text-primary" />
                   </div>

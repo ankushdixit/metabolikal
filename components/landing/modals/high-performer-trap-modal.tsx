@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { AlertTriangle, ChevronRight, Target, Trophy } from "lucide-react";
 
 interface HighPerformerTrapModalProps {
@@ -56,6 +62,9 @@ export function HighPerformerTrapModal({
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             The High-Performer Trap <span className="gradient-athletic">Revealed</span>
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
+            Discover why elite strategies fail high-performers and how to break free.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-8">
@@ -70,7 +79,7 @@ export function HighPerformerTrapModal({
 
             <div className="space-y-4">
               {TRAPS.map((trap, i) => (
-                <div key={i} className="athletic-card p-5 pl-10 flex items-start gap-4">
+                <div key={i} className="athletic-card p-5 pl-8 flex items-start gap-4">
                   <div className="p-2 bg-secondary flex-shrink-0">
                     <AlertTriangle className="h-5 w-5 text-primary" />
                   </div>
@@ -101,7 +110,7 @@ export function HighPerformerTrapModal({
                   className="object-cover"
                 />
               </div>
-              <div className="p-6 pl-10">
+              <div className="p-6 pl-8">
                 <h4 className="text-xl font-black uppercase tracking-tight mb-4">
                   You weren&apos;t designed for generic solutions.
                 </h4>

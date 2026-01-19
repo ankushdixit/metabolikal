@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { ChevronRight, Star, Check } from "lucide-react";
 
 interface EliteProgramsModalProps {
@@ -88,27 +94,27 @@ export function EliteProgramsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card p-0">
         <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
-          <DialogTitle className="text-3xl font-black uppercase tracking-tight">
+          <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Elite Transformation <span className="gradient-athletic">Programs</span>
           </DialogTitle>
-          <p className="text-muted-foreground font-bold mt-2">
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Three premium tiers of coaching designed for professional lifestyles and
             high-performance transformation goals. All programs include the Performance Protocol.
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-10">
+        <div className="p-6 space-y-8">
           {/* Program Cards */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 pt-4">
             {PROGRAMS.map((program) => (
               <div
                 key={program.name}
-                className={`athletic-card p-6 pl-10 relative ${
-                  program.popular ? "glow-power" : ""
+                className={`athletic-card p-6 pl-8 relative overflow-visible ${
+                  program.popular ? "glow-power mt-2" : ""
                 }`}
               >
                 {program.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 gradient-electric text-black text-xs font-black tracking-wider flex items-center gap-1">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 gradient-electric text-black text-xs font-black tracking-wider flex items-center gap-1 whitespace-nowrap">
                     <Star className="h-3 w-3" />
                     MOST POPULAR
                   </div>
@@ -150,7 +156,7 @@ export function EliteProgramsModal({
 
           {/* All Programs Include Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 All Programs Include
@@ -158,7 +164,7 @@ export function EliteProgramsModal({
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="athletic-card p-6 pl-10">
+              <div className="athletic-card p-6 pl-8">
                 <h4 className="font-black uppercase tracking-wide mb-4">
                   The METABOLI-K-AL Method
                 </h4>
@@ -175,7 +181,7 @@ export function EliteProgramsModal({
                 </ul>
               </div>
 
-              <div className="athletic-card p-6 pl-10">
+              <div className="athletic-card p-6 pl-8">
                 <h4 className="font-black uppercase tracking-wide mb-4">Performance Integration</h4>
                 <ul className="space-y-2">
                   {COMMON_FEATURES.performance.map((item, i) => (

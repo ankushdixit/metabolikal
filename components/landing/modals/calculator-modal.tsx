@@ -2,7 +2,13 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -111,15 +117,15 @@ export function CalculatorModal({
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Metabolic <span className="gradient-athletic">Calculator</span>
           </DialogTitle>
-          <p className="text-muted-foreground font-bold text-sm mt-2">
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Enter your metrics to calculate your personalized BMR, TDEE, and target calories.
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8">
           {/* Basic Metrics Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 Your Metrics
@@ -264,7 +270,7 @@ export function CalculatorModal({
 
           {/* Activity & Goal Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 Activity & Goals
