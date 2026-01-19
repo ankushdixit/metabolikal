@@ -9,3 +9,5 @@ export { EliteLifestylesModal } from "./elite-lifestyles-modal";
 export { AssessmentModal } from "./assessment-modal";
 export { CalculatorModal } from "./calculator-modal";
 export { ResultsModal } from "./results-modal";
+export { UserGuideModal } from "./user-guide-modal";
+export { ChallengeHubModal } from "./challenge-hub-modal";
