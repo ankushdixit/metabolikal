@@ -30,6 +30,11 @@ export function Header() {
     openModal("calendly");
   };
 
+  const handleTakeAssessment = () => {
+    closeMobileMenu();
+    openModal("assessment");
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md">
       {/* Top accent bar */}
@@ -67,7 +72,10 @@ export function Header() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-2">
-            <button className="btn-athletic px-5 py-3 text-sm text-foreground bg-secondary">
+            <button
+              onClick={handleTakeAssessment}
+              className="btn-athletic px-5 py-3 text-sm text-foreground bg-secondary"
+            >
               Take Assessment
             </button>
             <button
@@ -115,7 +123,10 @@ export function Header() {
 
             {/* Mobile CTA Buttons */}
             <div className="mt-4 pt-4 border-t border-border space-y-3">
-              <button className="btn-athletic w-full px-5 py-3 text-sm text-foreground bg-secondary">
+              <button
+                onClick={handleTakeAssessment}
+                className="btn-athletic w-full px-5 py-3 text-sm text-foreground bg-secondary"
+              >
                 Take Assessment
               </button>
               <button

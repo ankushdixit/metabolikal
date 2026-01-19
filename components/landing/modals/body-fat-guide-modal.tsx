@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface BodyFatGuideModalProps {
   open: boolean;
@@ -97,10 +103,10 @@ export function BodyFatGuideModal({ open, onOpenChange }: BodyFatGuideModalProps
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Body Fat Percentage <span className="gradient-athletic">Guide</span>
           </DialogTitle>
-          <p className="text-muted-foreground font-bold text-sm mt-2">
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Use this visual guide to estimate your body fat percentage. Remember, this is just an
             estimate - professional assessment methods like DEXA scans or BodPod are more accurate.
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-8">

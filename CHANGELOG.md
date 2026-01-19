@@ -7,66 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Initial project setup with Session-Driven Development
-- Supabase client configuration with environment validation (`lib/supabase.ts`, `lib/env.ts`)
-- Health check endpoint with database connectivity validation (`/api/health`)
-- Refine data provider integration with Supabase (`@refinedev/supabase`)
-- Comprehensive unit tests for environment validation, Supabase client, and health check endpoint
-- API documentation for health check endpoint (`docs/api/README.md`)
-- Supabase setup instructions in README
-- Database schema migration with 10 tables: profiles, food_items, diet_plans, food_alternatives, workout_plans, food_logs, workout_logs, check_ins, challenge_progress, assessment_results
-- Row-Level Security (RLS) policies for all tables with client/admin access patterns
-- Storage buckets configuration for checkin-photos (private) and avatars (public)
-- TypeScript database types (`lib/database.types.ts`) with full type safety
-- Database indexes for optimized queries on client_id, day_number, logged_at, submitted_at
-- Schema integration tests verifying table structure, constraints, and RLS policies
-- Landing page with Modern Athletic design theme (`app/(public)/page.tsx`)
-- Public layout with header and footer components (`app/(public)/layout.tsx`)
-- Landing page header with mobile menu toggle (`components/landing/header.tsx`)
-- Landing page footer with social icons (`components/landing/footer.tsx`)
-- Athletic design system with custom CSS utilities in `app/globals.css`
-- Unit tests for landing page components (50 tests total)
-- Content and information modals for landing page (`components/landing/modals/`)
-  - Calendly booking modal with widget integration
-  - Real Results modal with YouTube videos and Instagram links
-  - Meet Expert modal with founder bio
-  - The Method modal with 4-phase system and 5 pillars
-  - Elite Programs modal with 3 program tiers
-  - Body Fat Guide modal with reference information
-  - High-Performer Trap modal with problem revelation
-  - Elite Lifestyles modal with 6 lifestyle cards
-- Modal context for shared state management (`contexts/modal-context.tsx`)
-- Modal hook for local state management (`hooks/use-modal.ts`)
-- shadcn/ui Dialog component (`components/ui/dialog.tsx`)
-- Unit tests for all 8 modal components (85 tests)
-- Assessment, Calculator & Results flow for metabolic health evaluation
-  - Assessment modal with 7 lifestyle sliders (sleep, body confidence, nutrition, mental clarity, stress, support, hydration)
-  - Calculator modal with BMR/TDEE calculations using Mifflin-St Jeor and Katch-McArdle formulas
-  - Results modal with health score, metabolic numbers, and personalized insights
-  - Body Fat Guide modal for body fat percentage estimation
-- Custom hooks for assessment flow (`hooks/use-assessment.ts`, `hooks/use-calculator.ts`, `hooks/use-visitor-id.ts`)
-- Zod validation schemas for calculator form and assessment results (`lib/validations.ts`)
-- shadcn/ui Slider, Select, Input, Checkbox, and Label components
-- Unit tests for assessment hooks (88 tests) and modal components (57 tests)
-
-### Changed
-
-- Updated landing page to integrate assessment flow with "Take Assessment", "Start 30-Day Challenge", "How It Works", and "Launch Challenge Hub" buttons
-- Updated modal context with new modal types (assessment, calculator, results)
-- Updated jest.setup.ts with Radix UI component mocks for testing
-
-- Updated header to use modal context for "Book a Call" buttons
-- Updated footer to use modal context for program links and booking CTAs
-- Updated public layout to wrap with ModalProvider
-- Updated landing page to use modal context instead of local state
-- Added cursor pointer to `.btn-athletic` CSS class
-- Fixed ESLint config to disable base `no-unused-vars` rule for TypeScript/JSX compatibility
-- Updated `lib/refine.tsx` to use Supabase data provider
-- Updated `providers/refine-provider.tsx` with fallback placeholder provider
-- Updated environment example files with Supabase configuration
-
 ### Fixed
 
-### Removed
+- **Modal Consistency**: Standardized all 11 modals with consistent styling:
+  - Unified DialogHeader styling (`p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border`)
+  - Standardized DialogTitle to `text-2xl` across all modals
+  - Added DialogDescription to all modals (was using `<p>` tags or missing)
+  - Standardized content spacing to `space-y-8`
+  - Unified card padding to `pl-8`
+  - Standardized section header margin to `mb-4`
+
+- **Close Button Visibility**: Added `z-20` to dialog close button to ensure it appears above sticky headers
+
+- **Button Functionality**:
+  - Fixed "Take Assessment" button in header (desktop and mobile) - was missing onClick handler
+  - Fixed "Take Assessment" button in footer - was missing onClick handler
+  - Fixed "30-Day Challenge" button in footer - was missing onClick handler
+  - Fixed "Take the Metabolic Assessment" button in High-Performer Trap modal - was missing `onOpenAssessment` prop
+
+- **Elite Programs Modal**: Fixed "MOST POPULAR" badge positioning - added proper spacing and z-index to prevent clipping
+
+- **Transformations Modal**: Changed YouTube videos section from horizontal page overflow to contained horizontal scroll with shorts-style aspect ratio (9:16)

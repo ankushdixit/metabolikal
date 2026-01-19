@@ -478,6 +478,7 @@ export default function LandingPage() {
         open={activeModal === "high-performer-trap"}
         onOpenChange={(open) => !open && closeModal()}
         onOpenCalendly={() => openModal("calendly")}
+        onOpenAssessment={() => openModal("assessment")}
       />
       <EliteLifestylesModal
         open={activeModal === "elite-lifestyles"}

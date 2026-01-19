@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Instagram, ExternalLink } from "lucide-react";
 
 interface RealResultsModalProps {
@@ -44,13 +50,16 @@ export function RealResultsModal({ open, onOpenChange }: RealResultsModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card p-0">
         <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
-          <DialogTitle className="text-3xl font-black uppercase tracking-tight">
+          <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Real People. <span className="gradient-athletic">Real Transformations.</span>
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
+            See the incredible transformations achieved by our community.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-10">
-          {/* YouTube Section */}
+        <div className="p-6 space-y-8">
+          {/* YouTube Shorts Section */}
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
@@ -58,15 +67,18 @@ export function RealResultsModal({ open, onOpenChange }: RealResultsModalProps) 
                 Watch Real Client Transformations
               </h3>
             </div>
-            <p className="text-muted-foreground font-bold text-sm mb-6">
-              Scroll to see transformation stories and metabolic health insights
+            <p className="text-muted-foreground font-bold text-sm mb-4">
+              Real transformation stories and metabolic health insights
             </p>
 
-            {/* Horizontal scrollable carousel */}
-            <div className="overflow-x-auto pb-4 -mx-6 px-6">
-              <div className="flex gap-4 min-w-max">
+            {/* Horizontally scrollable shorts container */}
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-4 pb-2">
                 {YOUTUBE_VIDEOS.map((video) => (
-                  <div key={video.id} className="w-[320px] aspect-video bg-secondary flex-shrink-0">
+                  <div
+                    key={video.id}
+                    className="w-[180px] h-[320px] bg-secondary flex-shrink-0 rounded-lg overflow-hidden"
+                  >
                     <iframe
                       src={`https://www.youtube-nocookie.com/embed/${video.id}`}
                       title={video.title}
@@ -78,9 +90,7 @@ export function RealResultsModal({ open, onOpenChange }: RealResultsModalProps) 
                 ))}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Swipe or scroll horizontally to see more videos
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Swipe to see more transformations</p>
           </section>
 
           {/* Main transformation image */}

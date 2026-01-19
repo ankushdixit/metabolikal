@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Instagram, Youtube, ChevronRight } from "lucide-react";
 
 interface MeetExpertModalProps {
@@ -43,10 +49,13 @@ export function MeetExpertModal({ open, onOpenChange, onOpenCalendly }: MeetExpe
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card p-0">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-4 sticky top-0 bg-card z-10 border-b border-border">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Meet Your Expert
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
+            Get to know the specialist behind your metabolic transformation.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-8">
@@ -71,7 +80,7 @@ export function MeetExpertModal({ open, onOpenChange, onOpenCalendly }: MeetExpe
           </div>
 
           {/* Quote */}
-          <div className="athletic-card p-6 pl-10">
+          <div className="athletic-card p-6 pl-8">
             <blockquote className="text-lg text-muted-foreground font-bold italic leading-relaxed">
               &ldquo;Fat loss isn&apos;t about eating less. It&apos;s about burning better. I
               don&apos;t coach people to punish their metabolism—I teach them to master it.&rdquo;

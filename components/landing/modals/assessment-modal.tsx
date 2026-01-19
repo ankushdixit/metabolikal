@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import {
   Bed,
@@ -55,16 +61,16 @@ export function AssessmentModal({
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             <span className="gradient-athletic">METABOLI-K-AL</span> Assessment
           </DialogTitle>
-          <p className="text-muted-foreground font-bold text-sm mt-2">
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Rate each area of your lifestyle from 0-10. Be honest — this assessment reveals where
             your metabolic optimization opportunities lie.
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8">
           {/* Assessment Sliders */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
                 Lifestyle Assessment

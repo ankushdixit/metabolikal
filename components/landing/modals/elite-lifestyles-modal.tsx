@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Briefcase, Rocket, Globe, TrendingUp, Users, Sparkles, ChevronRight } from "lucide-react";
 
 interface EliteLifestylesModalProps {
@@ -65,15 +71,18 @@ export function EliteLifestylesModal({
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             We Understand <span className="gradient-athletic">Your Lifestyle</span>
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
+            Elite coaching designed for demanding professional lifestyles.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8">
           {/* Lifestyle Cards */}
           <div className="grid sm:grid-cols-2 gap-4">
             {LIFESTYLES.map((lifestyle, i) => (
               <div
                 key={i}
-                className={`athletic-card p-6 pl-10 transition-all ${
+                className={`athletic-card p-6 pl-8 transition-all ${
                   lifestyle.highlighted ? "glow-power border-primary/50" : "hover:glow-power"
                 }`}
               >
