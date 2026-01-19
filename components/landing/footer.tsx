@@ -3,8 +3,11 @@
  * Athletic-styled footer with social links
  */
 
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useModalContext } from "@/contexts/modal-context";
 
 // Simple YouTube icon component
 function YoutubeIcon({ className }: { className?: string }) {
@@ -35,9 +38,10 @@ function InstagramIcon({ className }: { className?: string }) {
 }
 
 const navItems = ["Home", "Transformations", "About", "Challenge"];
-const programItems = ["Elite Programs", "The Method", "30-Day Challenge"];
 
 export function Footer() {
+  const { openModal } = useModalContext();
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="h-1 gradient-electric" />
@@ -110,13 +114,27 @@ export function Footer() {
               Programs
             </h4>
             <ul className="space-y-3">
-              {programItems.map((item) => (
-                <li key={item}>
-                  <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left">
-                    {item}
-                  </button>
-                </li>
-              ))}
+              <li>
+                <button
+                  onClick={() => openModal("elite-programs")}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer"
+                >
+                  Elite Programs
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openModal("method")}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer"
+                >
+                  The Method
+                </button>
+              </li>
+              <li>
+                <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer">
+                  30-Day Challenge
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -127,10 +145,13 @@ export function Footer() {
               Start Now
             </h4>
             <div className="space-y-3">
-              <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide block text-left">
+              <button className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide block text-left cursor-pointer">
                 Take Assessment
               </button>
-              <button className="btn-athletic px-6 py-3 text-sm text-primary-foreground gradient-electric w-full">
+              <button
+                onClick={() => openModal("calendly")}
+                className="btn-athletic px-6 py-3 text-sm text-primary-foreground gradient-electric w-full"
+              >
                 Book Strategy Call
               </button>
             </div>

@@ -1,5 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { Footer } from "../footer";
+import { ModalProvider } from "@/contexts/modal-context";
+
+const renderWithProvider = (ui: React.ReactElement) => {
+  return render(<ModalProvider>{ui}</ModalProvider>);
+};
 
 // Mock next/image
 jest.mock("next/image", () => ({
@@ -24,31 +29,31 @@ jest.mock("next/link", () => ({
 
 describe("Landing Footer Component", () => {
   it("renders the footer element", () => {
-    const { container } = render(<Footer />);
+    const { container } = renderWithProvider(<Footer />);
     expect(container.querySelector("footer")).toBeInTheDocument();
   });
 
   it("renders the logo with METABOLIKAL text", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     // Use getAllBy since the text appears in logo and copyright
     const metaboliTexts = screen.getAllByText(/METABOLI/);
     expect(metaboliTexts.length).toBeGreaterThan(0);
   });
 
   it("renders the logo image", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     const logoImage = screen.getByAltText("Metabolikal");
     expect(logoImage).toBeInTheDocument();
   });
 
   it("renders brand tagline", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     expect(screen.getByText(/Reset Your Rhythm/i)).toBeInTheDocument();
     expect(screen.getByText(/Reclaim Your Life/i)).toBeInTheDocument();
   });
 
   it("renders YouTube social link", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     const youtubeLink = screen.getByLabelText("YouTube");
     expect(youtubeLink).toBeInTheDocument();
     expect(youtubeLink).toHaveAttribute("href", "https://youtube.com");
@@ -57,7 +62,7 @@ describe("Landing Footer Component", () => {
   });
 
   it("renders Instagram social link", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     const instagramLink = screen.getByLabelText("Instagram");
     expect(instagramLink).toBeInTheDocument();
     expect(instagramLink).toHaveAttribute("href", "https://instagram.com");
@@ -66,7 +71,7 @@ describe("Landing Footer Component", () => {
   });
 
   it("renders Quick Links section with navigation items", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     expect(screen.getByText("Navigate")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Transformations" })).toBeInTheDocument();
@@ -75,7 +80,7 @@ describe("Landing Footer Component", () => {
   });
 
   it("renders Programs section", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     expect(screen.getByText("Programs")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Elite Programs/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /The Method/i })).toBeInTheDocument();
@@ -83,20 +88,20 @@ describe("Landing Footer Component", () => {
   });
 
   it("renders Get Started section", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     expect(screen.getByText("Start Now")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Take Assessment/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Book Strategy Call/i })).toBeInTheDocument();
   });
 
   it("renders copyright notice", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
     expect(screen.getByText(/2024 METABOLI-K-AL/i)).toBeInTheDocument();
     expect(screen.getByText(/All rights reserved/i)).toBeInTheDocument();
   });
 
   it("navigation links have correct hrefs", () => {
-    render(<Footer />);
+    renderWithProvider(<Footer />);
 
     const homeLink = screen.getByRole("link", { name: "Home" });
     expect(homeLink).toHaveAttribute("href", "#");
@@ -112,7 +117,7 @@ describe("Landing Footer Component", () => {
   });
 
   it("has gradient electric accent bar", () => {
-    const { container } = render(<Footer />);
+    const { container } = renderWithProvider(<Footer />);
     const accentBar = container.querySelector(".gradient-electric");
     expect(accentBar).toBeInTheDocument();
   });

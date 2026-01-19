@@ -1,5 +1,10 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Header } from "../header";
+import { ModalProvider } from "@/contexts/modal-context";
+
+const renderWithProvider = (ui: React.ReactElement) => {
+  return render(<ModalProvider>{ui}</ModalProvider>);
+};
 
 // Mock next/image
 jest.mock("next/image", () => ({
@@ -24,12 +29,12 @@ jest.mock("next/link", () => ({
 
 describe("Landing Header Component", () => {
   it("renders the header element", () => {
-    const { container } = render(<Header />);
+    const { container } = renderWithProvider(<Header />);
     expect(container.querySelector("header")).toBeInTheDocument();
   });
 
   it("renders the logo with METABOLIKAL text", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     // The text is split across elements, so we use getAllBy
     const metaboliTexts = screen.getAllByText(/METABOLI/);
     expect(metaboliTexts.length).toBeGreaterThan(0);
@@ -39,13 +44,13 @@ describe("Landing Header Component", () => {
   });
 
   it("renders the logo image", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const logoImage = screen.getByAltText("Metabolikal");
     expect(logoImage).toBeInTheDocument();
   });
 
   it("renders desktop navigation with all items", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Transformations" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "About" })).toBeInTheDocument();
@@ -53,25 +58,25 @@ describe("Landing Header Component", () => {
   });
 
   it("renders Take Assessment button in header", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const assessmentButtons = screen.getAllByRole("button", { name: /Take Assessment/i });
     expect(assessmentButtons.length).toBeGreaterThan(0);
   });
 
   it("renders Book a Call button in header", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const bookCallButtons = screen.getAllByRole("button", { name: /Book a Call/i });
     expect(bookCallButtons.length).toBeGreaterThan(0);
   });
 
   it("renders mobile menu toggle button", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const menuButton = screen.getByLabelText(/Open menu/i);
     expect(menuButton).toBeInTheDocument();
   });
 
   it("toggles mobile menu when button is clicked", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const menuButton = screen.getByLabelText(/Open menu/i);
 
     // Initially mobile menu should not show mobile nav
@@ -85,7 +90,7 @@ describe("Landing Header Component", () => {
   });
 
   it("closes mobile menu when a link is clicked", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
     const menuButton = screen.getByLabelText(/Open menu/i);
 
     // Open the menu
@@ -105,19 +110,19 @@ describe("Landing Header Component", () => {
   });
 
   it("has proper z-index for layering", () => {
-    const { container } = render(<Header />);
+    const { container } = renderWithProvider(<Header />);
     const header = container.querySelector("header");
     expect(header).toHaveClass("z-50");
   });
 
   it("has fixed positioning", () => {
-    const { container } = render(<Header />);
+    const { container } = renderWithProvider(<Header />);
     const header = container.querySelector("header");
     expect(header).toHaveClass("fixed");
   });
 
   it("navigation links have correct hrefs", () => {
-    render(<Header />);
+    renderWithProvider(<Header />);
 
     const homeLink = screen.getByRole("link", { name: "Home" });
     expect(homeLink).toHaveAttribute("href", "#");

@@ -9,11 +9,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, X, Flame, ChevronRight } from "lucide-react";
+import { useModalContext } from "@/contexts/modal-context";
 
 const navItems = ["Home", "Transformations", "About", "Challenge"];
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { openModal } = useModalContext();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -21,6 +23,11 @@ export function Header() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleBookCall = () => {
+    closeMobileMenu();
+    openModal("calendly");
   };
 
   return (
@@ -63,7 +70,10 @@ export function Header() {
             <button className="btn-athletic px-5 py-3 text-sm text-foreground bg-secondary">
               Take Assessment
             </button>
-            <button className="btn-athletic px-5 py-3 text-sm text-primary-foreground gradient-electric glow-power animate-pulse-power flex items-center gap-2">
+            <button
+              onClick={handleBookCall}
+              className="btn-athletic px-5 py-3 text-sm text-primary-foreground gradient-electric glow-power animate-pulse-power flex items-center gap-2"
+            >
               <Flame className="h-4 w-4" />
               Book a Call
               <ChevronRight className="h-4 w-4" />
@@ -108,7 +118,10 @@ export function Header() {
               <button className="btn-athletic w-full px-5 py-3 text-sm text-foreground bg-secondary">
                 Take Assessment
               </button>
-              <button className="btn-athletic w-full px-5 py-3 text-sm text-primary-foreground gradient-electric glow-power flex items-center justify-center gap-2">
+              <button
+                onClick={handleBookCall}
+                className="btn-athletic w-full px-5 py-3 text-sm text-primary-foreground gradient-electric glow-power flex items-center justify-center gap-2"
+              >
                 <Flame className="h-4 w-4" />
                 Book a Call
                 <ChevronRight className="h-4 w-4" />

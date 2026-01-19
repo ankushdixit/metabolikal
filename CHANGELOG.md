@@ -28,9 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Landing page footer with social icons (`components/landing/footer.tsx`)
 - Athletic design system with custom CSS utilities in `app/globals.css`
 - Unit tests for landing page components (50 tests total)
+- Content and information modals for landing page (`components/landing/modals/`)
+  - Calendly booking modal with widget integration
+  - Real Results modal with YouTube videos and Instagram links
+  - Meet Expert modal with founder bio
+  - The Method modal with 4-phase system and 5 pillars
+  - Elite Programs modal with 3 program tiers
+  - Body Fat Guide modal with reference information
+  - High-Performer Trap modal with problem revelation
+  - Elite Lifestyles modal with 6 lifestyle cards
+- Modal context for shared state management (`contexts/modal-context.tsx`)
+- Modal hook for local state management (`hooks/use-modal.ts`)
+- shadcn/ui Dialog component (`components/ui/dialog.tsx`)
+- Unit tests for all 8 modal components (85 tests)
 
 ### Changed
 
+- Updated header to use modal context for "Book a Call" buttons
+- Updated footer to use modal context for program links and booking CTAs
+- Updated public layout to wrap with ModalProvider
+- Updated landing page to use modal context instead of local state
+- Added cursor pointer to `.btn-athletic` CSS class
+- Fixed ESLint config to disable base `no-unused-vars` rule for TypeScript/JSX compatibility
 - Updated `lib/refine.tsx` to use Supabase data provider
 - Updated `providers/refine-provider.tsx` with fallback placeholder provider
 - Updated environment example files with Supabase configuration
