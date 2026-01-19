@@ -14,6 +14,8 @@ export type ModalType =
   | "assessment"
   | "calculator"
   | "results"
+  | "user-guide"
+  | "challenge-hub"
   | null;
 
 interface ModalContextType {

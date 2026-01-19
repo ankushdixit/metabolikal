@@ -20,6 +20,7 @@ import {
   Target,
   Dumbbell,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import {
   CalendlyModal,
@@ -33,12 +34,16 @@ import {
   CalculatorModal,
   ResultsModal,
   BodyFatGuideModal,
+  UserGuideModal,
+  ChallengeHubModal,
 } from "@/components/landing/modals";
+import { QuickAccessTray, PointsTray, DayCounterTray } from "@/components/landing/floating-trays";
 import { useModalContext } from "@/contexts/modal-context";
 import { useAssessment } from "@/hooks/use-assessment";
 import { useCalculator, calculateHealthScore, Goal } from "@/hooks/use-calculator";
+import { useGamification } from "@/hooks/use-gamification";
 import { CalculatorFormData } from "@/lib/validations";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
@@ -70,6 +75,28 @@ export default function LandingPage() {
       )
     : 0;
 
+  // Gamification state
+  const gamification = useGamification();
+  const {
+    awardAssessmentPoints,
+    awardCalculatorPoints,
+    isLoading: gamificationLoading,
+  } = gamification;
+
+  // Award points when assessment is completed
+  useEffect(() => {
+    if (lifestyleScore > 0) {
+      awardAssessmentPoints(25);
+    }
+  }, [lifestyleScore, awardAssessmentPoints]);
+
+  // Award points when calculator is completed
+  useEffect(() => {
+    if (calculatorResults) {
+      awardCalculatorPoints(25);
+    }
+  }, [calculatorResults, awardCalculatorPoints]);
+
   // Handler for when assessment continues to calculator
   const handleAssessmentContinue = () => {
     openModal("calculator");
@@ -86,8 +113,42 @@ export default function LandingPage() {
     openModal("body-fat-guide");
   };
 
+  // Handler for User Guide -> Challenge Hub flow
+  const handleLaunchChallengeHub = () => {
+    closeModal();
+    setTimeout(() => openModal("challenge-hub"), 100);
+  };
+
   return (
     <div className="relative">
+      {/* Floating Trays (desktop only) */}
+      {!gamificationLoading && (
+        <>
+          <QuickAccessTray
+            onOpenRealResults={() => openModal("real-results")}
+            onOpenMeetExpert={() => openModal("meet-expert")}
+            onOpenMethod={() => openModal("method")}
+            onOpenElitePrograms={() => openModal("elite-programs")}
+          />
+
+          <PointsTray
+            totalPoints={gamification.totalPoints}
+            healthScore={healthScore}
+            dayStreak={gamification.dayStreak}
+            assessmentPoints={gamification.assessmentPoints}
+            calculatorPoints={gamification.calculatorPoints}
+            dailyVisitPoints={gamification.dailyVisitPoints}
+            completionPercent={gamification.completionPercent}
+          />
+
+          <DayCounterTray
+            currentDay={gamification.currentDay}
+            onOpenTodaysTasks={() => openModal("challenge-hub")}
+            onOpenChallengeHub={() => openModal("challenge-hub")}
+          />
+        </>
+      )}
+
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center px-6 pt-20 overflow-hidden diagonal-stripes">
         {/* Angled accent background */}
@@ -152,7 +213,7 @@ export default function LandingPage() {
               {/* Third CTA */}
               <div className="animate-slide-power delay-400 mt-6">
                 <button
-                  onClick={() => openModal("assessment")}
+                  onClick={() => openModal("challenge-hub")}
                   className="text-sm font-bold text-primary hover:text-accent tracking-wider uppercase group flex items-center gap-2"
                 >
                   <Trophy className="h-4 w-4" />
@@ -424,14 +485,15 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
             <button
-              onClick={() => openModal("method")}
+              onClick={() => openModal("user-guide")}
               className="btn-athletic group flex items-center gap-3 px-6 py-4 bg-secondary text-foreground"
             >
+              <HelpCircle className="h-5 w-5 text-primary" />
               How It Works
             </button>
 
             <button
-              onClick={() => openModal("assessment")}
+              onClick={() => openModal("challenge-hub")}
               className="btn-athletic group flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
             >
               <Flame className="h-5 w-5" />
@@ -510,6 +572,16 @@ export default function LandingPage() {
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
         onOpenChange={(open) => !open && closeModal()}
+      />
+      <UserGuideModal
+        open={activeModal === "user-guide"}
+        onOpenChange={(open) => !open && closeModal()}
+        onLaunchChallenge={handleLaunchChallengeHub}
+      />
+      <ChallengeHubModal
+        open={activeModal === "challenge-hub"}
+        onOpenChange={(open) => !open && closeModal()}
+        gamification={gamification}
       />
     </div>
   );
