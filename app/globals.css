@@ -1,72 +1,239 @@
 /*
- * Dashboard Refine Global Styles
- *
- * This template uses Tailwind CSS v4 with CSS-first configuration.
- * The comprehensive shadcn/ui color system enables consistent styling
- * across all components (button, card, table, etc.) used in this dashboard.
- *
- * Theme customization is done via @theme blocks below.
+ * Design 4: Modern Athletic
+ * Sports-inspired, sharp angles, high contrast, dynamic motion
+ * Brand: METABOLI-K-AL - #E85A3C with electric accents
  */
 
 @import "tailwindcss";
 
 @theme {
-  /* Base radius tokens */
-  --radius-lg: 0.5rem;
-  --radius-md: calc(0.5rem - 2px);
-  --radius-sm: calc(0.5rem - 4px);
+  /* Base radius tokens - Sharp/minimal */
+  --radius-lg: 0.25rem;
+  --radius-md: 0.125rem;
+  --radius-sm: 0;
 
-  /* Light mode colors - shadcn/ui compatible */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(222.2 47.4% 11.2%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(222.2 84% 4.9%);
-}
+  /* Brand Colors - Athletic Palette */
+  --color-brand: hsl(12 78% 57%);
+  --color-electric: hsl(45 100% 50%);
+  --color-neon-green: hsl(120 100% 40%);
+  --color-power-blue: hsl(200 100% 50%);
 
-/* Dark mode theme - applied via .dark class on html/body */
-.dark {
-  --color-background: hsl(222.2 84% 4.9%);
-  --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222.2 84% 4.9%);
-  --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(222.2 84% 4.9%);
-  --color-popover-foreground: hsl(210 40% 98%);
-  --color-primary: hsl(210 40% 98%);
-  --color-primary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-secondary: hsl(217.2 32.6% 17.5%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(217.2 32.6% 17.5%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-accent: hsl(217.2 32.6% 17.5%);
-  --color-accent-foreground: hsl(210 40% 98%);
+  /* Dark mode by default - Deep athletic black */
+  --color-background: hsl(0 0% 4%);
+  --color-foreground: hsl(0 0% 100%);
+  --color-card: hsl(0 0% 7%);
+  --color-card-foreground: hsl(0 0% 100%);
+  --color-popover: hsl(0 0% 7%);
+  --color-popover-foreground: hsl(0 0% 100%);
+  --color-primary: hsl(12 78% 57%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 10%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(0 0% 12%);
+  --color-muted-foreground: hsl(0 0% 50%);
+  --color-accent: hsl(45 100% 50%);
+  --color-accent-foreground: hsl(0 0% 0%);
   --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(217.2 32.6% 17.5%);
-  --color-input: hsl(217.2 32.6% 17.5%);
-  --color-ring: hsl(212.7 26.8% 83.9%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(0 0% 15%);
+  --color-input: hsl(0 0% 15%);
+  --color-ring: hsl(12 78% 57%);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* Athletic gradient - Fire */
+  .gradient-athletic {
+    background: linear-gradient(135deg, hsl(12 78% 57%) 0%, hsl(45 100% 50%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Electric accent gradient */
+  .gradient-electric {
+    background: linear-gradient(90deg, hsl(12 78% 57%) 0%, hsl(45 100% 50%) 100%);
+  }
+
+  /* Athletic card - Sharp edges with accent stripe */
+  .athletic-card {
+    background: hsl(0 0% 7%);
+    border: 1px solid hsl(0 0% 15%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .athletic-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, hsl(12 78% 57%), hsl(45 100% 50%));
+  }
+
+  /* Skewed section */
+  .skew-section {
+    transform: skewY(-2deg);
+  }
+
+  .skew-section > * {
+    transform: skewY(2deg);
+  }
+
+  /* Speed lines background */
+  .speed-lines {
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 100px,
+      hsla(0, 0%, 100%, 0.02) 100px,
+      hsla(0, 0%, 100%, 0.02) 102px
+    );
+  }
+
+  /* Athletic button with stripe */
+  .btn-athletic {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .btn-athletic::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: hsl(45 100% 50%);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .btn-athletic:hover::before {
+    transform: translateX(0);
+  }
+
+  .btn-athletic:hover {
+    transform: translateX(4px);
+  }
+
+  /* Stripe accent */
+  .stripe-accent {
+    position: relative;
+  }
+
+  .stripe-accent::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 4px;
+    background: linear-gradient(90deg, hsl(12 78% 57%), hsl(45 100% 50%));
+  }
+
+  /* Power glow */
+  .glow-power {
+    box-shadow:
+      0 0 40px -10px hsla(12, 78%, 57%, 0.5),
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
+  }
+
+  /* Slide in animations */
+  @keyframes slide-power {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse-power {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-slide-power {
+    animation: slide-power 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-power {
+    animation: pulse-power 2s ease-in-out infinite;
+  }
+
+  .delay-100 {
+    animation-delay: 0.1s;
+    opacity: 0;
+  }
+  .delay-200 {
+    animation-delay: 0.2s;
+    opacity: 0;
+  }
+  .delay-300 {
+    animation-delay: 0.3s;
+    opacity: 0;
+  }
+  .delay-400 {
+    animation-delay: 0.4s;
+    opacity: 0;
+  }
+
+  /* Number highlight */
+  .number-highlight {
+    font-weight: 900;
+    font-size: 4rem;
+    line-height: 1;
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 60%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Diagonal stripe pattern */
+  .diagonal-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 20px,
+      hsla(0, 0%, 100%, 0.02) 20px,
+      hsla(0, 0%, 100%, 0.02) 40px
+    );
   }
 }
