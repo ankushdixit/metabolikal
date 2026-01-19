@@ -41,8 +41,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modal hook for local state management (`hooks/use-modal.ts`)
 - shadcn/ui Dialog component (`components/ui/dialog.tsx`)
 - Unit tests for all 8 modal components (85 tests)
+- Assessment, Calculator & Results flow for metabolic health evaluation
+  - Assessment modal with 7 lifestyle sliders (sleep, body confidence, nutrition, mental clarity, stress, support, hydration)
+  - Calculator modal with BMR/TDEE calculations using Mifflin-St Jeor and Katch-McArdle formulas
+  - Results modal with health score, metabolic numbers, and personalized insights
+  - Body Fat Guide modal for body fat percentage estimation
+- Custom hooks for assessment flow (`hooks/use-assessment.ts`, `hooks/use-calculator.ts`, `hooks/use-visitor-id.ts`)
+- Zod validation schemas for calculator form and assessment results (`lib/validations.ts`)
+- shadcn/ui Slider, Select, Input, Checkbox, and Label components
+- Unit tests for assessment hooks (88 tests) and modal components (57 tests)
 
 ### Changed
+
+- Updated landing page to integrate assessment flow with "Take Assessment", "Start 30-Day Challenge", "How It Works", and "Launch Challenge Hub" buttons
+- Updated modal context with new modal types (assessment, calculator, results)
+- Updated jest.setup.ts with Radix UI component mocks for testing
 
 - Updated header to use modal context for "Book a Call" buttons
 - Updated footer to use modal context for program links and booking CTAs

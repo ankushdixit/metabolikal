@@ -6,3 +6,6 @@ export { EliteProgramsModal } from "./elite-programs-modal";
 export { BodyFatGuideModal } from "./body-fat-guide-modal";
 export { HighPerformerTrapModal } from "./high-performer-trap-modal";
 export { EliteLifestylesModal } from "./elite-lifestyles-modal";
+export { AssessmentModal } from "./assessment-modal";
+export { CalculatorModal } from "./calculator-modal";
+export { ResultsModal } from "./results-modal";
