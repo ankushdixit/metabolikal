@@ -166,7 +166,7 @@ export function Footer() {
 
         <div className="mt-16 pt-8 border-t border-border">
           <p className="text-xs text-muted-foreground font-bold text-center uppercase tracking-[0.2em]">
-            &copy; 2024 METABOLI-K-AL. All rights reserved.
+            &copy; {new Date().getFullYear()} METABOLI-K-AL. All rights reserved.
           </p>
         </div>
       </div>

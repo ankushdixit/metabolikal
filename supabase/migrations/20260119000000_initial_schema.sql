@@ -130,8 +130,7 @@ CREATE TABLE workout_logs (
   client_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   workout_plan_id UUID REFERENCES workout_plans(id),
   completed_at TIMESTAMPTZ DEFAULT NOW(),
-  notes TEXT,
-  UNIQUE(client_id, workout_plan_id, (completed_at::DATE))
+  notes TEXT
 );
 
 COMMENT ON TABLE workout_logs IS 'Workout completion tracking';
