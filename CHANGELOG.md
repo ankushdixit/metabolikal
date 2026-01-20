@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Dashboard Home & Navigation**: Complete dashboard with athletic design matching landing page:
+  - Dashboard home page with welcome message and day counter since program start
+  - Calorie summary card with progress bar (green/yellow/red states)
+  - Protein progress card with gamified messages at different thresholds
+  - Quick actions component with Log Food, View Meals, View Workout, Submit Check-In
+  - Responsive sidebar navigation with all dashboard links and logout
+  - Mobile navigation with hamburger menu and slide-out drawer
+  - Athletic-styled layout following landing page design patterns
+  - Refine hooks for data fetching (profiles, food_logs, diet_plans)
+  - 94 new tests for dashboard components
+
 - **Authentication System**: Complete Supabase Auth integration with:
   - Login, Register, Forgot Password, and Reset Password pages
   - Cookie-based session management using `@supabase/ssr`
