@@ -1,7 +1,6 @@
 import routerProvider from "@refinedev/nextjs-router";
 import { dataProvider } from "@refinedev/supabase";
 import type { AuthProvider } from "@refinedev/core";
-import { getSupabaseClient } from "./supabase";
 import { getEnvSafe } from "./env";
 import { createBrowserSupabaseClient, type UserRole } from "./auth";
 
@@ -24,6 +23,9 @@ import { createBrowserSupabaseClient, type UserRole } from "./auth";
 /**
  * Creates the Supabase data provider for Refine.
  * Returns null if environment is not configured (useful for build time).
+ *
+ * IMPORTANT: Uses the SSR-compatible client from lib/auth.ts to share
+ * authentication session with the rest of the application.
  */
 export function createRefineDataProvider() {
   const env = getEnvSafe();
@@ -34,7 +36,8 @@ export function createRefineDataProvider() {
     return null;
   }
 
-  const client = getSupabaseClient();
+  // Use the SSR-compatible client that shares auth cookies
+  const client = createBrowserSupabaseClient();
   return dataProvider(client);
 }
 

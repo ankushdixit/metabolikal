@@ -23,10 +23,9 @@ interface FoodLog {
   protein?: number;
 }
 
-interface DietPlan {
-  target_calories?: number;
-  target_protein?: number;
-  food_items?: { calories: number; protein: number }[];
+interface DietPlanEntry {
+  food_items?: { calories: number; protein: number } | null;
+  serving_multiplier?: number;
 }
 
 /**
@@ -83,7 +82,7 @@ export default function DashboardPage() {
   });
 
   // Fetch diet plan for current day to get targets
-  const dietPlanQuery = useList<DietPlan>({
+  const dietPlanQuery = useList<DietPlanEntry>({
     resource: "diet_plans",
     filters: [
       { field: "client_id", operator: "eq", value: userId },
@@ -108,18 +107,22 @@ export default function DashboardPage() {
     0
   );
 
-  // Calculate target calories and protein from diet plan
-  const dietPlan = dietPlanQuery.query.data?.data?.[0] as DietPlan | undefined;
+  // Calculate target calories and protein from diet plan entries
+  const dietPlanEntries = (dietPlanQuery.query.data?.data || []) as DietPlanEntry[];
 
-  // Use diet plan targets or calculate from food items, or use defaults
+  // Sum up calories and protein from all meal entries for the day
   const targetCalories =
-    dietPlan?.target_calories ||
-    dietPlan?.food_items?.reduce((sum: number, item) => sum + item.calories, 0) ||
-    2000;
+    dietPlanEntries.reduce((sum: number, entry: DietPlanEntry) => {
+      const calories = entry.food_items?.calories || 0;
+      const multiplier = entry.serving_multiplier || 1;
+      return sum + calories * multiplier;
+    }, 0) || 2000;
   const targetProtein =
-    dietPlan?.target_protein ||
-    dietPlan?.food_items?.reduce((sum: number, item) => sum + item.protein, 0) ||
-    150;
+    dietPlanEntries.reduce((sum: number, entry: DietPlanEntry) => {
+      const protein = entry.food_items?.protein || 0;
+      const multiplier = entry.serving_multiplier || 1;
+      return sum + protein * multiplier;
+    }, 0) || 150;
 
   // Format date
   const formattedDate = today.toLocaleDateString("en-US", {

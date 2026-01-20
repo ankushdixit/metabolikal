@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nutrition Module**: Complete diet plan and food logging system for clients:
+  - Diet plan page (`/dashboard/diet`) displaying 6 meal categories in order: pre-workout, post-workout, breakfast, lunch, evening-snack, dinner
+  - Meal cards showing food name, calories, protein, and serving size with athletic styling
+  - Food alternatives drawer with color-coded options (green=optimal ±10%, red=higher, yellow=lower calories)
+  - Vegetarian filter for food alternatives
+  - Food log form with serving multipliers (0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x)
+  - Custom food search with manual entry option
+  - Today's logged items view with delete confirmation
+  - Daily progress summary with calorie and protein tracking
+  - Sheet UI component for slide-out panels
+  - Calorie color utility for visual feedback
+  - Seed data script with 20 food items and 7-day diet plans
+  - 87 new tests for nutrition components
+
+### Fixed
+
+- **RLS Infinite Recursion**: Fixed Row Level Security policies causing "infinite recursion detected" errors:
+  - Created `is_admin()` SECURITY DEFINER function to bypass RLS when checking admin status
+  - Recreated all admin policies using the new function
+  - Added policy for clients to update their own diet plans
+
+- **Refine Data Provider Auth**: Fixed data provider not sharing authentication session:
+  - Updated `lib/refine.tsx` to use SSR-compatible Supabase client from `lib/auth.ts`
+  - Data provider now properly inherits user authentication cookies
+
+- **Dashboard Target Calculations**: Fixed TypeError when calculating target calories/protein:
+  - Corrected data structure assumptions for diet plan entries
+  - Each entry has a single `food_items` object, not an array
+
 - **Client Dashboard Home & Navigation**: Complete dashboard with athletic design matching landing page:
   - Dashboard home page with welcome message and day counter since program start
   - Calorie summary card with progress bar (green/yellow/red states)
