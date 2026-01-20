@@ -175,10 +175,9 @@ export default function LandingPage() {
     isLoading: gamificationLoading,
   } = gamification;
 
-  // Track if actions have been performed this session to prevent infinite loops
+  // Track if points have been awarded this session to prevent infinite loops
   const assessmentPointsAwarded = useRef(false);
   const calculatorPointsAwarded = useRef(false);
-  const profileRefetched = useRef(false);
 
   // Award points when assessment is completed (once per session)
   useEffect(() => {
@@ -201,8 +200,8 @@ export default function LandingPage() {
     // Save assessment results to database for authenticated users
     if (isAuthenticated && profileCompletion.user) {
       const visitorId = localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
-      await saveAssessmentResults(profileCompletion.user.id, scores, visitorId);
-      refetchProfileCompletion();
+      // Save in background - don't await or refetch to avoid UI jank
+      saveAssessmentResults(profileCompletion.user.id, scores, visitorId);
     }
     openModal("calculator");
   };
@@ -236,7 +235,8 @@ export default function LandingPage() {
       const fatsGrams = Math.round(fatCalories / 9);
       const carbsGrams = Math.round(carbCalories / 4);
 
-      await saveCalculatorResults(
+      // Save in background - don't await to avoid UI jank
+      saveCalculatorResults(
         profileCompletion.user.id,
         {
           gender: data.gender,
@@ -258,8 +258,10 @@ export default function LandingPage() {
           fatsGrams,
           metabolicImpactPercent,
         }
-      );
-      refetchProfileCompletion();
+      ).then(() => {
+        // Refetch profile completion in background after save completes
+        refetchProfileCompletion();
+      });
     }
 
     openModal("results");
@@ -307,13 +309,7 @@ export default function LandingPage() {
     openModal("calculator");
   }, [openModal]);
 
-  // Refetch profile completion after calculator (once per session)
-  useEffect(() => {
-    if (calculatorResults && !profileRefetched.current) {
-      profileRefetched.current = true;
-      refetchProfileCompletion();
-    }
-  }, [calculatorResults, refetchProfileCompletion]);
+  // Profile refetch is now handled in handleCalculatorComplete after save completes
 
   return (
     <div className="relative">
