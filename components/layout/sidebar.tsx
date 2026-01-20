@@ -64,12 +64,12 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border">
+    <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border fixed top-0 left-0 h-screen z-40">
       {/* Top accent bar */}
-      <div className="h-1 gradient-electric" />
+      <div className="h-1 gradient-electric shrink-0" />
 
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6 border-b border-border shrink-0">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="relative h-10 w-10 transition-transform duration-200 group-hover:scale-110">
             <Image src="/images/logo.png" alt="Metabolikal" fill className="object-contain" />
@@ -86,7 +86,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1" aria-label="Main navigation">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -113,7 +113,7 @@ export function Sidebar() {
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border shrink-0">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"

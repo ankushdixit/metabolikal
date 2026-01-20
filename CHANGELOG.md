@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Sidebar Scrolling**: Fixed dashboard sidebar scrolling with content instead of staying fixed:
+  - Made sidebar fixed position with full viewport height
+  - Added proper overflow handling for navigation items
+  - Ensured logout button always visible at bottom
+  - Added margin offset to main content area for fixed sidebar width
+
 ### Added
 
 - **Check-In Module**: Weekly check-in system for client progress tracking:
