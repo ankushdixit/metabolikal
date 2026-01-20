@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col lg:ml-0">
+        <div className="flex-1 flex flex-col lg:ml-64">
           {/* Desktop Header */}
           <Header />
 
