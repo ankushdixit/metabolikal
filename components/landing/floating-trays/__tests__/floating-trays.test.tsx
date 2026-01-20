@@ -174,7 +174,6 @@ describe("PointsTray", () => {
 describe("DayCounterTray", () => {
   const defaultProps = {
     currentDay: 7,
-    onOpenTodaysTasks: jest.fn(),
     onOpenChallengeHub: jest.fn(),
   };
 
@@ -200,27 +199,10 @@ describe("DayCounterTray", () => {
     expect(screen.getByText("23 days remaining")).toBeInTheDocument();
   });
 
-  it("displays View Today's Tasks button", () => {
-    render(<DayCounterTray {...defaultProps} />);
-
-    expect(screen.getByRole("button", { name: /View Today's Tasks/i })).toBeInTheDocument();
-  });
-
   it("displays Open Challenge Hub button", () => {
     render(<DayCounterTray {...defaultProps} />);
 
     expect(screen.getByRole("button", { name: /Open Challenge Hub/i })).toBeInTheDocument();
-  });
-
-  it("calls onOpenTodaysTasks when View Today's Tasks is clicked", () => {
-    render(<DayCounterTray {...defaultProps} />);
-
-    const todaysTasksButton = screen.getByRole("button", {
-      name: /View Today's Tasks/i,
-    });
-    fireEvent.click(todaysTasksButton);
-
-    expect(defaultProps.onOpenTodaysTasks).toHaveBeenCalledTimes(1);
   });
 
   it("calls onOpenChallengeHub when Open Challenge Hub is clicked", () => {

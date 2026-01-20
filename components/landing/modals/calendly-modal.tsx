@@ -96,7 +96,7 @@ export function CalendlyModal({ open, onOpenChange }: CalendlyModalProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden">
-          <div ref={containerRef} className="h-full w-full" />
+          <div ref={containerRef} className="h-full w-full" data-testid="calendly-embed" />
         </div>
       </DialogContent>
     </Dialog>

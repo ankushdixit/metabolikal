@@ -34,13 +34,19 @@ describe("RealResultsModal", () => {
 
   it("renders YouTube section heading", () => {
     render(<RealResultsModal {...defaultProps} />);
-    expect(screen.getByText("Watch Real Client Transformations")).toBeInTheDocument();
+    expect(screen.getByText("Client Transformation Stories")).toBeInTheDocument();
   });
 
   it("renders YouTube video embeds", () => {
     render(<RealResultsModal {...defaultProps} />);
     const iframes = document.querySelectorAll("iframe");
-    expect(iframes.length).toBe(3);
+    // 12 YouTube Shorts + 3 full testimonial videos = 15 total
+    expect(iframes.length).toBe(15);
+  });
+
+  it("renders Client Testimonials section", () => {
+    render(<RealResultsModal {...defaultProps} />);
+    expect(screen.getByText("Client Testimonials")).toBeInTheDocument();
   });
 
   it("renders main transformation results image", () => {
