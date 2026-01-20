@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Workout Module**: Complete workout tracking system for clients:
+  - Workout plan page (`/dashboard/workout`) displaying exercises grouped by section (Warmup, Main, Cooldown)
+  - Exercise items showing name, sets/reps or duration, rest intervals with expand/collapse for instructions
+  - Video links opening YouTube in new tab for exercise demonstrations
+  - Checkbox completion tracking with optimistic UI updates
+  - Progress indicator showing X/Y exercises completed with "Mark All Complete" button
+  - Completion celebration message when all exercises are done
+  - Rest day state when no workout is scheduled
+  - Workout history page (`/dashboard/workout/history`) showing past 30 days of workout completion
+  - History entries with completion percentages and exercise summaries
+  - Seed data script with 7-day workout program (Upper/Lower/Core split + recovery day)
+  - 43 new tests for workout components (workout-progress, workout-item, workout-section)
+
 - **Nutrition Module**: Complete diet plan and food logging system for clients:
   - Diet plan page (`/dashboard/diet`) displaying 6 meal categories in order: pre-workout, post-workout, breakfast, lunch, evening-snack, dinner
   - Meal cards showing food name, calories, protein, and serving size with athletic styling
