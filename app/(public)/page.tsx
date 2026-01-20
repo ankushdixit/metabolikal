@@ -49,7 +49,7 @@ import {
   saveCalculatorResults,
 } from "@/hooks/use-profile-completion";
 import { CalculatorFormData } from "@/lib/validations";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // Dynamic imports for modals - reduces initial bundle size
 // Modals are only loaded when opened
@@ -175,16 +175,22 @@ export default function LandingPage() {
     isLoading: gamificationLoading,
   } = gamification;
 
-  // Award points when assessment is completed
+  // Track if points have been awarded this session to prevent infinite loops
+  const assessmentPointsAwarded = useRef(false);
+  const calculatorPointsAwarded = useRef(false);
+
+  // Award points when assessment is completed (once per session)
   useEffect(() => {
-    if (lifestyleScore > 0) {
+    if (lifestyleScore > 0 && !assessmentPointsAwarded.current) {
+      assessmentPointsAwarded.current = true;
       awardAssessmentPoints(25);
     }
   }, [lifestyleScore, awardAssessmentPoints]);
 
-  // Award points when calculator is completed
+  // Award points when calculator is completed (once per session)
   useEffect(() => {
-    if (calculatorResults) {
+    if (calculatorResults && !calculatorPointsAwarded.current) {
+      calculatorPointsAwarded.current = true;
       awardCalculatorPoints(25);
     }
   }, [calculatorResults, awardCalculatorPoints]);
