@@ -115,7 +115,7 @@ export function FoodSearch({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md bg-card p-0 max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-md bg-card p-0 max-h-[85vh] flex flex-col">
         {/* Top accent */}
         <div className="h-1 gradient-electric" />
 

@@ -412,7 +412,7 @@ export default function CheckInPage() {
 
       {/* Duplicate Warning Dialog */}
       <Dialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="bg-card border-border p-6">
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-yellow-500/20">

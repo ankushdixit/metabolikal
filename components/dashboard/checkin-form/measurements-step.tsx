@@ -11,6 +11,22 @@ interface MeasurementsStepProps {
 }
 
 /**
+ * Converts input value to number, returning undefined for empty/invalid values
+ * This prevents NaN from being passed to zod validation
+ */
+const parseOptionalNumber = (value: string) => {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const num = parseFloat(value);
+  return isNaN(num) ? undefined : num;
+};
+
+const parseRequiredNumber = (value: string) => {
+  if (value === "" || value === null || value === undefined) return NaN; // Let zod handle required validation
+  const num = parseFloat(value);
+  return num;
+};
+
+/**
  * Step 1: Measurements
  * Collects weight (required) and optional body measurements
  */
@@ -53,7 +69,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
             step="0.1"
             placeholder="75.5"
             className="w-full pl-14 pr-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-            {...register("weight", { valueAsNumber: true })}
+            {...register("weight", { setValueAs: parseRequiredNumber })}
           />
         </div>
         {errors.weight && (
@@ -78,7 +94,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
           step="0.1"
           placeholder="15.0"
           className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-          {...register("body_fat_percent", { valueAsNumber: true })}
+          {...register("body_fat_percent", { setValueAs: parseOptionalNumber })}
         />
         {errors.body_fat_percent && (
           <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
@@ -114,7 +130,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               step="0.1"
               placeholder="100"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("chest_cm", { valueAsNumber: true })}
+              {...register("chest_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
 
@@ -132,7 +148,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               step="0.1"
               placeholder="80"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("waist_cm", { valueAsNumber: true })}
+              {...register("waist_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
 
@@ -150,7 +166,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               step="0.1"
               placeholder="95"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("hips_cm", { valueAsNumber: true })}
+              {...register("hips_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
 
@@ -168,7 +184,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               step="0.1"
               placeholder="35"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("arms_cm", { valueAsNumber: true })}
+              {...register("arms_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
 
@@ -186,7 +202,7 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               step="0.1"
               placeholder="55"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("thighs_cm", { valueAsNumber: true })}
+              {...register("thighs_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
         </div>

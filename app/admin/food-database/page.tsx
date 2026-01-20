@@ -306,7 +306,7 @@ export default function FoodDatabasePage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="athletic-card p-0 max-w-md">
+        <DialogContent className="athletic-card p-0 sm:max-w-md">
           <div className="p-6">
             <DialogHeader>
               <DialogTitle className="text-xl font-black uppercase tracking-tight">

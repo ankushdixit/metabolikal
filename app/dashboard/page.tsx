@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useList, useOne } from "@refinedev/core";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useList, useOne, useCreate } from "@refinedev/core";
 import { Calendar, Flame } from "lucide-react";
-import { CalorieSummary, ProteinProgress, QuickActions } from "@/components/dashboard";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  CalorieSummary,
+  ProteinProgress,
+  QuickActions,
+  FoodSearch,
+  FoodLogForm,
+} from "@/components/dashboard";
+import { createBrowserSupabaseClient } from "@/lib/auth";
+import type { MealCategory } from "@/lib/database.types";
 
 interface Profile {
   full_name?: string;
@@ -28,6 +28,15 @@ interface DietPlanEntry {
   serving_multiplier?: number;
 }
 
+interface FoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  serving_size: string;
+  is_vegetarian: boolean;
+}
+
 /**
  * Dashboard Home Page
  * Displays daily overview metrics and quick actions
@@ -35,7 +44,11 @@ interface DietPlanEntry {
  */
 export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLogFoodOpen, setIsLogFoodOpen] = useState(false);
+  const [isFoodSearchOpen, setIsFoodSearchOpen] = useState(false);
+  const [isFoodLogFormOpen, setIsFoodLogFormOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [selectedMealCategory, setSelectedMealCategory] = useState<MealCategory>("breakfast");
 
   // Get current user ID from Supabase auth
   useEffect(() => {
@@ -62,11 +75,13 @@ export default function DashboardPage() {
   const startOfTomorrow = new Date(startOfToday);
   startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-  // Calculate day number from profile creation date
+  // Calculate day number from profile creation date (cycles through 7-day plan)
   const profile = profileQuery.query.data?.data as Profile | undefined;
   const programStartDate = profile?.created_at ? new Date(profile.created_at) : today;
-  const dayNumber =
+  const totalDays =
     Math.floor((today.getTime() - programStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  // Cycle through 7-day plan: day 8 becomes day 1, day 15 becomes day 1, etc.
+  const dayNumber = ((totalDays - 1) % 7) + 1;
 
   // Fetch today's food logs for calorie/protein totals
   const foodLogsQuery = useList<FoodLog>({
@@ -95,6 +110,100 @@ export default function DashboardPage() {
       enabled: !!userId,
     },
   });
+
+  // Search for food items in the database
+  const debouncedSearchQuery = useMemo(() => searchQuery, [searchQuery]);
+  const foodSearchQuery = useList<FoodItem>({
+    resource: "food_items",
+    filters:
+      debouncedSearchQuery.length >= 2
+        ? [{ field: "name", operator: "contains", value: debouncedSearchQuery }]
+        : [],
+    pagination: { pageSize: 20 },
+    queryOptions: {
+      enabled: debouncedSearchQuery.length >= 2,
+    },
+  });
+
+  // Create mutation for logging food
+  const createFoodLogMutation = useCreate();
+  const createFoodLog = createFoodLogMutation.mutate;
+  const isLoggingFood = createFoodLogMutation.mutation.isPending;
+
+  // Handle selecting a food from search results
+  const handleSelectFood = useCallback((foodItem: FoodItem, mealCategory: MealCategory) => {
+    setSelectedFood(foodItem);
+    setSelectedMealCategory(mealCategory);
+    setIsFoodSearchOpen(false);
+    setIsFoodLogFormOpen(true);
+  }, []);
+
+  // Handle logging food with serving multiplier
+  const handleLogFood = useCallback(
+    (data: {
+      food_item_id: string;
+      calories: number;
+      protein: number;
+      serving_multiplier: number;
+      meal_category: string;
+    }) => {
+      if (!userId) return;
+
+      createFoodLog(
+        {
+          resource: "food_logs",
+          values: {
+            client_id: userId,
+            food_item_id: data.food_item_id,
+            calories: data.calories,
+            protein: data.protein,
+            serving_multiplier: data.serving_multiplier,
+            meal_category: data.meal_category,
+            logged_at: new Date().toISOString(),
+          },
+        },
+        {
+          onSuccess: () => {
+            setIsFoodLogFormOpen(false);
+            setSelectedFood(null);
+            // Refetch food logs to update totals
+            foodLogsQuery.query.refetch();
+          },
+        }
+      );
+    },
+    [userId, createFoodLog, foodLogsQuery.query]
+  );
+
+  // Handle logging custom food (without food_item_id)
+  const handleLogCustomFood = useCallback(
+    (data: { food_name: string; calories: number; protein: number; meal_category: string }) => {
+      if (!userId) return;
+
+      createFoodLog(
+        {
+          resource: "food_logs",
+          values: {
+            client_id: userId,
+            food_name: data.food_name,
+            calories: data.calories,
+            protein: data.protein,
+            serving_multiplier: 1,
+            meal_category: data.meal_category,
+            logged_at: new Date().toISOString(),
+          },
+        },
+        {
+          onSuccess: () => {
+            setIsFoodSearchOpen(false);
+            // Refetch food logs to update totals
+            foodLogsQuery.query.refetch();
+          },
+        }
+      );
+    },
+    [userId, createFoodLog, foodLogsQuery.query]
+  );
 
   // Calculate consumed calories and protein from food logs
   const foodLogs = foodLogsQuery.query.data?.data || [];
@@ -188,32 +297,33 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <QuickActions onLogFood={() => setIsLogFoodOpen(true)} />
+      <QuickActions onLogFood={() => setIsFoodSearchOpen(true)} />
 
-      {/* Log Food Modal */}
-      <Dialog open={isLogFoodOpen} onOpenChange={setIsLogFoodOpen}>
-        <DialogContent className="max-w-md bg-card p-0">
-          <DialogHeader className="p-6 pb-4 border-b border-border">
-            <DialogTitle className="text-xl font-black uppercase tracking-tight">
-              Log <span className="gradient-athletic">Food</span>
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground font-bold text-sm">
-              Add food to your daily intake
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-6">
-            <p className="text-sm text-muted-foreground font-bold mb-4">
-              Food logging functionality will be available soon.
-            </p>
-            <button
-              onClick={() => setIsLogFoodOpen(false)}
-              className="btn-athletic w-full px-5 py-3 bg-secondary text-foreground"
-            >
-              Close
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Food Search Modal */}
+      <FoodSearch
+        isOpen={isFoodSearchOpen}
+        onClose={() => setIsFoodSearchOpen(false)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchResults={(foodSearchQuery.query.data?.data as FoodItem[]) || []}
+        isSearching={foodSearchQuery.query.isLoading}
+        onSelectFood={handleSelectFood}
+        onLogCustomFood={handleLogCustomFood}
+        isLogging={isLoggingFood}
+      />
+
+      {/* Food Log Form Modal */}
+      <FoodLogForm
+        isOpen={isFoodLogFormOpen}
+        onClose={() => {
+          setIsFoodLogFormOpen(false);
+          setSelectedFood(null);
+        }}
+        foodItem={selectedFood}
+        mealCategory={selectedMealCategory}
+        onLogFood={handleLogFood}
+        isLogging={isLoggingFood}
+      />
     </div>
   );
 }

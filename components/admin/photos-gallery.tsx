@@ -268,7 +268,7 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
 
       {/* Photo Lightbox */}
       <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-4xl bg-card border-border p-0">
+        <DialogContent className="sm:max-w-4xl bg-card border-border p-0">
           <DialogHeader className="p-4 border-b border-border">
             <DialogTitle className="text-lg font-black uppercase tracking-tight">
               Progress Photo
