@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mobile Challenge Tray**: New floating tray for mobile devices showing challenge progress:
+  - Compact collapsed bar showing Day, Points, and Streak
+  - Expandable view with full stats and "Open Challenge Hub" button
+  - Responsive design: mobile tray on small screens, desktop trays on larger screens
+
+- **Real Client Testimonials**: Updated transformations gallery with actual YouTube content:
+  - 12 YouTube Shorts in horizontally scrollable section
+  - 3 full-length testimonial videos in new dedicated section
+
+### Changed
+
+- **Calendly Integration**: Configured production Calendly booking:
+  - Set actual Calendly link for strategy call booking
+  - Increased modal height to 90vh for better widget display
+  - Added dark mode styling matching site theme (background, text, accent colors)
+  - Fixed race condition causing intermittent widget loading failures
+
+- **Challenge Hub Navigation**: Improved challenge-related CTAs across landing page:
+  - "Start 30-Day Challenge" in hero now scrolls to challenge section instead of opening modal
+  - Added cursor-pointer for proper hover state
+  - Fixed footer "30-Day Challenge" link to open challenge hub (was opening assessment)
+  - Fixed "Start the 30-Day Challenge" button in High Performer Trap modal
+
+- **Day Counter Tray**: Simplified by removing redundant "View Today's Tasks" button (both buttons did the same thing)
+
+### Planned
+
+- **Challenger Role Feature**: Spec created for gating challenge hub behind authentication:
+  - New "challenger" user role (default for registrations)
+  - Profile completion flow (assessment + calculator required)
+  - Database persistence for challenge progress
+  - Admin management of challengers with upgrade to client capability
+
+### Added (Previous)
+
 - **Food Logging Functionality**: Connected "Log Food" button on client dashboard to actual food logging:
   - Integrated FoodSearch and FoodLogForm components with dashboard
   - Added food search query with database lookup

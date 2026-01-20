@@ -132,7 +132,7 @@ export function Footer() {
               </li>
               <li>
                 <button
-                  onClick={() => openModal("assessment")}
+                  onClick={() => openModal("challenge-hub")}
                   className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide text-left cursor-pointer"
                 >
                   30-Day Challenge
