@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Admin Dashboard & Client Management**: Complete admin interface for coaches to manage clients:
+  - Admin layout with fixed sidebar navigation (Dashboard, Clients, Pending Reviews)
+  - Admin dashboard home (`/admin`) with stats cards showing Total Clients, Pending Reviews, Flagged Clients
+  - Quick actions for viewing all clients and reviewing pending check-ins
+  - Recent check-ins preview with direct review links
+  - Client list page (`/admin/clients`) with search, filters (All/Active/Flagged), and pagination
+  - Client detail/review page (`/admin/clients/[id]`) with tabbed interface:
+    - Check-ins tab: Expandable check-in cards with all data, admin notes, flag toggle, mark reviewed action
+    - Progress tab: Weight and body fat trend charts with date range selector (7d/30d/90d/All)
+    - Photos tab: Photo gallery with compare mode for before/after views
+    - Plans tab: Diet and workout plan summaries
+  - Pending reviews page (`/admin/pending-reviews`) listing all unreviewed check-ins
+  - Mobile-responsive admin navigation with slide-out drawer
+  - Athletic design system matching client dashboard (sharp edges, gradient accents, uppercase tracking)
+  - 69 new tests for admin components (admin-sidebar, stats-cards, client-table, progress-charts, photos-gallery)
+  - Test data seed scripts for creating admin and test client accounts with realistic data
+
 ### Fixed
 
 - **Sidebar Scrolling**: Fixed dashboard sidebar scrolling with content instead of staying fixed:
