@@ -288,12 +288,20 @@ export default function CheckInPage() {
       </div>
 
       {/* Progress Steps */}
-      <div className="athletic-card p-6 pl-8">
+      <div className="athletic-card p-4 sm:p-6 pl-6 sm:pl-8">
+        {/* Mobile: Show current step info */}
+        <div className="flex sm:hidden items-center justify-between mb-4">
+          <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+            Step {currentStep + 1} of {STEPS.length}
+          </span>
+          <span className="text-sm font-black text-primary uppercase">{STEPS[currentStep]}</span>
+        </div>
+
         <div className="flex items-center justify-between">
           {STEPS.map((step, index) => (
             <div key={step} className="flex items-center">
               <div
-                className={`flex items-center justify-center w-10 h-10 font-black text-sm ${
+                className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 font-black text-xs sm:text-sm ${
                   index < currentStep
                     ? "bg-neon-green text-black"
                     : index === currentStep
@@ -301,11 +309,11 @@ export default function CheckInPage() {
                       : "bg-secondary text-muted-foreground"
                 }`}
               >
-                {index < currentStep ? <Check className="h-5 w-5" /> : index + 1}
+                {index < currentStep ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : index + 1}
               </div>
               {index < STEPS.length - 1 && (
                 <div
-                  className={`hidden md:block w-16 lg:w-24 h-1 mx-2 ${
+                  className={`w-6 sm:w-16 lg:w-24 h-0.5 sm:h-1 mx-1 sm:mx-2 ${
                     index < currentStep ? "bg-neon-green" : "bg-secondary"
                   }`}
                 />
@@ -313,7 +321,7 @@ export default function CheckInPage() {
             </div>
           ))}
         </div>
-        <div className="hidden md:flex items-center justify-between mt-2">
+        <div className="hidden sm:flex items-center justify-between mt-2">
           {STEPS.map((step) => (
             <span
               key={step}

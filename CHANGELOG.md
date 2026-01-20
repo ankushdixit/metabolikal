@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sentry Error Monitoring**: Integrated Sentry for production error tracking:
+  - Client-side error capture with session replay
+  - Server-side error tracking with sensitive data redaction
+  - Edge runtime support for middleware errors
+  - Global error boundary UI component
+  - Configurable via environment variables (NEXT_PUBLIC_SENTRY_DSN, SENTRY_ORG, SENTRY_PROJECT)
+
+### Changed
+
+- **Mobile Responsiveness**: Comprehensive mobile-first improvements across the application:
+  - Dialog component now full-screen on mobile with proper inset handling
+  - All 13 landing page modals use responsive max-width (sm:max-w-\*) classes
+  - Landing page hero section uses responsive gaps and padding
+  - Check-in progress indicator improved for small screens
+  - Close button on modals enlarged for better touch targets on mobile
+
+- **Performance Optimization**: Reduced initial bundle size:
+  - All 13 landing page modals now use dynamic imports with next/dynamic
+  - Modals only loaded when opened, not on initial page load
+
+- **SEO Improvements**: Enhanced metadata for search engines and social sharing:
+  - Comprehensive Open Graph tags with site title, description, and images
+  - Twitter card configuration for large image previews
+  - Proper viewport meta tag with theme color support
+  - Robots configuration for search engine indexing
+  - Canonical URL and alternate links support
+
 - **Food Database Management**: Admin interface for managing food items used in diet plans:
   - Food database page (`/admin/food-database`) with searchable list, pagination (10 items/page)
   - Create food item page (`/admin/food-database/create`) with full form validation

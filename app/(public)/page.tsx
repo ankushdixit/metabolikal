@@ -11,6 +11,7 @@
 
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   Flame,
@@ -22,21 +23,6 @@ import {
   ChevronRight,
   HelpCircle,
 } from "lucide-react";
-import {
-  CalendlyModal,
-  RealResultsModal,
-  MeetExpertModal,
-  MethodModal,
-  EliteProgramsModal,
-  HighPerformerTrapModal,
-  EliteLifestylesModal,
-  AssessmentModal,
-  CalculatorModal,
-  ResultsModal,
-  BodyFatGuideModal,
-  UserGuideModal,
-  ChallengeHubModal,
-} from "@/components/landing/modals";
 import { QuickAccessTray, PointsTray, DayCounterTray } from "@/components/landing/floating-trays";
 import { useModalContext } from "@/contexts/modal-context";
 import { useAssessment } from "@/hooks/use-assessment";
@@ -44,6 +30,72 @@ import { useCalculator, calculateHealthScore, Goal } from "@/hooks/use-calculato
 import { useGamification } from "@/hooks/use-gamification";
 import { CalculatorFormData } from "@/lib/validations";
 import { useState, useEffect } from "react";
+
+// Dynamic imports for modals - reduces initial bundle size
+// Modals are only loaded when opened
+const CalendlyModal = dynamic(
+  () =>
+    import("@/components/landing/modals/calendly-modal").then((m) => ({
+      default: m.CalendlyModal,
+    })),
+  { ssr: false }
+);
+const RealResultsModal = dynamic(() =>
+  import("@/components/landing/modals/real-results-modal").then((m) => ({
+    default: m.RealResultsModal,
+  }))
+);
+const MeetExpertModal = dynamic(() =>
+  import("@/components/landing/modals/meet-expert-modal").then((m) => ({
+    default: m.MeetExpertModal,
+  }))
+);
+const MethodModal = dynamic(() =>
+  import("@/components/landing/modals/method-modal").then((m) => ({ default: m.MethodModal }))
+);
+const EliteProgramsModal = dynamic(() =>
+  import("@/components/landing/modals/elite-programs-modal").then((m) => ({
+    default: m.EliteProgramsModal,
+  }))
+);
+const HighPerformerTrapModal = dynamic(() =>
+  import("@/components/landing/modals/high-performer-trap-modal").then((m) => ({
+    default: m.HighPerformerTrapModal,
+  }))
+);
+const EliteLifestylesModal = dynamic(() =>
+  import("@/components/landing/modals/elite-lifestyles-modal").then((m) => ({
+    default: m.EliteLifestylesModal,
+  }))
+);
+const AssessmentModal = dynamic(() =>
+  import("@/components/landing/modals/assessment-modal").then((m) => ({
+    default: m.AssessmentModal,
+  }))
+);
+const CalculatorModal = dynamic(() =>
+  import("@/components/landing/modals/calculator-modal").then((m) => ({
+    default: m.CalculatorModal,
+  }))
+);
+const ResultsModal = dynamic(() =>
+  import("@/components/landing/modals/results-modal").then((m) => ({ default: m.ResultsModal }))
+);
+const BodyFatGuideModal = dynamic(() =>
+  import("@/components/landing/modals/body-fat-guide-modal").then((m) => ({
+    default: m.BodyFatGuideModal,
+  }))
+);
+const UserGuideModal = dynamic(() =>
+  import("@/components/landing/modals/user-guide-modal").then((m) => ({
+    default: m.UserGuideModal,
+  }))
+);
+const ChallengeHubModal = dynamic(() =>
+  import("@/components/landing/modals/challenge-hub-modal").then((m) => ({
+    default: m.ChallengeHubModal,
+  }))
+);
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
@@ -154,8 +206,8 @@ export default function LandingPage() {
         {/* Angled accent background */}
         <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-bl from-primary/10 via-transparent to-transparent skew-x-12 origin-top-right" />
 
-        <div className="relative z-10 mx-auto max-w-7xl w-full py-20">
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
+        <div className="relative z-10 mx-auto max-w-7xl w-full py-12 sm:py-16 lg:py-20">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left - Content */}
             <div className="lg:col-span-7">
               {/* Badge */}
@@ -225,7 +277,7 @@ export default function LandingPage() {
 
             {/* Right - Stats */}
             <div className="lg:col-span-5 animate-slide-power delay-400">
-              <div className="athletic-card p-8 pl-10">
+              <div className="athletic-card p-6 pl-8 sm:p-8 sm:pl-10">
                 <h3 className="text-xs font-black tracking-[0.2em] text-primary mb-8 uppercase">
                   Program Stats
                 </h3>
@@ -301,7 +353,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-primary/5 to-transparent" />
 
         <div className="relative z-10 mx-auto max-w-5xl">
-          <div className="athletic-card p-10 md:p-16 pl-12 md:pl-20">
+          <div className="athletic-card p-6 sm:p-10 md:p-16 pl-8 sm:pl-12 md:pl-20">
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground mb-8">
               <span className="text-xs font-black tracking-[0.15em] uppercase">The Revelation</span>
             </span>
@@ -438,7 +490,10 @@ export default function LandingPage() {
                   "No extreme protocols, no unsustainable demands. Every strategy integrates your executive lifestyle.",
               },
             ].map((item, i) => (
-              <div key={i} className="athletic-card p-8 pl-10 hover:glow-power transition-all">
+              <div
+                key={i}
+                className="athletic-card p-6 pl-8 sm:p-8 sm:pl-10 hover:glow-power transition-all"
+              >
                 <div className="p-3 bg-secondary w-fit mb-6">
                   <item.icon className="h-6 w-6 text-primary" />
                 </div>
