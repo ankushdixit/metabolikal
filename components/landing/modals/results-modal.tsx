@@ -120,7 +120,7 @@ export function ResultsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] bg-card p-0 flex flex-col">
+      <DialogContent className="sm:max-w-3xl bg-card p-0 flex flex-col overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Your <span className="gradient-athletic">METABOLI-K-AL</span> Results

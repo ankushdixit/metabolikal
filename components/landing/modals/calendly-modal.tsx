@@ -68,7 +68,7 @@ export function CalendlyModal({ open, onOpenChange }: CalendlyModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-card p-0 flex flex-col">
+      <DialogContent className="sm:max-w-4xl bg-card p-0 flex flex-col overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
             Book Your Strategy Call
