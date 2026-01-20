@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Authentication System**: Complete Supabase Auth integration with:
+  - Login, Register, Forgot Password, and Reset Password pages
+  - Cookie-based session management using `@supabase/ssr`
+  - Role-based access control (admin/client roles)
+  - Next.js Middleware for route protection
+  - Automatic profile creation on user signup via database trigger
+  - Refine authProvider integration for dashboard auth state
+  - Form validation with Zod schemas
+  - Server-only auth utilities separated from client-safe code
+
+- **Database Schema**: Initial Supabase database setup with:
+  - 10 tables: profiles, food_items, diet_plans, food_alternatives, workout_plans, workout_logs, food_logs, check_ins, challenge_progress, assessment_results
+  - Row Level Security (RLS) policies for all tables (31 policies)
+  - Storage buckets for check-in photos and avatars
+  - Triggers for updated_at timestamps and profile auto-creation
+
 - **Gamification System & Challenge Hub**: Complete 30-day challenge tracking system with:
   - `useGamification` hook for state management with localStorage persistence
   - Points calculation for 5 health metrics (Steps, Water, Floors, Protein, Sleep)
@@ -70,3 +86,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real Results Modal: Edge-to-edge YouTube carousel, smaller video cards on mobile
 
 - **Footer Button Styling**: Changed "Take Assessment" button to secondary style for visual hierarchy
+
+- **Copyright Year Consistency**: Updated landing page footer to use dynamic year matching auth pages

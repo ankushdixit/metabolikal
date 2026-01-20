@@ -6,6 +6,7 @@ import {
   refineRouterProvider,
   refineResources,
   refineOptions,
+  refineAuthProvider,
 } from "@/lib/refine";
 
 /**
@@ -57,6 +58,7 @@ export function RefineProvider({ children }: { children: React.ReactNode }) {
   return (
     <Refine
       dataProvider={dataProvider}
+      authProvider={refineAuthProvider}
       routerProvider={refineRouterProvider}
       resources={refineResources}
       options={refineOptions}

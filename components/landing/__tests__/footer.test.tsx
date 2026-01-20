@@ -96,7 +96,9 @@ describe("Landing Footer Component", () => {
 
   it("renders copyright notice", () => {
     renderWithProvider(<Footer />);
-    expect(screen.getByText(/2024 METABOLI-K-AL/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`${new Date().getFullYear()} METABOLI-K-AL`, "i"))
+    ).toBeInTheDocument();
     expect(screen.getByText(/All rights reserved/i)).toBeInTheDocument();
   });
 
