@@ -175,9 +175,10 @@ export default function LandingPage() {
     isLoading: gamificationLoading,
   } = gamification;
 
-  // Track if points have been awarded this session to prevent infinite loops
+  // Track if actions have been performed this session to prevent infinite loops
   const assessmentPointsAwarded = useRef(false);
   const calculatorPointsAwarded = useRef(false);
+  const profileRefetched = useRef(false);
 
   // Award points when assessment is completed (once per session)
   useEffect(() => {
@@ -306,9 +307,10 @@ export default function LandingPage() {
     openModal("calculator");
   }, [openModal]);
 
-  // Refetch profile completion after assessment or calculator
+  // Refetch profile completion after calculator (once per session)
   useEffect(() => {
-    if (calculatorResults) {
+    if (calculatorResults && !profileRefetched.current) {
+      profileRefetched.current = true;
       refetchProfileCompletion();
     }
   }, [calculatorResults, refetchProfileCompletion]);
