@@ -99,7 +99,8 @@ describe("Environment validation", () => {
       const env = getEnvSafe();
 
       expect(env).not.toBeNull();
-      expect(env?.SUPABASE_URL).toBe("https://test.supabase.co");
+      // Check for a property that exists on both Env and ClientEnv types
+      expect(env?.NEXT_PUBLIC_SUPABASE_URL).toBe("https://test.supabase.co");
     });
 
     it("returns null when validation fails", () => {

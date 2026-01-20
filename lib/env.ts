@@ -86,9 +86,15 @@ export function validateClientEnv(): ClientEnv {
 /**
  * Get validated environment variables.
  * Returns null if validation fails (for use in optional contexts).
+ * On the client side, only validates NEXT_PUBLIC_ variables since
+ * server-side variables are not available in the browser.
  */
-export function getEnvSafe(): Env | null {
+export function getEnvSafe(): Env | ClientEnv | null {
   try {
+    // On the client, only validate client-safe environment variables
+    if (typeof window !== "undefined") {
+      return validateClientEnv();
+    }
     return validateEnv();
   } catch {
     return null;
