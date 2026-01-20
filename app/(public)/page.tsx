@@ -267,9 +267,16 @@ export default function LandingPage() {
     openModal("results");
   };
 
-  // Handler for body fat guide from calculator
+  // Handler for body fat guide from calculator - returns to calculator when closed
   const handleOpenBodyFatGuide = () => {
     openModal("body-fat-guide");
+  };
+
+  // Handler for closing body fat guide - returns to calculator
+  const handleCloseBodyFatGuide = (open: boolean) => {
+    if (!open) {
+      openModal("calculator");
+    }
   };
 
   // Handler for User Guide -> Challenge Hub flow
@@ -774,7 +781,7 @@ export default function LandingPage() {
       />
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
-        onOpenChange={(open) => !open && closeModal()}
+        onOpenChange={handleCloseBodyFatGuide}
       />
       <UserGuideModal
         open={activeModal === "user-guide"}
