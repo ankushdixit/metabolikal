@@ -31,10 +31,25 @@ import {
 } from "@/components/landing/floating-trays";
 import { useModalContext } from "@/contexts/modal-context";
 import { useAssessment } from "@/hooks/use-assessment";
-import { useCalculator, calculateHealthScore, Goal } from "@/hooks/use-calculator";
+import {
+  useCalculator,
+  calculateHealthScore,
+  calculateBmrMifflinStJeor,
+  calculateBmrKatchMcArdle,
+  calculateMetabolicImpact,
+  calculateProteinRecommendation,
+  ACTIVITY_MULTIPLIERS,
+  GOAL_ADJUSTMENTS,
+  Goal,
+} from "@/hooks/use-calculator";
 import { useGamification } from "@/hooks/use-gamification";
+import {
+  useProfileCompletion,
+  saveAssessmentResults,
+  saveCalculatorResults,
+} from "@/hooks/use-profile-completion";
 import { CalculatorFormData } from "@/lib/validations";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // Dynamic imports for modals - reduces initial bundle size
 // Modals are only loaded when opened
@@ -101,6 +116,16 @@ const ChallengeHubModal = dynamic(() =>
     default: m.ChallengeHubModal,
   }))
 );
+const LoginRequiredModal = dynamic(() =>
+  import("@/components/landing/modals/login-required-modal").then((m) => ({
+    default: m.LoginRequiredModal,
+  }))
+);
+const ProfileIncompleteModal = dynamic(() =>
+  import("@/components/landing/modals/profile-incomplete-modal").then((m) => ({
+    default: m.ProfileIncompleteModal,
+  }))
+);
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
@@ -132,6 +157,16 @@ export default function LandingPage() {
       )
     : 0;
 
+  // Profile completion state for gating Challenge Hub
+  const profileCompletion = useProfileCompletion();
+  const {
+    isAuthenticated,
+    hasAssessment: profileHasAssessment,
+    hasCalculator: profileHasCalculator,
+    isProfileComplete,
+    refetch: refetchProfileCompletion,
+  } = profileCompletion;
+
   // Gamification state
   const gamification = useGamification();
   const {
@@ -140,34 +175,108 @@ export default function LandingPage() {
     isLoading: gamificationLoading,
   } = gamification;
 
-  // Award points when assessment is completed
+  // Track if points have been awarded this session to prevent infinite loops
+  const assessmentPointsAwarded = useRef(false);
+  const calculatorPointsAwarded = useRef(false);
+
+  // Award points when assessment is completed (once per session)
   useEffect(() => {
-    if (lifestyleScore > 0) {
+    if (lifestyleScore > 0 && !assessmentPointsAwarded.current) {
+      assessmentPointsAwarded.current = true;
       awardAssessmentPoints(25);
     }
   }, [lifestyleScore, awardAssessmentPoints]);
 
-  // Award points when calculator is completed
+  // Award points when calculator is completed (once per session)
   useEffect(() => {
-    if (calculatorResults) {
+    if (calculatorResults && !calculatorPointsAwarded.current) {
+      calculatorPointsAwarded.current = true;
       awardCalculatorPoints(25);
     }
   }, [calculatorResults, awardCalculatorPoints]);
 
   // Handler for when assessment continues to calculator
-  const handleAssessmentContinue = () => {
+  const handleAssessmentContinue = async () => {
+    // Save assessment results to database for authenticated users
+    if (isAuthenticated && profileCompletion.user) {
+      const visitorId = localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
+      // Save in background - don't await or refetch to avoid UI jank
+      saveAssessmentResults(profileCompletion.user.id, scores, visitorId);
+    }
     openModal("calculator");
   };
 
   // Handler for when calculator completes
-  const handleCalculatorComplete = (data: CalculatorFormData) => {
+  const handleCalculatorComplete = async (data: CalculatorFormData) => {
     setCalculatorData(data);
+
+    // Save calculator results to database for authenticated users
+    if (isAuthenticated && profileCompletion.user) {
+      // Calculate results using exported functions (not calling hook)
+      const bmr =
+        data.bodyFatPercent !== undefined
+          ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
+          : calculateBmrMifflinStJeor(data.gender, data.weightKg, data.heightCm, data.age);
+
+      const activityMultiplier = ACTIVITY_MULTIPLIERS[data.activityLevel].multiplier;
+      const tdee = bmr * activityMultiplier;
+      const metabolicImpactPercent = calculateMetabolicImpact(data.medicalConditions);
+      const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);
+      const goalAdjustment = GOAL_ADJUSTMENTS[data.goal].adjustment;
+      const targetCalories = Math.round(adjustedTdee + goalAdjustment);
+      const proteinGrams = calculateProteinRecommendation(data.weightKg, data.goal);
+
+      // Calculate macros from target calories
+      // Fat: 25% of target calories / 9 cal per gram
+      // Carbs: remaining calories / 4 cal per gram
+      const proteinCalories = proteinGrams * 4;
+      const fatCalories = targetCalories * 0.25;
+      const carbCalories = targetCalories - proteinCalories - fatCalories;
+      const fatsGrams = Math.round(fatCalories / 9);
+      const carbsGrams = Math.round(carbCalories / 4);
+
+      // Save in background - don't await to avoid UI jank
+      saveCalculatorResults(
+        profileCompletion.user.id,
+        {
+          gender: data.gender,
+          age: data.age,
+          weightKg: data.weightKg,
+          heightCm: data.heightCm,
+          bodyFatPercent: data.bodyFatPercent,
+          activityLevel: data.activityLevel,
+          goal: data.goal,
+          goalWeightKg: data.goalWeightKg,
+          medicalConditions: data.medicalConditions,
+        },
+        {
+          bmr: Math.round(bmr),
+          tdee: Math.round(tdee),
+          targetCalories,
+          proteinGrams,
+          carbsGrams,
+          fatsGrams,
+          metabolicImpactPercent,
+        }
+      ).then(() => {
+        // Refetch profile completion in background after save completes
+        refetchProfileCompletion();
+      });
+    }
+
     openModal("results");
   };
 
-  // Handler for body fat guide from calculator
+  // Handler for body fat guide from calculator - returns to calculator when closed
   const handleOpenBodyFatGuide = () => {
     openModal("body-fat-guide");
+  };
+
+  // Handler for closing body fat guide - returns to calculator
+  const handleCloseBodyFatGuide = (open: boolean) => {
+    if (!open) {
+      openModal("calculator");
+    }
   };
 
   // Handler for User Guide -> Challenge Hub flow
@@ -175,6 +284,39 @@ export default function LandingPage() {
     closeModal();
     setTimeout(() => openModal("challenge-hub"), 100);
   };
+
+  /**
+   * Handler for opening Challenge Hub with auth and profile checks.
+   * Flow:
+   * 1. Not authenticated -> show Login Required modal
+   * 2. Authenticated but profile incomplete -> show Profile Incomplete modal
+   * 3. Authenticated and profile complete -> show Challenge Hub modal
+   */
+  const handleOpenChallengeHub = useCallback(() => {
+    if (!isAuthenticated) {
+      openModal("login-required");
+      return;
+    }
+
+    if (!isProfileComplete) {
+      openModal("profile-incomplete");
+      return;
+    }
+
+    openModal("challenge-hub");
+  }, [isAuthenticated, isProfileComplete, openModal]);
+
+  // Handler for starting assessment from Profile Incomplete modal
+  const handleStartAssessmentFromModal = useCallback(() => {
+    openModal("assessment");
+  }, [openModal]);
+
+  // Handler for starting calculator from Profile Incomplete modal
+  const handleStartCalculatorFromModal = useCallback(() => {
+    openModal("calculator");
+  }, [openModal]);
+
+  // Profile refetch is now handled in handleCalculatorComplete after save completes
 
   return (
     <div className="relative">
@@ -200,7 +342,7 @@ export default function LandingPage() {
 
           <DayCounterTray
             currentDay={gamification.currentDay}
-            onOpenChallengeHub={() => openModal("challenge-hub")}
+            onOpenChallengeHub={handleOpenChallengeHub}
           />
 
           {/* Mobile Tray */}
@@ -208,7 +350,7 @@ export default function LandingPage() {
             currentDay={gamification.currentDay}
             totalPoints={gamification.totalPoints}
             dayStreak={gamification.dayStreak}
-            onOpenChallengeHub={() => openModal("challenge-hub")}
+            onOpenChallengeHub={handleOpenChallengeHub}
           />
         </>
       )}
@@ -560,7 +702,7 @@ export default function LandingPage() {
             </button>
 
             <button
-              onClick={() => openModal("challenge-hub")}
+              onClick={handleOpenChallengeHub}
               className="btn-athletic group flex items-center gap-3 px-8 py-5 gradient-electric text-black glow-power"
             >
               <Flame className="h-5 w-5" />
@@ -608,7 +750,7 @@ export default function LandingPage() {
         onOpenChange={(open) => !open && closeModal()}
         onOpenCalendly={() => openModal("calendly")}
         onOpenAssessment={() => openModal("assessment")}
-        onOpenChallenge={() => openModal("challenge-hub")}
+        onOpenChallenge={handleOpenChallengeHub}
       />
       <EliteLifestylesModal
         open={activeModal === "elite-lifestyles"}
@@ -639,7 +781,7 @@ export default function LandingPage() {
       />
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
-        onOpenChange={(open) => !open && closeModal()}
+        onOpenChange={handleCloseBodyFatGuide}
       />
       <UserGuideModal
         open={activeModal === "user-guide"}
@@ -650,6 +792,18 @@ export default function LandingPage() {
         open={activeModal === "challenge-hub"}
         onOpenChange={(open) => !open && closeModal()}
         gamification={gamification}
+      />
+      <LoginRequiredModal
+        open={activeModal === "login-required"}
+        onOpenChange={(open) => !open && closeModal()}
+      />
+      <ProfileIncompleteModal
+        open={activeModal === "profile-incomplete"}
+        onOpenChange={(open) => !open && closeModal()}
+        onStartAssessment={handleStartAssessmentFromModal}
+        onStartCalculator={handleStartCalculatorFromModal}
+        hasAssessment={profileHasAssessment}
+        hasCalculator={profileHasCalculator}
       />
     </div>
   );

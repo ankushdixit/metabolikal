@@ -7,7 +7,7 @@ const createMockGamification = (
   overrides?: Partial<UseGamificationReturn>
 ): UseGamificationReturn => ({
   isLoading: false,
-  visitorId: "test-visitor-id",
+  user: null,
   currentDay: 1,
   totalPoints: 100,
   dayStreak: 3,
@@ -26,13 +26,13 @@ const createMockGamification = (
     totalSleepHours: 24,
     daysCompleted: 3,
   },
-  saveTodayProgress: jest.fn(() => true),
+  saveTodayProgress: jest.fn(() => Promise.resolve(true)),
   canEditDay: jest.fn(() => true),
   awardAssessmentPoints: jest.fn(),
   awardCalculatorPoints: jest.fn(),
   getDayProgress: jest.fn(() => null),
   isDayUnlocked: jest.fn((day: number) => day <= 7),
-  resetChallenge: jest.fn(),
+  resetChallenge: jest.fn(() => Promise.resolve()),
   calculateMetricsPoints: jest.fn(() => 75),
   ...overrides,
 });

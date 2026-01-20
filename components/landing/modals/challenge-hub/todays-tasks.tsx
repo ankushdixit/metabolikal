@@ -26,7 +26,7 @@ import {
 interface TodaysTasksProps {
   currentDay: number;
   todayProgress: DayProgress | null;
-  onSave: (metrics: DailyMetrics) => boolean;
+  onSave: (metrics: DailyMetrics) => Promise<boolean>;
   canEdit: boolean;
 }
 
@@ -83,14 +83,14 @@ export function TodaysTasks({ currentDay, todayProgress, onSave, canEdit }: Toda
     setSaveError(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canEdit) {
       setSaveError(true);
       setTimeout(() => setSaveError(false), 3000);
       return;
     }
 
-    const success = onSave(metrics);
+    const success = await onSave(metrics);
     if (success) {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

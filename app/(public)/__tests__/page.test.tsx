@@ -19,6 +19,20 @@ jest.mock("next/image", () => ({
   },
 }));
 
+// Mock next/navigation
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 describe("Landing Page", () => {
   describe("Hero Section", () => {
     it("renders the main quote", () => {

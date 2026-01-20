@@ -1,6 +1,40 @@
 /* eslint-disable no-undef */
 import "@testing-library/jest-dom";
 
+// Mock Supabase client for tests
+jest.mock("@supabase/ssr", () => ({
+  createBrowserClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      onAuthStateChange: jest.fn(() => ({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      })),
+      signOut: jest.fn().mockResolvedValue({ error: null }),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      limit: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+    })),
+  })),
+  createServerClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    })),
+  })),
+}));
+
 // Mock ResizeObserver for Radix UI components
 global.ResizeObserver = class ResizeObserver {
   observe() {}

@@ -6,7 +6,8 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Handles authentication and authorization:
  * - Unauthenticated users are redirected to /login for protected routes
- * - Client role users cannot access /admin/* routes
+ * - Challenger role users can only access landing page (no dashboard/admin)
+ * - Client role users can access /dashboard/* but not /admin/*
  * - Admin role users can access both /dashboard/* and /admin/*
  * - Refreshes session on each request
  */
@@ -16,6 +17,9 @@ const protectedRoutes = ["/dashboard", "/admin"];
 
 // Routes that only admins can access
 const adminRoutes = ["/admin"];
+
+// Routes that require client or admin role (challengers cannot access)
+const clientRoutes = ["/dashboard"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -71,18 +75,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // For admin routes, verify user has admin role
-  if (isAdminRoute && user) {
+  // Check if the current path is a client route (requires client or admin role)
+  const isClientRoute = clientRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  // For protected routes that require specific roles, fetch user profile
+  if ((isAdminRoute || isClientRoute) && user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    const role = profile?.role ?? "client";
+    const role = profile?.role ?? "challenger";
 
-    if (role !== "admin") {
-      // Redirect non-admin users to dashboard with access denied message
+    // Block challengers from dashboard routes
+    if (isClientRoute && role === "challenger") {
+      // Redirect challengers to landing page with upgrade required message
+      const landingUrl = new URL("/", request.url);
+      landingUrl.searchParams.set("error", "upgrade_required");
+      return NextResponse.redirect(landingUrl);
+    }
+
+    // Block non-admins from admin routes
+    if (isAdminRoute && role !== "admin") {
+      // Redirect non-admin users to appropriate page
+      if (role === "challenger") {
+        const landingUrl = new URL("/", request.url);
+        landingUrl.searchParams.set("error", "Access denied");
+        return NextResponse.redirect(landingUrl);
+      }
       const dashboardUrl = new URL("/dashboard", request.url);
       dashboardUrl.searchParams.set("error", "Access denied");
       return NextResponse.redirect(dashboardUrl);

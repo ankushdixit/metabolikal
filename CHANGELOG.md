@@ -34,13 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Day Counter Tray**: Simplified by removing redundant "View Today's Tasks" button (both buttons did the same thing)
 
-### Planned
+- **Challenger Role & Gated Challenge Hub**: Full implementation of challenge access control:
+  - New "challenger" user role (default for new registrations)
+  - Login Required modal prompting unauthenticated users to sign in
+  - Profile Incomplete modal requiring assessment + calculator completion before challenge access
+  - Database migration adding challenger role constraint and calculator_results table
+  - Challenge progress now persists to database instead of localStorage
+  - useGamification hook refactored for database storage with proper auth integration
+  - useProfileCompletion hook for checking assessment/calculator completion status
+  - Middleware blocks challengers from /dashboard routes (redirects to landing with upgrade_required error)
 
-- **Challenger Role Feature**: Spec created for gating challenge hub behind authentication:
-  - New "challenger" user role (default for registrations)
-  - Profile completion flow (assessment + calculator required)
-  - Database persistence for challenge progress
-  - Admin management of challengers with upgrade to client capability
+- **Admin Challengers Management**: New admin page for managing challenge participants:
+  - Challengers list page (`/admin/challengers`) with search and pagination
+  - Stats display showing days completed, total points, profile completion status
+  - "Upgrade to Client" action to convert challengers to full clients
+  - Last active date tracking from challenge progress entries
 
 ### Added (Previous)
 
