@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Food Database Management**: Admin interface for managing food items used in diet plans:
+  - Food database page (`/admin/food-database`) with searchable list, pagination (10 items/page)
+  - Create food item page (`/admin/food-database/create`) with full form validation
+  - Edit food item page (`/admin/food-database/edit/[id]`) for updating existing items
+  - Food item form with all nutritional fields: name, calories, protein, carbs, fats, serving size
+  - Vegetarian flag with leaf badge indicator in list view
+  - Multi-select meal type tags (breakfast, lunch, dinner, snack, pre-workout, post-workout)
+  - Delete protection checking usage in diet_plans and food_alternatives before allowing deletion
+  - Zod validation schema for food items with proper constraints
+  - Navigation item added to admin sidebar (desktop and mobile)
+  - 44 new tests for food item form component and validation schema
+  - Athletic design matching existing admin pages
+
 - **Admin Dashboard & Client Management**: Complete admin interface for coaches to manage clients:
   - Admin layout with fixed sidebar navigation (Dashboard, Clients, Pending Reviews)
   - Admin dashboard home (`/admin`) with stats cards showing Total Clients, Pending Reviews, Flagged Clients

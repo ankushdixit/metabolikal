@@ -200,3 +200,63 @@ export const checkInStep1Schema = checkInSchema.pick({
   arms_cm: true,
   thighs_cm: true,
 });
+
+/**
+ * Meal types for food items.
+ */
+export const MEAL_TYPES = [
+  { value: "breakfast", label: "Breakfast" },
+  { value: "lunch", label: "Lunch" },
+  { value: "dinner", label: "Dinner" },
+  { value: "snack", label: "Snack" },
+  { value: "pre-workout", label: "Pre-Workout" },
+  { value: "post-workout", label: "Post-Workout" },
+] as const;
+
+export type MealType = (typeof MEAL_TYPES)[number]["value"];
+
+/**
+ * Food item validation schema.
+ * Validates food item data for the admin food database.
+ */
+export const foodItemSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: "Name is required" })
+    .max(100, { message: "Name must be 100 characters or less" }),
+  calories: z
+    .number({
+      message: "Calories is required and must be a number",
+    })
+    .min(0, { message: "Calories must be at least 0" })
+    .max(5000, { message: "Calories must be 5000 or less" }),
+  protein: z
+    .number({
+      message: "Protein is required and must be a number",
+    })
+    .min(0, { message: "Protein must be at least 0" })
+    .max(500, { message: "Protein must be 500g or less" }),
+  carbs: z
+    .number()
+    .min(0, { message: "Carbs must be at least 0" })
+    .max(500, { message: "Carbs must be 500g or less" })
+    .optional()
+    .nullable(),
+  fats: z
+    .number()
+    .min(0, { message: "Fats must be at least 0" })
+    .max(500, { message: "Fats must be 500g or less" })
+    .optional()
+    .nullable(),
+  serving_size: z
+    .string()
+    .min(1, { message: "Serving size is required" })
+    .max(50, { message: "Serving size must be 50 characters or less" }),
+  is_vegetarian: z.boolean(),
+  meal_types: z
+    .array(z.enum(["breakfast", "lunch", "dinner", "snack", "pre-workout", "post-workout"]))
+    .optional()
+    .nullable(),
+});
+
+export type FoodItemFormData = z.infer<typeof foodItemSchema>;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, ClipboardCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, UtensilsCrossed, LogOut } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
 /**
@@ -27,6 +27,11 @@ const navItems = [
     label: "Pending Reviews",
     icon: ClipboardCheck,
     href: "/admin/pending-reviews",
+  },
+  {
+    label: "Food Database",
+    icon: UtensilsCrossed,
+    href: "/admin/food-database",
   },
 ];
 

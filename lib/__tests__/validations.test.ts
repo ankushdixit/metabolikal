@@ -1,4 +1,4 @@
-import { calculatorFormSchema, assessmentResultsSchema } from "../validations";
+import { calculatorFormSchema, assessmentResultsSchema, foodItemSchema } from "../validations";
 
 describe("calculatorFormSchema", () => {
   const validData = {
@@ -259,5 +259,229 @@ describe("assessmentResultsSchema", () => {
       health_score: 101,
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("foodItemSchema", () => {
+  const validData = {
+    name: "Grilled Chicken Breast",
+    calories: 165,
+    protein: 31,
+    serving_size: "100g",
+    is_vegetarian: false,
+  };
+
+  it("validates correct data", () => {
+    const result = foodItemSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("validates with optional fields", () => {
+    const result = foodItemSchema.safeParse({
+      ...validData,
+      carbs: 0,
+      fats: 3.6,
+      meal_types: ["lunch", "dinner"],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  describe("name validation", () => {
+    it("rejects empty name", () => {
+      const result = foodItemSchema.safeParse({ ...validData, name: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects name over 100 characters", () => {
+      const result = foodItemSchema.safeParse({
+        ...validData,
+        name: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid name", () => {
+      const result = foodItemSchema.safeParse({ ...validData, name: "Salmon Fillet" });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("calories validation", () => {
+    it("rejects negative calories", () => {
+      const result = foodItemSchema.safeParse({ ...validData, calories: -1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects calories above 5000", () => {
+      const result = foodItemSchema.safeParse({ ...validData, calories: 5001 });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid calories", () => {
+      const result = foodItemSchema.safeParse({ ...validData, calories: 200 });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts zero calories", () => {
+      const result = foodItemSchema.safeParse({ ...validData, calories: 0 });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("protein validation", () => {
+    it("rejects negative protein", () => {
+      const result = foodItemSchema.safeParse({ ...validData, protein: -1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects protein above 500g", () => {
+      const result = foodItemSchema.safeParse({ ...validData, protein: 501 });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid protein", () => {
+      const result = foodItemSchema.safeParse({ ...validData, protein: 25 });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("carbs validation", () => {
+    it("is optional", () => {
+      const result = foodItemSchema.safeParse({ ...validData, carbs: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts null", () => {
+      const result = foodItemSchema.safeParse({ ...validData, carbs: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects negative carbs", () => {
+      const result = foodItemSchema.safeParse({ ...validData, carbs: -1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects carbs above 500g", () => {
+      const result = foodItemSchema.safeParse({ ...validData, carbs: 501 });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid carbs", () => {
+      const result = foodItemSchema.safeParse({ ...validData, carbs: 30 });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("fats validation", () => {
+    it("is optional", () => {
+      const result = foodItemSchema.safeParse({ ...validData, fats: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts null", () => {
+      const result = foodItemSchema.safeParse({ ...validData, fats: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects negative fats", () => {
+      const result = foodItemSchema.safeParse({ ...validData, fats: -1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects fats above 500g", () => {
+      const result = foodItemSchema.safeParse({ ...validData, fats: 501 });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid fats", () => {
+      const result = foodItemSchema.safeParse({ ...validData, fats: 10 });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("serving_size validation", () => {
+    it("rejects empty serving size", () => {
+      const result = foodItemSchema.safeParse({ ...validData, serving_size: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects serving size over 50 characters", () => {
+      const result = foodItemSchema.safeParse({
+        ...validData,
+        serving_size: "a".repeat(51),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid serving sizes", () => {
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: "100g" }).success).toBe(true);
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: "1 cup" }).success).toBe(true);
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: "1 medium" }).success).toBe(
+        true
+      );
+    });
+  });
+
+  describe("is_vegetarian validation", () => {
+    it("is required", () => {
+      const result = foodItemSchema.safeParse({
+        name: "Test",
+        calories: 100,
+        protein: 10,
+        serving_size: "100g",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts true", () => {
+      const result = foodItemSchema.safeParse({ ...validData, is_vegetarian: true });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts false", () => {
+      const result = foodItemSchema.safeParse({ ...validData, is_vegetarian: false });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("meal_types validation", () => {
+    it("is optional", () => {
+      const result = foodItemSchema.safeParse({ ...validData, meal_types: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts null", () => {
+      const result = foodItemSchema.safeParse({ ...validData, meal_types: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts empty array", () => {
+      const result = foodItemSchema.safeParse({ ...validData, meal_types: [] });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts valid meal types", () => {
+      const validTypes = ["breakfast", "lunch", "dinner", "snack", "pre-workout", "post-workout"];
+      validTypes.forEach((type) => {
+        const result = foodItemSchema.safeParse({ ...validData, meal_types: [type] });
+        expect(result.success).toBe(true);
+      });
+    });
+
+    it("accepts multiple meal types", () => {
+      const result = foodItemSchema.safeParse({
+        ...validData,
+        meal_types: ["breakfast", "snack"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid meal types", () => {
+      const result = foodItemSchema.safeParse({
+        ...validData,
+        meal_types: ["invalid_type"],
+      });
+      expect(result.success).toBe(false);
+    });
   });
 });
