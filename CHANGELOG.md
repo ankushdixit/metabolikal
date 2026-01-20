@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Check-In Module**: Weekly check-in system for client progress tracking:
+  - Multi-step check-in form (`/dashboard/checkin`) with 4 steps:
+    - Step 1: Measurements - weight (required), body fat %, body measurements (chest, waist, hips, arms, thighs)
+    - Step 2: Progress Photos - three upload slots (front, side, back) with Supabase Storage integration
+    - Step 3: Subjective Ratings - energy, sleep, stress, mood on 1-10 scale with sliders
+    - Step 4: Compliance & Notes - diet/workout adherence percentages, challenges, progress notes, questions for coach
+  - Photo upload component with file validation (jpg/png/webp, max 10MB), preview, and remove functionality
+  - Duplicate check-in warning when submitting multiple times in the same week
+  - Check-in history page (`/dashboard/checkin/history`) with expandable entries
+  - Expandable history items showing all measurements, photos with lightbox, ratings, compliance, and notes
+  - Color-coded ratings and compliance indicators (green/yellow/red based on values)
+  - Zod validation schema for check-in form data
+  - 30 new tests for check-in components
+
 - **Workout Module**: Complete workout tracking system for clients:
   - Workout plan page (`/dashboard/workout`) displaying exercises grouped by section (Warmup, Main, Cooldown)
   - Exercise items showing name, sets/reps or duration, rest intervals with expand/collapse for instructions

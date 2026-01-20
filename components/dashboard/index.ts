@@ -9,3 +9,5 @@ export { TodaysLogs } from "./todays-logs";
 export { WorkoutProgress } from "./workout-progress";
 export { WorkoutItem } from "./workout-item";
 export { WorkoutSection, SECTION_CONFIG } from "./workout-section";
+export { PhotoUpload } from "./photo-upload";
+export { CheckInHistoryItem } from "./checkin-history-item";
