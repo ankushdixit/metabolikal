@@ -7,3 +7,4 @@ export { CheckInReview } from "./checkin-review";
 export { ProgressCharts } from "./progress-charts";
 export { PhotosGallery } from "./photos-gallery";
 export { PlansSummary } from "./plans-summary";
+export { FoodItemForm } from "./food-item-form";
