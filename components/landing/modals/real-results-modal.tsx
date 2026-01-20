@@ -15,19 +15,25 @@ interface RealResultsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const YOUTUBE_SHORTS = [
+  { id: "GKbzoiKoQzM", title: "Client Transformation Story" },
+  { id: "QutRfBc9jM8", title: "Client Transformation Story" },
+  { id: "FASef8aqdfM", title: "Client Transformation Story" },
+  { id: "js1TlePCC7k", title: "Client Transformation Story" },
+  { id: "bCTPI9SvZC0", title: "Client Transformation Story" },
+  { id: "BTOZPZZi5Dk", title: "Client Transformation Story" },
+  { id: "JiI63Walf4g", title: "Client Transformation Story" },
+  { id: "4YWgnJoAH9w", title: "Client Transformation Story" },
+  { id: "KVeFo0IoBA8", title: "Client Transformation Story" },
+  { id: "kyxYUoQRE2M", title: "Client Transformation Story" },
+  { id: "uDpy1Gh8bjs", title: "Client Transformation Story" },
+  { id: "mfPiQjgGzbo", title: "Client Transformation Story" },
+];
+
 const YOUTUBE_VIDEOS = [
-  {
-    id: "VIDEO_ID_1",
-    title: "Client Transformation Story 1",
-  },
-  {
-    id: "VIDEO_ID_2",
-    title: "Client Transformation Story 2",
-  },
-  {
-    id: "VIDEO_ID_3",
-    title: "Metabolic Health Insights",
-  },
+  { id: "K-HAAkZ1MzI", title: "Client Testimonial" },
+  { id: "KKejfj9_ZIA", title: "Client Testimonial" },
+  { id: "qsTew1fhnPY", title: "Client Testimonial" },
 ];
 
 const INSTAGRAM_CARDS = [
@@ -65,17 +71,17 @@ export function RealResultsModal({ open, onOpenChange }: RealResultsModalProps) 
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-1 gradient-electric" />
                 <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                  Watch Real Client Transformations
+                  Client Transformation Stories
                 </h3>
               </div>
               <p className="text-muted-foreground font-bold text-sm mb-4">
-                Real transformation stories and metabolic health insights
+                Real transformation stories from our community
               </p>
 
               {/* Horizontally scrollable shorts container */}
               <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto overflow-y-hidden">
                 <div className="flex gap-3 sm:gap-4 pb-2">
-                  {YOUTUBE_VIDEOS.map((video) => (
+                  {YOUTUBE_SHORTS.map((video) => (
                     <div
                       key={video.id}
                       className="w-[140px] sm:w-[180px] h-[250px] sm:h-[320px] bg-secondary flex-shrink-0 rounded-lg overflow-hidden"
@@ -94,6 +100,32 @@ export function RealResultsModal({ open, onOpenChange }: RealResultsModalProps) 
               <p className="text-xs text-muted-foreground mt-2">
                 Swipe to see more transformations
               </p>
+            </section>
+
+            {/* Full Testimonials Section */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Client Testimonials
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {YOUTUBE_VIDEOS.map((video) => (
+                  <div
+                    key={video.id}
+                    className="relative w-full aspect-video bg-secondary rounded-lg overflow-hidden"
+                  >
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${video.id}`}
+                      title={video.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                ))}
+              </div>
             </section>
 
             {/* Main transformation image */}

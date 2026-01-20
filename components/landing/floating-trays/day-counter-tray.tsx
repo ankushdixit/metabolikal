@@ -1,18 +1,13 @@
 "use client";
 
-import { Calendar, ClipboardList, Target } from "lucide-react";
+import { Calendar, Target } from "lucide-react";
 
 interface DayCounterTrayProps {
   currentDay: number;
-  onOpenTodaysTasks: () => void;
   onOpenChallengeHub: () => void;
 }
 
-export function DayCounterTray({
-  currentDay,
-  onOpenTodaysTasks,
-  onOpenChallengeHub,
-}: DayCounterTrayProps) {
+export function DayCounterTray({ currentDay, onOpenChallengeHub }: DayCounterTrayProps) {
   return (
     <div className="fixed right-4 bottom-4 z-40 hidden md:block">
       <div className="bg-card border border-border shadow-lg w-48">
@@ -34,16 +29,8 @@ export function DayCounterTray({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="p-3 pt-0 space-y-2">
-          <button
-            onClick={onOpenTodaysTasks}
-            className="btn-athletic w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary text-foreground hover:bg-secondary/80 text-sm"
-          >
-            <ClipboardList className="h-4 w-4 text-primary" />
-            View Today&apos;s Tasks
-          </button>
-
+        {/* Action Button */}
+        <div className="p-3 pt-0">
           <button
             onClick={onOpenChallengeHub}
             className="btn-athletic w-full flex items-center justify-center gap-2 px-4 py-2.5 gradient-electric text-black text-sm"

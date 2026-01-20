@@ -23,7 +23,12 @@ import {
   ChevronRight,
   HelpCircle,
 } from "lucide-react";
-import { QuickAccessTray, PointsTray, DayCounterTray } from "@/components/landing/floating-trays";
+import {
+  QuickAccessTray,
+  PointsTray,
+  DayCounterTray,
+  MobileChallengeTray,
+} from "@/components/landing/floating-trays";
 import { useModalContext } from "@/contexts/modal-context";
 import { useAssessment } from "@/hooks/use-assessment";
 import { useCalculator, calculateHealthScore, Goal } from "@/hooks/use-calculator";
@@ -195,7 +200,14 @@ export default function LandingPage() {
 
           <DayCounterTray
             currentDay={gamification.currentDay}
-            onOpenTodaysTasks={() => openModal("challenge-hub")}
+            onOpenChallengeHub={() => openModal("challenge-hub")}
+          />
+
+          {/* Mobile Tray */}
+          <MobileChallengeTray
+            currentDay={gamification.currentDay}
+            totalPoints={gamification.totalPoints}
+            dayStreak={gamification.dayStreak}
             onOpenChallengeHub={() => openModal("challenge-hub")}
           />
         </>
@@ -264,14 +276,14 @@ export default function LandingPage() {
 
               {/* Third CTA */}
               <div className="animate-slide-power delay-400 mt-6">
-                <button
-                  onClick={() => openModal("challenge-hub")}
-                  className="text-sm font-bold text-primary hover:text-accent tracking-wider uppercase group flex items-center gap-2"
+                <a
+                  href="#challenge"
+                  className="text-sm font-bold text-primary hover:text-accent tracking-wider uppercase group flex items-center gap-2 cursor-pointer"
                 >
                   <Trophy className="h-4 w-4" />
                   Start 30-Day Challenge
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </button>
+                </a>
               </div>
             </div>
 
@@ -596,6 +608,7 @@ export default function LandingPage() {
         onOpenChange={(open) => !open && closeModal()}
         onOpenCalendly={() => openModal("calendly")}
         onOpenAssessment={() => openModal("assessment")}
+        onOpenChallenge={() => openModal("challenge-hub")}
       />
       <EliteLifestylesModal
         open={activeModal === "elite-lifestyles"}

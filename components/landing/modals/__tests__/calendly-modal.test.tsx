@@ -24,8 +24,8 @@ describe("CalendlyModal", () => {
 
   it("renders the Calendly embed container", () => {
     render(<CalendlyModal {...defaultProps} />);
-    const container = document.getElementById("calendly-embed");
-    expect(container).toBeInTheDocument();
+    const embedContainer = screen.getByTestId("calendly-embed");
+    expect(embedContainer).toBeInTheDocument();
   });
 
   it("does not render when closed", () => {

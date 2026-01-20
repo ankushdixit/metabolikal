@@ -39,13 +39,20 @@ describe("Landing Page", () => {
       expect(screen.getByText(/high-performing professionals/i)).toBeInTheDocument();
     });
 
-    it("renders three CTA buttons", () => {
+    it("renders three CTA elements", () => {
       renderWithProvider(<LandingPage />);
       expect(
         screen.getByRole("button", { name: /Get Free Strategy Session/i })
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Take Assessment/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Start 30-Day Challenge/i })).toBeInTheDocument();
+      // "Start 30-Day Challenge" is now an anchor link that scrolls to the challenge section
+      expect(screen.getByRole("link", { name: /Start 30-Day Challenge/i })).toBeInTheDocument();
+    });
+
+    it("Start 30-Day Challenge link points to challenge section", () => {
+      renderWithProvider(<LandingPage />);
+      const challengeLink = screen.getByRole("link", { name: /Start 30-Day Challenge/i });
+      expect(challengeLink).toHaveAttribute("href", "#challenge");
     });
 
     it("renders feature stats box with correct values", () => {
