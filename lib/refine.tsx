@@ -189,7 +189,6 @@ export const refineAuthProvider: AuthProvider = {
   },
 
   onError: async (error) => {
-    console.error("Auth error:", error);
     return { error };
   },
 };
