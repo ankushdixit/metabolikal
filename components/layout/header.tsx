@@ -1,42 +1,39 @@
 "use client";
 
-import { Menu, Search, Bell, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bell, User } from "lucide-react";
+import Link from "next/link";
 
 /**
- * Dashboard header component
- * Provides navigation, search, and user actions
+ * Dashboard header component (desktop only)
+ * Athletic-styled header with notifications
  */
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center gap-4 px-4">
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
+    <header className="hidden lg:block sticky top-0 z-40 bg-card border-b border-border">
+      <div className="flex h-14 items-center justify-between px-6">
+        {/* Page breadcrumb area - can be used for dynamic page titles */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-1 gradient-electric" />
+          <span className="text-xs font-black tracking-[0.15em] text-primary uppercase">
+            Dashboard
+          </span>
+        </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="search"
-                placeholder="Search..."
-                className="w-full rounded-md border bg-background pl-8 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                aria-label="Search"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Settings">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            aria-label="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+          </button>
+          <Link
+            href="/dashboard/profile"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            aria-label="Profile"
+          >
+            <User className="h-5 w-5" />
+          </Link>
         </div>
       </div>
     </header>

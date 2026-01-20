@@ -1,9 +1,27 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Sidebar } from "../sidebar";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
-  usePathname: jest.fn(() => "/"),
+  usePathname: jest.fn(() => "/dashboard"),
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+  })),
+}));
+
+// Mock next/image
+jest.mock("next/image", () => ({
+  __esModule: true,
+  default: (props: { alt: string }) => <img alt={props.alt} />,
+}));
+
+// Mock Supabase auth
+jest.mock("@/lib/auth", () => ({
+  createBrowserSupabaseClient: jest.fn(() => ({
+    auth: {
+      signOut: jest.fn().mockResolvedValue({}),
+    },
+  })),
 }));
 
 describe("Sidebar Component", () => {
@@ -12,10 +30,14 @@ describe("Sidebar Component", () => {
     expect(container.querySelector("aside")).toBeInTheDocument();
   });
 
-  it("renders Dashboard navigation link", () => {
+  it("renders all navigation items", () => {
     render(<Sidebar />);
-    // Dashboard appears twice (logo + nav), so use getAllByText
-    expect(screen.getAllByText("Dashboard")).toHaveLength(2);
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Diet Plan")).toBeInTheDocument();
+    expect(screen.getByText("Workout Plan")).toBeInTheDocument();
+    expect(screen.getByText("Check-In")).toBeInTheDocument();
+    expect(screen.getByText("Progress")).toBeInTheDocument();
+    expect(screen.getByText("Profile")).toBeInTheDocument();
   });
 
   it("has accessible navigation landmark", () => {
@@ -25,43 +47,37 @@ describe("Sidebar Component", () => {
 
   it("renders links with correct href attributes", () => {
     render(<Sidebar />);
-    const dashboardLinks = screen.getAllByText("Dashboard");
-    // Both should link to root
-    dashboardLinks.forEach((link) => {
-      const anchor = link.closest("a");
-      expect(anchor).toHaveAttribute("href", "/");
-    });
+    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    expect(dashboardLink).toHaveAttribute("href", "/dashboard");
+
+    const dietLink = screen.getByText("Diet Plan").closest("a");
+    expect(dietLink).toHaveAttribute("href", "/dashboard/diet");
+
+    const workoutLink = screen.getByText("Workout Plan").closest("a");
+    expect(workoutLink).toHaveAttribute("href", "/dashboard/workout");
   });
 
-  it("marks dashboard as active on root path", () => {
+  it("marks dashboard as active on dashboard path", () => {
     const { usePathname } = require("next/navigation");
-    usePathname.mockReturnValue("/");
+    usePathname.mockReturnValue("/dashboard");
 
     render(<Sidebar />);
 
-    // Get the second "Dashboard" link (the one in navigation, not the logo)
-    const dashboardLink = screen.getAllByText("Dashboard")[1]?.closest("a");
+    const dashboardLink = screen.getByText("Dashboard").closest("a");
     expect(dashboardLink).toHaveAttribute("aria-current", "page");
   });
 
-  it("has hidden class for mobile viewports", () => {
+  it("has hidden class for mobile viewports (lg breakpoint)", () => {
     const { container } = render(<Sidebar />);
     const aside = container.querySelector("aside");
     expect(aside).toHaveClass("hidden");
+    expect(aside).toHaveClass("lg:flex");
   });
 
-  it("has md:flex for desktop viewports", () => {
-    const { container } = render(<Sidebar />);
-    const aside = container.querySelector("aside");
-    expect(aside).toHaveClass("md:flex");
-  });
-
-  it("renders brand logo link in header", () => {
+  it("renders brand logo with correct styling", () => {
     render(<Sidebar />);
-    const brandLinks = screen.getAllByText("Dashboard");
-    // First one is in the header/logo area
-    const logoLink = brandLinks[0]?.closest("a");
-    expect(logoLink).toHaveAttribute("href", "/");
+    expect(screen.getByAltText("Metabolikal")).toBeInTheDocument();
+    expect(screen.getByText("Client Portal")).toBeInTheDocument();
   });
 
   it("has proper sidebar width", () => {
@@ -74,5 +90,37 @@ describe("Sidebar Component", () => {
     const { container } = render(<Sidebar />);
     const aside = container.querySelector("aside");
     expect(aside).toHaveClass("border-r");
+  });
+
+  it("renders logout button", () => {
+    render(<Sidebar />);
+    expect(screen.getByText("Logout")).toBeInTheDocument();
+  });
+
+  it("calls signOut when logout button is clicked", async () => {
+    const { createBrowserSupabaseClient } = require("@/lib/auth");
+    const mockSignOut = jest.fn().mockResolvedValue({});
+    createBrowserSupabaseClient.mockReturnValue({
+      auth: { signOut: mockSignOut },
+    });
+
+    render(<Sidebar />);
+    const logoutButton = screen.getByText("Logout");
+    fireEvent.click(logoutButton);
+
+    expect(mockSignOut).toHaveBeenCalled();
+  });
+
+  it("renders gradient electric accent bar", () => {
+    const { container } = render(<Sidebar />);
+    const accentBar = container.querySelector(".gradient-electric");
+    expect(accentBar).toBeInTheDocument();
+  });
+
+  it("renders athletic-styled branding", () => {
+    render(<Sidebar />);
+    // Check for the gradient text in logo
+    const logo = screen.getByText(/METABOLI/);
+    expect(logo).toBeInTheDocument();
   });
 });
