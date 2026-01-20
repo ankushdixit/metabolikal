@@ -41,8 +41,8 @@ const DialogContent = React.forwardRef<
         // Mobile-first: full screen on small devices, centered modal on larger screens
         "fixed inset-0 z-50 w-full border bg-background shadow-lg duration-200",
         // Mobile: full screen with no transforms
-        // Tablet/Desktop: centered with transforms
-        "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:max-h-[90vh]",
+        // Tablet/Desktop: centered with transforms and max-width
+        "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:max-h-[90vh] sm:w-full sm:max-w-lg",
         // Animations
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         // Slide animation only on larger screens

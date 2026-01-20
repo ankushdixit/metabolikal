@@ -150,7 +150,7 @@ export function TodaysLogs({ logs, onDeleteLog, isDeleting = false }: TodaysLogs
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <DialogContent className="max-w-sm bg-card p-0">
+        <DialogContent className="sm:max-w-sm bg-card p-0">
           <div className="h-1 bg-red-500" />
           <DialogHeader className="p-6 pb-4">
             <DialogTitle className="text-xl font-black uppercase tracking-tight">

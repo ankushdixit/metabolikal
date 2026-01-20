@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Food Logging Functionality**: Connected "Log Food" button on client dashboard to actual food logging:
+  - Integrated FoodSearch and FoodLogForm components with dashboard
+  - Added food search query with database lookup
+  - Implemented handleLogFood for logging from database items
+  - Implemented handleLogCustomFood for manual food entry
+  - Calorie and protein totals update after logging
+
+### Changed
+
+- **Seed Data for All Test Users**: Updated seed scripts to create data for all 5 test users:
+  - `seed-nutrition-data.sql` now creates diet plans with food alternatives for all clients
+  - `seed-workout-data.sql` now creates detailed workout plans for all clients
+  - Both scripts use dynamic loops instead of single-user hardcoded IDs
+
+- **Cyclic Day Number Calculation**: Diet and workout plans now cycle through 7-day program:
+  - Day 8 becomes Day 1, Day 15 becomes Day 1, etc.
+  - Fixed issue where users enrolled for 8+ days saw "No Diet Plan Available"
+  - Applied to dashboard, diet page, and workout page
+
+### Fixed
+
+- **Hydration Error**: Added `suppressHydrationWarning` to html and body tags in root layout to prevent hydration errors from browser extensions adding attributes
+
+- **Dialog Positioning on Mobile**: Fixed dialogs being stuck to left side on mobile instead of full-screen:
+  - Added `sm:` prefix to max-width classes in 5 dialog components
+  - Dialogs now properly full-screen on mobile, centered on desktop
+  - Affected: food-search, food-log-form, todays-logs, photos-gallery, food-database delete dialog
+
+- **Dialog Width on Desktop**: Added default `sm:max-w-lg` to base DialogContent component so dialogs have sensible max-width without explicit class
+
+- **Check-In Form Submission**: Fixed "Submit Check-In" button not working on step 4:
+  - Added parseOptionalNumber helper to handle empty number inputs returning NaN
+  - Empty optional measurement fields now correctly pass validation
+  - Weight field still properly validates as required
+
 - **Sentry Error Monitoring**: Integrated Sentry for production error tracking:
   - Client-side error capture with session replay
   - Server-side error tracking with sensitive data redaction

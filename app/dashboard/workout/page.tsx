@@ -70,15 +70,17 @@ export default function WorkoutPage() {
     },
   });
 
-  // Calculate day number from profile creation date
+  // Calculate day number from profile creation date (cycles through 7-day plan)
   useEffect(() => {
     const profile = profileQuery.query.data?.data?.[0];
     if (profile?.created_at) {
       const today = new Date();
       const startDate = new Date(profile.created_at);
-      const calculatedDay =
+      const totalDays =
         Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      setDayNumber(calculatedDay);
+      // Cycle through 7-day plan: day 8 becomes day 1, day 15 becomes day 1, etc.
+      const cyclicDay = ((totalDays - 1) % 7) + 1;
+      setDayNumber(cyclicDay);
     }
   }, [profileQuery.query.data]);
 

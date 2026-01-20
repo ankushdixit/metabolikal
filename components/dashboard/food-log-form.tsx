@@ -90,7 +90,7 @@ export function FoodLogForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md bg-card p-0">
+      <DialogContent className="sm:max-w-md bg-card p-0">
         {/* Top accent */}
         <div className="h-1 gradient-electric" />
 
