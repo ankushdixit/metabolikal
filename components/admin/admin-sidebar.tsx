@@ -4,7 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, ClipboardCheck, UtensilsCrossed, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  ClipboardCheck,
+  UtensilsCrossed,
+  LogOut,
+  Trophy,
+} from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
 /**
@@ -22,6 +29,11 @@ const navItems = [
     label: "Clients",
     icon: Users,
     href: "/admin/clients",
+  },
+  {
+    label: "Challengers",
+    icon: Trophy,
+    href: "/admin/challengers",
   },
   {
     label: "Pending Reviews",

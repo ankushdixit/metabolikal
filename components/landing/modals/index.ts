@@ -11,3 +11,5 @@ export { CalculatorModal } from "./calculator-modal";
 export { ResultsModal } from "./results-modal";
 export { UserGuideModal } from "./user-guide-modal";
 export { ChallengeHubModal } from "./challenge-hub-modal";
+export { LoginRequiredModal } from "./login-required-modal";
+export { ProfileIncompleteModal } from "./profile-incomplete-modal";

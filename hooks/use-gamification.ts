@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { createBrowserSupabaseClient } from "@/lib/auth";
+import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 // Constants
-const CHALLENGE_DATA_KEY = "metabolikal_challenge_data";
-const VISITOR_ID_KEY = "metabolikal_visitor_id";
 const MAX_DAILY_POINTS = 150;
 const DAYS_IN_WEEK = 7;
 const TOTAL_CHALLENGE_DAYS = 30;
@@ -30,7 +30,7 @@ export interface DayProgress {
 }
 
 export interface ChallengeData {
-  visitorId: string;
+  userId: string;
   startDate: string;
   dailyProgress: Record<number, DayProgress>;
   assessmentPoints: number;
@@ -41,7 +41,7 @@ export interface ChallengeData {
 
 export interface GamificationState {
   isLoading: boolean;
-  visitorId: string | null;
+  user: User | null;
   currentDay: number;
   totalPoints: number;
   dayStreak: number;
@@ -191,18 +191,6 @@ function calculateCumulativeStats(progress: Record<number, DayProgress>) {
   };
 }
 
-function getDefaultChallengeData(visitorId: string): ChallengeData {
-  return {
-    visitorId,
-    startDate: getDateString(),
-    dailyProgress: {},
-    assessmentPoints: 0,
-    calculatorPoints: 0,
-    lastVisitDate: "",
-    dailyVisitPointsAwarded: false,
-  };
-}
-
 function getEmptyDayProgress(dayNumber: number): DayProgress {
   return {
     dayNumber,
@@ -219,66 +207,188 @@ function getEmptyDayProgress(dayNumber: number): DayProgress {
   };
 }
 
-// Main hook
+interface ChallengeProgressRow {
+  id: string;
+  user_id: string;
+  day_number: number;
+  logged_date: string;
+  steps: number;
+  water_liters: number;
+  floors_climbed: number;
+  protein_grams: number;
+  sleep_hours: number;
+  feeling: string | null;
+  tomorrow_focus: string | null;
+  points_earned: number;
+}
+
+// Main hook - now requires authentication
 export function useGamification() {
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
   const [dailyVisitPoints, setDailyVisitPoints] = useState(0);
+  const [startDate, setStartDate] = useState<string>(getDateString());
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      localStorage.setItem(VISITOR_ID_KEY, visitorId);
-    }
+  // Memoize Supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
-    const storedData = localStorage.getItem(CHALLENGE_DATA_KEY);
-    let data: ChallengeData;
+  // Load data from database
+  const loadChallengeData = useCallback(
+    async (userId: string) => {
+      if (!supabase) return null;
 
-    if (storedData) {
       try {
-        data = JSON.parse(storedData);
-        // Ensure visitorId matches
-        if (data.visitorId !== visitorId) {
-          data.visitorId = visitorId;
+        // Fetch all challenge progress for this user
+        const { data: progressData, error } = await supabase
+          .from("challenge_progress")
+          .select("*")
+          .eq("user_id", userId)
+          .order("day_number", { ascending: true });
+
+        if (error) {
+          console.error("Error loading challenge progress:", error);
+          return null;
         }
-      } catch {
-        data = getDefaultChallengeData(visitorId);
+
+        // Convert database rows to DayProgress records
+        const dailyProgress: Record<number, DayProgress> = {};
+        let earliestDate = getDateString();
+
+        if (progressData && progressData.length > 0) {
+          progressData.forEach((row: ChallengeProgressRow) => {
+            if (row.day_number !== null) {
+              dailyProgress[row.day_number] = {
+                dayNumber: row.day_number,
+                loggedDate: row.logged_date,
+                metrics: {
+                  steps: row.steps || 0,
+                  waterLiters: Number(row.water_liters) || 0,
+                  floorsClimbed: row.floors_climbed || 0,
+                  proteinGrams: row.protein_grams || 0,
+                  sleepHours: Number(row.sleep_hours) || 0,
+                  feeling: row.feeling || undefined,
+                  tomorrowFocus: row.tomorrow_focus || undefined,
+                },
+                pointsEarned: row.points_earned || 0,
+                hasData: true,
+              };
+
+              // Track earliest date to calculate start date
+              if (row.logged_date < earliestDate) {
+                earliestDate = row.logged_date;
+              }
+            }
+          });
+        }
+
+        // Calculate start date based on day 1 entry or current date
+        const calculatedStartDate =
+          progressData && progressData.length > 0
+            ? calculateStartDateFromProgress(dailyProgress)
+            : getDateString();
+
+        return {
+          userId,
+          startDate: calculatedStartDate,
+          dailyProgress,
+          assessmentPoints: 0,
+          calculatorPoints: 0,
+          lastVisitDate: getDateString(),
+          dailyVisitPointsAwarded: false,
+        };
+      } catch (error) {
+        console.error("Error loading challenge data:", error);
+        return null;
       }
-    } else {
-      data = getDefaultChallengeData(visitorId);
+    },
+    [supabase]
+  );
+
+  // Calculate start date from the earliest day 1 entry
+  function calculateStartDateFromProgress(progress: Record<number, DayProgress>): string {
+    const day1 = progress[1];
+    if (day1) {
+      return day1.loggedDate;
     }
-
-    // Award daily visit points (10 pts, once per day)
-    const today = getDateString();
-    if (data.lastVisitDate !== today) {
-      data.lastVisitDate = today;
-      data.dailyVisitPointsAwarded = true;
-      setDailyVisitPoints(10);
-    } else if (data.dailyVisitPointsAwarded) {
-      setDailyVisitPoints(10);
+    // If no day 1, estimate from the earliest entry
+    const entries = Object.values(progress).sort((a, b) => a.dayNumber - b.dayNumber);
+    if (entries.length > 0) {
+      const earliest = entries[0];
+      const date = new Date(earliest.loggedDate);
+      date.setDate(date.getDate() - (earliest.dayNumber - 1));
+      return getDateString(date);
     }
+    return getDateString();
+  }
 
-    setChallengeData(data);
-    setIsLoading(false);
-
-    // Save to localStorage
-    localStorage.setItem(CHALLENGE_DATA_KEY, JSON.stringify(data));
-  }, []);
-
-  // Persist data to localStorage on changes
+  // Initialize and subscribe to auth changes
   useEffect(() => {
-    if (challengeData && !isLoading) {
-      localStorage.setItem(CHALLENGE_DATA_KEY, JSON.stringify(challengeData));
+    if (!supabase) {
+      setIsLoading(false);
+      return;
     }
-  }, [challengeData, isLoading]);
+
+    const initializeGamification = async () => {
+      setIsLoading(true);
+
+      // Get current user
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (currentUser) {
+        setUser(currentUser);
+        const data = await loadChallengeData(currentUser.id);
+        if (data) {
+          setChallengeData(data);
+          setStartDate(data.startDate);
+
+          // Award daily visit points
+          const today = getDateString();
+          if (data.lastVisitDate !== today) {
+            setDailyVisitPoints(10);
+          }
+        }
+      } else {
+        // Not authenticated - clear state
+        setUser(null);
+        setChallengeData(null);
+      }
+
+      setIsLoading(false);
+    };
+
+    initializeGamification();
+
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+        if (session?.user) {
+          setUser(session.user);
+          const data = await loadChallengeData(session.user.id);
+          if (data) {
+            setChallengeData(data);
+            setStartDate(data.startDate);
+          }
+        } else {
+          setUser(null);
+          setChallengeData(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, loadChallengeData]);
 
   // Calculate current day
   const currentDay = useMemo(() => {
-    if (!challengeData) return 1;
-    return getDaysSinceStart(challengeData.startDate);
-  }, [challengeData]);
+    return getDaysSinceStart(startDate);
+  }, [startDate]);
 
   // Get today's progress
   const todayProgress = useMemo(() => {
@@ -335,35 +445,68 @@ export function useGamification() {
     return calculateCumulativeStats(challengeData.dailyProgress);
   }, [challengeData]);
 
-  // Save today's progress
+  // Save today's progress to database
   const saveTodayProgress = useCallback(
-    (metrics: DailyMetrics) => {
-      if (!challengeData) return false;
+    async (metrics: DailyMetrics): Promise<boolean> => {
+      if (!user || !challengeData || !supabase) return false;
 
-      const points = calculateDailyPoints(metrics, true); // Include check-in bonus
+      const points = calculateDailyPoints(metrics, true);
+      const today = getDateString();
 
-      const newProgress: DayProgress = {
-        dayNumber: currentDay,
-        loggedDate: getDateString(),
-        metrics,
-        pointsEarned: points,
-        hasData: true,
-      };
-
-      setChallengeData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          dailyProgress: {
-            ...prev.dailyProgress,
-            [currentDay]: newProgress,
+      try {
+        // Upsert to database
+        const { error } = await supabase.from("challenge_progress").upsert(
+          {
+            user_id: user.id,
+            visitor_id: user.id, // Use user_id as visitor_id for compatibility
+            day_number: currentDay,
+            logged_date: today,
+            steps: metrics.steps,
+            water_liters: metrics.waterLiters,
+            floors_climbed: metrics.floorsClimbed,
+            protein_grams: metrics.proteinGrams,
+            sleep_hours: metrics.sleepHours,
+            feeling: metrics.feeling || null,
+            tomorrow_focus: metrics.tomorrowFocus || null,
+            points_earned: points,
           },
-        };
-      });
+          {
+            onConflict: "user_id,day_number",
+          }
+        );
 
-      return true;
+        if (error) {
+          console.error("Error saving progress:", error);
+          return false;
+        }
+
+        // Update local state
+        const newProgress: DayProgress = {
+          dayNumber: currentDay,
+          loggedDate: today,
+          metrics,
+          pointsEarned: points,
+          hasData: true,
+        };
+
+        setChallengeData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            dailyProgress: {
+              ...prev.dailyProgress,
+              [currentDay]: newProgress,
+            },
+          };
+        });
+
+        return true;
+      } catch (error) {
+        console.error("Error saving progress:", error);
+        return false;
+      }
     },
-    [challengeData, currentDay]
+    [user, challengeData, currentDay, supabase]
   );
 
   // Check if editing a specific day is allowed
@@ -424,18 +567,34 @@ export function useGamification() {
     [weekUnlocked]
   );
 
-  // Reset challenge (for testing)
-  const resetChallenge = useCallback(() => {
-    const visitorId = localStorage.getItem(VISITOR_ID_KEY) || crypto.randomUUID();
-    const newData = getDefaultChallengeData(visitorId);
-    setChallengeData(newData);
-    setDailyVisitPoints(0);
-    localStorage.setItem(CHALLENGE_DATA_KEY, JSON.stringify(newData));
-  }, []);
+  // Reset challenge (admin/testing only)
+  const resetChallenge = useCallback(async () => {
+    if (!user || !supabase) return;
+
+    try {
+      // Delete all progress for this user
+      await supabase.from("challenge_progress").delete().eq("user_id", user.id);
+
+      // Reset local state
+      setChallengeData({
+        userId: user.id,
+        startDate: getDateString(),
+        dailyProgress: {},
+        assessmentPoints: 0,
+        calculatorPoints: 0,
+        lastVisitDate: getDateString(),
+        dailyVisitPointsAwarded: false,
+      });
+      setStartDate(getDateString());
+      setDailyVisitPoints(0);
+    } catch (error) {
+      console.error("Error resetting challenge:", error);
+    }
+  }, [user, supabase]);
 
   const state: GamificationState = {
     isLoading,
-    visitorId: challengeData?.visitorId || null,
+    user,
     currentDay,
     totalPoints,
     dayStreak,

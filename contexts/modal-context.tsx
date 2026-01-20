@@ -16,6 +16,8 @@ export type ModalType =
   | "results"
   | "user-guide"
   | "challenge-hub"
+  | "login-required"
+  | "profile-incomplete"
   | null;
 
 interface ModalContextType {

@@ -52,7 +52,7 @@ export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 // Types
 // =============================================================================
 
-export type UserRole = "admin" | "client";
+export type UserRole = "admin" | "client" | "challenger";
 
 export interface UserProfile {
   id: string;
@@ -69,6 +69,33 @@ export interface AuthResponse {
   success: boolean;
   error?: string;
   redirectTo?: string;
+}
+
+// =============================================================================
+// Role Helper Functions
+// =============================================================================
+
+/**
+ * Check if a user can access the client dashboard
+ * Only clients and admins have access, challengers cannot
+ */
+export function canAccessDashboard(role: UserRole): boolean {
+  return role === "admin" || role === "client";
+}
+
+/**
+ * Check if a user can access the admin portal
+ * Only admins have access
+ */
+export function canAccessAdmin(role: UserRole): boolean {
+  return role === "admin";
+}
+
+/**
+ * Check if a user is a challenger (free 30-day challenge participant)
+ */
+export function isChallenger(role: UserRole): boolean {
+  return role === "challenger";
 }
 
 // =============================================================================

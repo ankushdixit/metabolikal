@@ -46,7 +46,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
     getDayProgress,
   } = gamification;
 
-  const handleSaveProgress = (metrics: DailyMetrics): boolean => {
+  const handleSaveProgress = async (metrics: DailyMetrics): Promise<boolean> => {
     return saveTodayProgress(metrics);
   };
 

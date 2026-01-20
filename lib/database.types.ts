@@ -10,7 +10,7 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type UserRole = "admin" | "client";
+export type UserRole = "admin" | "client" | "challenger";
 
 export type MealCategory =
   | "pre-workout"
@@ -608,6 +608,82 @@ export interface Database {
           },
         ];
       };
+      calculator_results: {
+        Row: {
+          id: string;
+          user_id: string;
+          gender: Gender;
+          age: number;
+          weight_kg: number;
+          height_cm: number;
+          body_fat_percent: number | null;
+          activity_level: string;
+          goal: Goal;
+          goal_weight_kg: number | null;
+          medical_conditions: string[] | null;
+          bmr: number;
+          tdee: number;
+          target_calories: number;
+          protein_grams: number;
+          carbs_grams: number;
+          fats_grams: number;
+          metabolic_impact_percent: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          gender: Gender;
+          age: number;
+          weight_kg: number;
+          height_cm: number;
+          body_fat_percent?: number | null;
+          activity_level: string;
+          goal: Goal;
+          goal_weight_kg?: number | null;
+          medical_conditions?: string[] | null;
+          bmr: number;
+          tdee: number;
+          target_calories: number;
+          protein_grams: number;
+          carbs_grams: number;
+          fats_grams: number;
+          metabolic_impact_percent?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          gender?: Gender;
+          age?: number;
+          weight_kg?: number;
+          height_cm?: number;
+          body_fat_percent?: number | null;
+          activity_level?: string;
+          goal?: Goal;
+          goal_weight_kg?: number | null;
+          medical_conditions?: string[] | null;
+          bmr?: number;
+          tdee?: number;
+          target_calories?: number;
+          protein_grams?: number;
+          carbs_grams?: number;
+          fats_grams?: number;
+          metabolic_impact_percent?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calculator_results_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -664,3 +740,7 @@ export type ChallengeProgressUpdate = UpdateTables<"challenge_progress">;
 export type AssessmentResult = Tables<"assessment_results">;
 export type AssessmentResultInsert = InsertTables<"assessment_results">;
 export type AssessmentResultUpdate = UpdateTables<"assessment_results">;
+
+export type CalculatorResult = Tables<"calculator_results">;
+export type CalculatorResultInsert = InsertTables<"calculator_results">;
+export type CalculatorResultUpdate = UpdateTables<"calculator_results">;
