@@ -95,3 +95,108 @@ export const assessmentResultsSchema = z.object({
 });
 
 export type AssessmentResults = z.infer<typeof assessmentResultsSchema>;
+
+/**
+ * Check-in form validation schema.
+ * Validates weekly check-in data including measurements, ratings, and compliance.
+ */
+export const checkInSchema = z.object({
+  // Step 1: Measurements
+  weight: z
+    .number({
+      error: "Weight is required and must be a number",
+    })
+    .min(20, { message: "Weight must be at least 20 kg" })
+    .max(300, { message: "Weight must be 300 kg or less" }),
+  body_fat_percent: z
+    .number()
+    .min(1, { message: "Body fat must be at least 1%" })
+    .max(60, { message: "Body fat must be 60% or less" })
+    .optional()
+    .nullable(),
+  chest_cm: z
+    .number()
+    .min(50, { message: "Chest must be at least 50 cm" })
+    .max(200, { message: "Chest must be 200 cm or less" })
+    .optional()
+    .nullable(),
+  waist_cm: z
+    .number()
+    .min(40, { message: "Waist must be at least 40 cm" })
+    .max(200, { message: "Waist must be 200 cm or less" })
+    .optional()
+    .nullable(),
+  hips_cm: z
+    .number()
+    .min(50, { message: "Hips must be at least 50 cm" })
+    .max(200, { message: "Hips must be 200 cm or less" })
+    .optional()
+    .nullable(),
+  arms_cm: z
+    .number()
+    .min(15, { message: "Arms must be at least 15 cm" })
+    .max(60, { message: "Arms must be 60 cm or less" })
+    .optional()
+    .nullable(),
+  thighs_cm: z
+    .number()
+    .min(30, { message: "Thighs must be at least 30 cm" })
+    .max(100, { message: "Thighs must be 100 cm or less" })
+    .optional()
+    .nullable(),
+
+  // Step 2: Photos (URLs from storage)
+  photo_front: z.string().optional().nullable(),
+  photo_side: z.string().optional().nullable(),
+  photo_back: z.string().optional().nullable(),
+
+  // Step 3: Subjective Ratings (1-10 scale)
+  energy_rating: z
+    .number()
+    .min(1, { message: "Rating must be between 1 and 10" })
+    .max(10, { message: "Rating must be between 1 and 10" }),
+  sleep_rating: z
+    .number()
+    .min(1, { message: "Rating must be between 1 and 10" })
+    .max(10, { message: "Rating must be between 1 and 10" }),
+  stress_rating: z
+    .number()
+    .min(1, { message: "Rating must be between 1 and 10" })
+    .max(10, { message: "Rating must be between 1 and 10" }),
+  mood_rating: z
+    .number()
+    .min(1, { message: "Rating must be between 1 and 10" })
+    .max(10, { message: "Rating must be between 1 and 10" }),
+
+  // Step 4: Compliance & Notes (0-100%)
+  diet_adherence: z
+    .number()
+    .min(0, { message: "Adherence must be between 0 and 100%" })
+    .max(100, { message: "Adherence must be between 0 and 100%" }),
+  workout_adherence: z
+    .number()
+    .min(0, { message: "Adherence must be between 0 and 100%" })
+    .max(100, { message: "Adherence must be between 0 and 100%" }),
+  challenges: z.string().max(1000, { message: "Maximum 1000 characters" }).optional().nullable(),
+  progress_notes: z
+    .string()
+    .max(1000, { message: "Maximum 1000 characters" })
+    .optional()
+    .nullable(),
+  questions: z.string().max(1000, { message: "Maximum 1000 characters" }).optional().nullable(),
+});
+
+export type CheckInFormData = z.infer<typeof checkInSchema>;
+
+/**
+ * Step 1 validation - just weight required
+ */
+export const checkInStep1Schema = checkInSchema.pick({
+  weight: true,
+  body_fat_percent: true,
+  chest_cm: true,
+  waist_cm: true,
+  hips_cm: true,
+  arms_cm: true,
+  thighs_cm: true,
+});
