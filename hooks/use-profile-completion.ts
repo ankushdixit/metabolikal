@@ -160,34 +160,60 @@ export async function saveAssessmentResults(
   const supabase = createBrowserSupabaseClient();
 
   try {
-    const { error } = await supabase.from("assessment_results").upsert(
-      {
-        visitor_id: visitorId,
-        user_id: userId,
-        sleep_score: scores.sleep,
-        body_score: scores.body,
-        nutrition_score: scores.nutrition,
-        mental_score: scores.mental,
-        stress_score: scores.stress,
-        support_score: scores.support,
-        hydration_score: scores.hydration,
-        assessed_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-        ignoreDuplicates: false,
-      }
-    );
+    // Check if user already has assessment results
+    const { data: existing } = await supabase
+      .from("assessment_results")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const assessmentData = {
+      visitor_id: visitorId,
+      user_id: userId,
+      sleep_score: scores.sleep,
+      body_score: scores.body,
+      nutrition_score: scores.nutrition,
+      mental_score: scores.mental,
+      stress_score: scores.stress,
+      support_score: scores.support,
+      hydration_score: scores.hydration,
+      assessed_at: new Date().toISOString(),
+    };
+
+    let error;
+
+    if (existing) {
+      // Update existing record
+      const result = await supabase
+        .from("assessment_results")
+        .update(assessmentData)
+        .eq("user_id", userId);
+      error = result.error;
+    } else {
+      // Insert new record
+      const result = await supabase.from("assessment_results").insert(assessmentData);
+      error = result.error;
+    }
 
     if (error) {
-      console.error("Error saving assessment results:", error);
+      console.error(
+        "Error saving assessment results:",
+        error.message,
+        error.details,
+        error.hint,
+        error.code
+      );
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Error saving assessment results:", error);
-    return { success: false, error: "Failed to save assessment results" };
+    console.error(
+      "Error saving assessment results (catch):",
+      JSON.stringify(error, Object.getOwnPropertyNames(error))
+    );
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, error: errorMessage || "Failed to save assessment results" };
   }
 }
 
@@ -221,35 +247,57 @@ export async function saveCalculatorResults(
   const supabase = createBrowserSupabaseClient();
 
   try {
-    const { error } = await supabase.from("calculator_results").upsert(
-      {
-        user_id: userId,
-        gender: data.gender,
-        age: data.age,
-        weight_kg: data.weightKg,
-        height_cm: data.heightCm,
-        body_fat_percent: data.bodyFatPercent || null,
-        activity_level: data.activityLevel,
-        goal: data.goal,
-        goal_weight_kg: data.goalWeightKg || null,
-        medical_conditions: data.medicalConditions || null,
-        bmr: results.bmr,
-        tdee: results.tdee,
-        target_calories: results.targetCalories,
-        protein_grams: results.proteinGrams,
-        carbs_grams: results.carbsGrams,
-        fats_grams: results.fatsGrams,
-        metabolic_impact_percent: results.metabolicImpactPercent || null,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-        ignoreDuplicates: false,
-      }
-    );
+    // Check if user already has calculator results
+    const { data: existing } = await supabase
+      .from("calculator_results")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const calculatorData = {
+      user_id: userId,
+      gender: data.gender,
+      age: data.age,
+      weight_kg: data.weightKg,
+      height_cm: data.heightCm,
+      body_fat_percent: data.bodyFatPercent || null,
+      activity_level: data.activityLevel,
+      goal: data.goal,
+      goal_weight_kg: data.goalWeightKg || null,
+      medical_conditions: data.medicalConditions || null,
+      bmr: results.bmr,
+      tdee: results.tdee,
+      target_calories: results.targetCalories,
+      protein_grams: results.proteinGrams,
+      carbs_grams: results.carbsGrams,
+      fats_grams: results.fatsGrams,
+      metabolic_impact_percent: results.metabolicImpactPercent || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    let error;
+
+    if (existing) {
+      // Update existing record
+      const result = await supabase
+        .from("calculator_results")
+        .update(calculatorData)
+        .eq("user_id", userId);
+      error = result.error;
+    } else {
+      // Insert new record
+      const result = await supabase.from("calculator_results").insert(calculatorData);
+      error = result.error;
+    }
 
     if (error) {
-      console.error("Error saving calculator results:", error);
+      console.error(
+        "Error saving calculator results:",
+        error.message,
+        error.details,
+        error.hint,
+        error.code
+      );
       return { success: false, error: error.message };
     }
 
