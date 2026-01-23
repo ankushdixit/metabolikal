@@ -26,7 +26,9 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        run: npm audit --audit-level=moderate
+        # Using high level temporarily due to unpatched lodash vulnerability (GHSA-xxjr-mmjv-4gpg)
+        # published 2026-01-22 with no fix available. Revert to moderate once lodash releases patch.
+        run: npm audit --audit-level=high
 
       - name: Check if Dependency Graph is enabled
         id: check-dependency-graph
