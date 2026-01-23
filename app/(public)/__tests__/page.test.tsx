@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import LandingPage from "../page";
 import { ModalProvider } from "@/contexts/modal-context";
 
@@ -33,55 +33,62 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// Mock the constants to use variant A for consistent testing
+jest.mock("@/lib/constants", () => ({
+  ACTIVE_HERO_VARIANT: "A",
+  HERO_VARIANTS: {
+    A: { name: "Problem-Solution", description: "", focus: "" },
+    B: { name: "Results-Focused", description: "", focus: "" },
+    C: { name: "Identity-Positioning", description: "", focus: "" },
+    original: { name: "Original Quote", description: "", focus: "" },
+  },
+}));
+
 describe("Landing Page", () => {
-  describe("Hero Section", () => {
-    it("renders the main quote", () => {
+  // Use fake timers for animations
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    jest.useRealTimers();
+  });
+
+  describe("Hero Section (Variant A - Problem-Solution)", () => {
+    it("renders the hero section with aria-label", () => {
       renderWithProvider(<LandingPage />);
-      expect(screen.getByText(/My clients complain that I make them/i)).toBeInTheDocument();
-      expect(screen.getByText(/eat too much/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("Hero section")).toBeInTheDocument();
     });
 
-    it("renders the founder attribution", () => {
+    it("renders the eyebrow text for target audience", () => {
       renderWithProvider(<LandingPage />);
-      expect(screen.getByText(/Shivashish Sinha/i)).toBeInTheDocument();
-      expect(screen.getByText(/Founder \| Metaboli-k-al/i)).toBeInTheDocument();
+      expect(screen.getByText(/For High-Performing Professionals/i)).toBeInTheDocument();
     });
 
-    it("renders the subtitle with program description", () => {
+    it("renders the problem-focused headline", () => {
       renderWithProvider(<LandingPage />);
-      expect(screen.getByText(/structured lifestyle reset/i)).toBeInTheDocument();
-      expect(screen.getByText(/high-performing professionals/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tired of Diets That Ignore Your/i)).toBeInTheDocument();
+      expect(screen.getByText(/Demanding Schedule/i)).toBeInTheDocument();
     });
 
-    it("renders three CTA elements", () => {
+    it("renders the science-based coaching description", () => {
       renderWithProvider(<LandingPage />);
-      expect(
-        screen.getByRole("button", { name: /Get Free Strategy Session/i })
-      ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Take Assessment/i })).toBeInTheDocument();
-      // "Start 30-Day Challenge" is now an anchor link that scrolls to the challenge section
-      expect(screen.getByRole("link", { name: /Start 30-Day Challenge/i })).toBeInTheDocument();
+      expect(screen.getByText(/science-based metabolic coaching/i)).toBeInTheDocument();
     });
 
-    it("Start 30-Day Challenge link points to challenge section", () => {
+    it("renders two CTA buttons", () => {
       renderWithProvider(<LandingPage />);
-      const challengeLink = screen.getByRole("link", { name: /Start 30-Day Challenge/i });
-      expect(challengeLink).toHaveAttribute("href", "#challenge");
+      expect(screen.getByRole("button", { name: /Book.*(free|strategy)/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Take.*assessment/i })).toBeInTheDocument();
     });
 
-    it("renders feature stats box with correct values", () => {
+    it("renders program overview stats", () => {
       renderWithProvider(<LandingPage />);
-      expect(screen.getByText("4")).toBeInTheDocument();
-      expect(screen.getByText("Phases")).toBeInTheDocument();
-      expect(screen.getByText("180")).toBeInTheDocument();
-      expect(screen.getByText("Minutes")).toBeInTheDocument();
-      expect(screen.getByText("0")).toBeInTheDocument();
-      expect(screen.getByText("Burnout")).toBeInTheDocument();
-    });
-
-    it("renders metabolic transformation badge", () => {
-      renderWithProvider(<LandingPage />);
-      expect(screen.getByText(/Metabolic Transformation/i)).toBeInTheDocument();
+      expect(screen.getByText("Program Overview")).toBeInTheDocument();
+      expect(screen.getByText(/Complete Program/i)).toBeInTheDocument();
     });
   });
 

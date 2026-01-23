@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Hero Section A/B Testing Variants**: Created 3 new hero section messaging variants for conversion testing:
+  - **Variant A (Problem-Solution)**: "Tired of Diets That Ignore Your Demanding Schedule?" - addresses visitor frustration, positions Metabolikal as solution
+  - **Variant B (Results-Focused)**: "Reclaim Your Energy. Lose the Weight. Keep Your Schedule." - leads with measurable outcomes, animated counters
+  - **Variant C (Identity-Positioning)**: "You Don't Need Another Diet. You Need a System." - creates self-identification, exclusivity positioning
+  - **Original**: Preserved founder quote variant for comparison
+  - HeroController component for easy variant switching via `NEXT_PUBLIC_HERO_VARIANT` env var
+  - Shared components (HeroBackground, HeroCTA, HeroEyebrow, HeroStatsCard) for consistency
+  - Comprehensive test suite with 46 tests covering all variants and controller
+
 - **Mobile Challenge Tray**: New floating tray for mobile devices showing challenge progress:
   - Compact collapsed bar showing Day, Points, and Streak
   - Expandable view with full stats and "Open Challenge Hub" button
