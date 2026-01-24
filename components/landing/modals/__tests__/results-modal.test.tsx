@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ResultsModal } from "../results-modal";
 import { CalculatorResults } from "@/hooks/use-calculator";
+import { StoredAssessment } from "@/hooks/use-assessment-storage";
 
 describe("ResultsModal", () => {
   const defaultResults: CalculatorResults = {
@@ -21,6 +22,21 @@ describe("ResultsModal", () => {
     healthScore: 72,
     goal: "fat_loss" as const,
     onBookCall: jest.fn(),
+  };
+
+  const mockPreviousAssessment: StoredAssessment = {
+    date: "2026-01-20T10:00:00.000Z",
+    scores: {
+      sleep: 7,
+      body: 6,
+      nutrition: 8,
+      mental: 5,
+      stress: 6,
+      support: 7,
+      hydration: 8,
+    },
+    totalScore: 70,
+    lifestyleScore: 67,
   };
 
   beforeEach(() => {
@@ -163,5 +179,48 @@ describe("ResultsModal", () => {
   it("displays correct goal label for muscle gain", () => {
     render(<ResultsModal {...defaultProps} goal="muscle_gain" />);
     expect(screen.getByText(/Target \(Muscle Gain\)/i)).toBeInTheDocument();
+  });
+
+  describe("Score Comparison", () => {
+    it("does not show score comparison when no previous assessment", () => {
+      render(<ResultsModal {...defaultProps} previousAssessment={null} />);
+      expect(screen.queryByText(/Amazing Progress!/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Consistent Performance!/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Room to Grow!/i)).not.toBeInTheDocument();
+    });
+
+    it("shows Amazing Progress when score improved", () => {
+      // Current healthScore is 72, previous totalScore is 70
+      render(<ResultsModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      expect(screen.getByText(/Amazing Progress!/i)).toBeInTheDocument();
+      expect(screen.getByText(/\+2 points/i)).toBeInTheDocument();
+    });
+
+    it("shows Consistent Performance when score is same", () => {
+      // Set healthScore to 70 to match previous
+      render(
+        <ResultsModal
+          {...defaultProps}
+          healthScore={70}
+          previousAssessment={mockPreviousAssessment}
+        />
+      );
+      expect(screen.getByText(/Consistent Performance!/i)).toBeInTheDocument();
+      // The message contains "maintained your score" - look for it in paragraph text
+      expect(screen.getByText(/maintained your score/i)).toBeInTheDocument();
+    });
+
+    it("shows Room to Grow when score decreased", () => {
+      // Set healthScore to 65, below previous 70
+      render(
+        <ResultsModal
+          {...defaultProps}
+          healthScore={65}
+          previousAssessment={mockPreviousAssessment}
+        />
+      );
+      expect(screen.getByText(/Room to Grow!/i)).toBeInTheDocument();
+      expect(screen.getByText(/baseline is set/i)).toBeInTheDocument();
+    });
   });
 });

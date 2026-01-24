@@ -19,9 +19,11 @@ import {
   AlertTriangle,
   TrendingUp,
   Award,
+  Star,
 } from "lucide-react";
 import { CalculatorResults, Goal, GOAL_ADJUSTMENTS } from "@/hooks/use-calculator";
 import { useState } from "react";
+import { StoredAssessment, calculateScoreComparison } from "@/hooks/use-assessment-storage";
 
 interface ResultsModalProps {
   open: boolean;
@@ -31,6 +33,7 @@ interface ResultsModalProps {
   healthScore: number;
   goal: Goal;
   onBookCall: () => void;
+  previousAssessment?: StoredAssessment | null;
 }
 
 /**
@@ -73,6 +76,7 @@ export function ResultsModal({
   healthScore,
   goal,
   onBookCall,
+  previousAssessment,
 }: ResultsModalProps) {
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
@@ -82,6 +86,11 @@ export function ResultsModal({
   const insights = getInsights(healthScore);
   const InsightIcon = insights.icon;
   const goalLabel = GOAL_ADJUSTMENTS[goal].label;
+
+  // Calculate score comparison if previous assessment exists
+  const scoreComparison = previousAssessment
+    ? calculateScoreComparison(healthScore, previousAssessment.totalScore)
+    : null;
 
   const handleShare = async () => {
     const shareText = `My METABOLI-K-AL Results:\n\nHealth Score: ${healthScore}/100\nLifestyle Score: ${lifestyleScore}/100\nBMR: ${results.bmr} cal\nTDEE: ${results.tdee} cal\nTarget: ${results.targetCalories} cal\n\nDiscover your metabolic potential at metabolikal.com`;
@@ -162,6 +171,52 @@ export function ResultsModal({
                   <div className="text-sm text-muted-foreground font-bold mt-1">out of 100</div>
                 </div>
               </div>
+
+              {/* Score Comparison - shown when previous assessment exists */}
+              {scoreComparison && (
+                <div className="mt-4 relative overflow-hidden bg-emerald-950/40 border border-emerald-800/50 p-5 pl-8">
+                  {/* Green left accent stripe */}
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-emerald-400" />
+
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-500/20">
+                      {scoreComparison.status === "decreased" ? (
+                        <TrendingUp className="h-6 w-6 text-emerald-500" />
+                      ) : (
+                        <Star className="h-6 w-6 text-yellow-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-black uppercase tracking-wide text-emerald-400 mb-1">
+                        {scoreComparison.status === "improved"
+                          ? "Amazing Progress!"
+                          : scoreComparison.status === "same"
+                            ? "Consistent Performance!"
+                            : "Room to Grow!"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground font-bold">
+                        {scoreComparison.status === "improved" ? (
+                          <>
+                            You improved by{" "}
+                            <span className="text-emerald-400">
+                              +{scoreComparison.delta} points
+                            </span>{" "}
+                            since your last assessment!
+                          </>
+                        ) : scoreComparison.status === "same" ? (
+                          <>
+                            You maintained your score of{" "}
+                            <span className="text-emerald-400">{healthScore}/100</span> since your
+                            last assessment!
+                          </>
+                        ) : (
+                          <>Your baseline is set. The METABOLIKAL system will help you improve.</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Insights Section */}

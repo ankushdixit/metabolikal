@@ -135,6 +135,44 @@ describe("useAssessment", () => {
 
     expect(result.current.lifestyleScore).toBe(71);
   });
+
+  it("sets all scores at once with setAllScores", () => {
+    const { result } = renderHook(() => useAssessment());
+
+    const newScores = {
+      sleep: 8,
+      body: 7,
+      nutrition: 9,
+      mental: 6,
+      stress: 5,
+      support: 8,
+      hydration: 7,
+    };
+
+    act(() => {
+      result.current.setAllScores(newScores);
+    });
+
+    expect(result.current.scores).toEqual(newScores);
+  });
+
+  it("accepts initial scores via parameter", () => {
+    const initialScores = {
+      sleep: 8,
+      body: 7,
+      nutrition: 9,
+      mental: 6,
+      stress: 5,
+      support: 8,
+      hydration: 7,
+    };
+
+    const { result } = renderHook(() => useAssessment(initialScores));
+
+    expect(result.current.scores).toEqual(initialScores);
+    // Lifestyle score should reflect initial values: (8+7+9+6+5+8+7) / 7 * 10 = 71.4... ≈ 71
+    expect(result.current.lifestyleScore).toBe(71);
+  });
 });
 
 describe("ASSESSMENT_CATEGORIES", () => {

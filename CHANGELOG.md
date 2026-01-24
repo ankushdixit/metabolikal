@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Assessment History with Local Storage and Score Comparison**: localStorage persistence for anonymous users completing assessments:
+  - `useAssessmentStorage` hook for saving/loading assessment data from localStorage
+  - "Welcome Back" banner in assessment modal showing last assessment date and previous score
+  - Pre-population of assessment sliders with previous values for returning users
+  - Score comparison section in results modal showing improvement, same score, or decreased messaging
+  - Automatic migration of localStorage data to database on login/signup
+  - 25 new tests for storage hook and modal components
+  - Green-tinted styling matching athletic design system
+
 - **Custom Thank You Page After Calendly Booking**: Branded confirmation page at `/thank-you` route:
   - Success confirmation with green checkmark icon
   - Pre-session checklist with 3 steps (Check Inbox, Complete Form, Show Up Ready)

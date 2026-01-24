@@ -23,6 +23,7 @@ import {
 } from "@/components/landing/floating-trays";
 import { useModalContext } from "@/contexts/modal-context";
 import { useAssessment } from "@/hooks/use-assessment";
+import { useAssessmentStorage, StoredAssessment } from "@/hooks/use-assessment-storage";
 import {
   useCalculator,
   calculateHealthScore,
@@ -123,8 +124,41 @@ const ProfileIncompleteModal = dynamic(() =>
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
 
-  // Assessment flow state
-  const { scores, updateScore, lifestyleScore } = useAssessment();
+  // Assessment storage for localStorage persistence
+  const assessmentStorage = useAssessmentStorage();
+  const { getPreviousAssessment, saveAssessmentWithHealthScore } = assessmentStorage;
+
+  // Track previous assessment for comparison (loaded once on mount)
+  const [previousAssessment, setPreviousAssessment] = useState<StoredAssessment | null>(null);
+  const previousAssessmentLoaded = useRef(false);
+
+  // Load previous assessment from localStorage on mount
+  useEffect(() => {
+    if (!previousAssessmentLoaded.current) {
+      previousAssessmentLoaded.current = true;
+      const stored = getPreviousAssessment();
+      if (stored) {
+        setPreviousAssessment(stored);
+      }
+    }
+  }, [getPreviousAssessment]);
+
+  // Assessment flow state - initialize with previous scores if available
+  const { scores, updateScore, setAllScores, lifestyleScore } = useAssessment();
+  const scoresInitialized = useRef(false);
+
+  // Pre-populate sliders with previous assessment values when modal opens
+  useEffect(() => {
+    if (activeModal === "assessment" && previousAssessment && !scoresInitialized.current) {
+      scoresInitialized.current = true;
+      setAllScores(previousAssessment.scores);
+    }
+    // Reset the flag when modal closes so it can reinitialize next time
+    if (activeModal !== "assessment") {
+      scoresInitialized.current = false;
+    }
+  }, [activeModal, previousAssessment, setAllScores]);
+
   const [calculatorData, setCalculatorData] = useState<CalculatorFormData | null>(null);
   const calculatorResults = useCalculator(
     calculatorData
@@ -212,22 +246,32 @@ export default function LandingPage() {
   const handleCalculatorComplete = async (data: CalculatorFormData) => {
     setCalculatorData(data);
 
+    // Calculate results using exported functions (not calling hook)
+    const bmr =
+      data.bodyFatPercent !== undefined
+        ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
+        : calculateBmrMifflinStJeor(data.gender, data.weightKg, data.heightCm, data.age);
+
+    const activityMultiplier = ACTIVITY_MULTIPLIERS[data.activityLevel].multiplier;
+    const tdee = bmr * activityMultiplier;
+    const metabolicImpactPercent = calculateMetabolicImpact(data.medicalConditions);
+    const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);
+    const goalAdjustment = GOAL_ADJUSTMENTS[data.goal].adjustment;
+    const targetCalories = Math.round(adjustedTdee + goalAdjustment);
+    const proteinGrams = calculateProteinRecommendation(data.weightKg, data.goal);
+
+    // Calculate health score for localStorage save
+    const calculatedHealthScore = calculateHealthScore(
+      lifestyleScore,
+      metabolicImpactPercent,
+      targetCalories
+    );
+
+    // Save to localStorage for anonymous users (always save so returning visitors see progress)
+    saveAssessmentWithHealthScore(scores, lifestyleScore, calculatedHealthScore);
+
     // Save calculator results to database for authenticated users
     if (isAuthenticated && profileCompletion.user) {
-      // Calculate results using exported functions (not calling hook)
-      const bmr =
-        data.bodyFatPercent !== undefined
-          ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
-          : calculateBmrMifflinStJeor(data.gender, data.weightKg, data.heightCm, data.age);
-
-      const activityMultiplier = ACTIVITY_MULTIPLIERS[data.activityLevel].multiplier;
-      const tdee = bmr * activityMultiplier;
-      const metabolicImpactPercent = calculateMetabolicImpact(data.medicalConditions);
-      const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);
-      const goalAdjustment = GOAL_ADJUSTMENTS[data.goal].adjustment;
-      const targetCalories = Math.round(adjustedTdee + goalAdjustment);
-      const proteinGrams = calculateProteinRecommendation(data.weightKg, data.goal);
-
       // Calculate macros from target calories
       // Fat: 25% of target calories / 9 cal per gram
       // Carbs: remaining calories / 4 cal per gram
@@ -660,6 +704,7 @@ export default function LandingPage() {
         scores={scores}
         onScoreChange={updateScore}
         onContinue={handleAssessmentContinue}
+        previousAssessment={previousAssessment}
       />
       <CalculatorModal
         open={activeModal === "calculator"}
@@ -675,6 +720,7 @@ export default function LandingPage() {
         healthScore={healthScore}
         goal={(calculatorData?.goal as Goal) || "fat_loss"}
         onBookCall={() => openModal("calendly")}
+        previousAssessment={previousAssessment}
       />
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
