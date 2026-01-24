@@ -16,14 +16,29 @@ import {
   Share2,
   Copy,
   Check,
-  AlertTriangle,
   TrendingUp,
-  Award,
   Star,
+  Moon,
+  Heart,
+  Utensils,
+  Brain,
+  Shield,
+  Users,
+  Droplet,
+  Zap,
 } from "lucide-react";
-import { CalculatorResults, Goal, GOAL_ADJUSTMENTS } from "@/hooks/use-calculator";
+import { CalculatorResults, Goal } from "@/hooks/use-calculator";
+import { AssessmentScores } from "@/hooks/use-assessment";
 import { useState } from "react";
 import { StoredAssessment, calculateScoreComparison } from "@/hooks/use-assessment-storage";
+import {
+  getHealthScoreTier,
+  getActionPlanStrategy,
+  generatePriorityRecommendations,
+  calculateLifestyleBoost,
+  calculatePhysicalMetricsScore,
+  PriorityRecommendation,
+} from "@/lib/results-insights";
 
 interface ResultsModalProps {
   open: boolean;
@@ -34,38 +49,27 @@ interface ResultsModalProps {
   goal: Goal;
   onBookCall: () => void;
   previousAssessment?: StoredAssessment | null;
+  assessmentScores?: AssessmentScores;
 }
 
 /**
- * Get personalized insights based on health score.
+ * Icon component mapping for priority recommendations
  */
-function getInsights(healthScore: number): {
-  level: string;
-  message: string;
-  icon: typeof AlertTriangle;
-} {
-  if (healthScore < 50) {
-    return {
-      level: "urgent",
-      message:
-        "Your metabolic health needs urgent attention. A metabolic reset is strongly recommended to rebuild your foundation and reclaim your energy.",
-      icon: AlertTriangle,
-    };
-  }
-  if (healthScore <= 70) {
-    return {
-      level: "moderate",
-      message:
-        "There are clear optimization opportunities in your metabolic profile. Strategic adjustments can unlock significant performance gains.",
-      icon: TrendingUp,
-    };
-  }
-  return {
-    level: "positive",
-    message:
-      "Your metabolic foundation is solid. Fine-tuning your approach can help you achieve elite-level performance and maintain long-term results.",
-    icon: Award,
-  };
+const ICON_MAP: Record<string, typeof Moon> = {
+  Moon,
+  Heart,
+  Utensils,
+  Brain,
+  Shield,
+  Users,
+  Droplet,
+};
+
+/**
+ * Get the appropriate icon component for a recommendation
+ */
+function getRecommendationIcon(iconName: string) {
+  return ICON_MAP[iconName] || Star;
 }
 
 export function ResultsModal({
@@ -77,20 +81,34 @@ export function ResultsModal({
   goal,
   onBookCall,
   previousAssessment,
+  assessmentScores,
 }: ResultsModalProps) {
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
 
   if (!results) return null;
 
-  const insights = getInsights(healthScore);
-  const InsightIcon = insights.icon;
-  const goalLabel = GOAL_ADJUSTMENTS[goal].label;
+  // Get health score tier (status label and description)
+  const healthTier = getHealthScoreTier(healthScore);
 
   // Calculate score comparison if previous assessment exists
   const scoreComparison = previousAssessment
     ? calculateScoreComparison(healthScore, previousAssessment.totalScore)
     : null;
+
+  // Calculate lifestyle boost
+  const lifestyleBoost = calculateLifestyleBoost(results.bmr, results.tdee);
+
+  // Calculate physical metrics score
+  const physicalMetricsScore = calculatePhysicalMetricsScore(results.metabolicImpactPercent);
+
+  // Get action plan strategy
+  const actionPlan = getActionPlanStrategy(goal, results.targetCalories);
+
+  // Generate priority recommendations (only if assessment scores are available)
+  const priorityRecommendations = assessmentScores
+    ? generatePriorityRecommendations(assessmentScores, 3)
+    : [];
 
   const handleShare = async () => {
     const shareText = `My METABOLI-K-AL Results:\n\nHealth Score: ${healthScore}/100\nLifestyle Score: ${lifestyleScore}/100\nBMR: ${results.bmr} cal\nTDEE: ${results.tdee} cal\nTarget: ${results.targetCalories} cal\n\nDiscover your metabolic potential at metabolikal.com`;
@@ -135,52 +153,48 @@ export function ResultsModal({
             Your <span className="gradient-athletic">METABOLI-K-AL</span> Results
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
-            Your personalized metabolic profile and recommendations.
+            Complete Metabolic Analysis + Physical + Lifestyle Integration
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
-            {/* Health Score Section */}
+            {/* Health Score Section with Status */}
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-1 gradient-electric" />
                 <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                  Your Health Score
+                  METABOLI-K-AL Health Score
                 </h3>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Metabolic Health Score */}
-                <div className="athletic-card p-6 pl-8 text-center">
-                  <div className="text-6xl font-black gradient-athletic bg-clip-text text-transparent">
-                    {healthScore}
-                  </div>
-                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mt-2">
-                    Metabolic Health Score
-                  </div>
-                  <div className="text-sm text-muted-foreground font-bold mt-1">out of 100</div>
+              {/* Main Health Score Display */}
+              <div className="athletic-card p-6 pl-8 text-center mb-4">
+                <div className="text-7xl font-black gradient-athletic bg-clip-text text-transparent">
+                  {healthScore}
                 </div>
-
-                {/* Lifestyle Score */}
-                <div className="athletic-card p-6 pl-8 text-center">
-                  <div className="text-6xl font-black text-primary">{lifestyleScore}</div>
-                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mt-2">
-                    Lifestyle Score
+                <div className="text-sm font-black tracking-wider text-muted-foreground uppercase mt-2">
+                  Score
+                </div>
+                <div className="mt-4">
+                  <div className="text-lg font-black uppercase tracking-wide">
+                    {healthTier.name}
                   </div>
-                  <div className="text-sm text-muted-foreground font-bold mt-1">out of 100</div>
+                  <div className="text-sm text-muted-foreground font-bold mt-1">
+                    {healthTier.description}
+                  </div>
                 </div>
               </div>
 
               {/* Score Comparison - shown when previous assessment exists */}
               {scoreComparison && (
-                <div className="mt-4 relative overflow-hidden bg-emerald-950/40 border border-emerald-800/50 p-5 pl-8">
+                <div className="relative overflow-hidden bg-emerald-950/40 border border-emerald-800/50 p-5 pl-8 mb-4">
                   {/* Green left accent stripe */}
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-emerald-400" />
 
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-emerald-500/20">
-                      {scoreComparison.status === "decreased" ? (
+                      {scoreComparison.status === "improved" ? (
                         <TrendingUp className="h-6 w-6 text-emerald-500" />
                       ) : (
                         <Star className="h-6 w-6 text-yellow-400" />
@@ -217,54 +231,157 @@ export function ResultsModal({
                   </div>
                 </div>
               )}
+
+              {/* Score Breakdown: Physical vs Lifestyle */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="athletic-card p-5 pl-8 text-center">
+                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
+                    Physical Metrics
+                  </div>
+                  <div className="text-4xl font-black text-primary">{physicalMetricsScore}</div>
+                  <div className="text-xs text-muted-foreground font-bold mt-1">Score</div>
+                </div>
+                <div className="athletic-card p-5 pl-8 text-center">
+                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
+                    Lifestyle Factors
+                  </div>
+                  <div className="text-4xl font-black text-primary">{lifestyleScore}</div>
+                  <div className="text-xs text-muted-foreground font-bold mt-1">Score</div>
+                </div>
+              </div>
             </section>
 
-            {/* Insights Section */}
+            {/* Personalized Metabolic Profile */}
             <section>
-              <div
-                className={`athletic-card p-6 pl-8 ${
-                  insights.level === "urgent"
-                    ? "border-l-amber-500"
-                    : insights.level === "moderate"
-                      ? "border-l-blue-500"
-                      : "border-l-green-500"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`p-3 ${
-                      insights.level === "urgent"
-                        ? "bg-amber-500/20"
-                        : insights.level === "moderate"
-                          ? "bg-blue-500/20"
-                          : "bg-green-500/20"
-                    }`}
-                  >
-                    <InsightIcon
-                      className={`h-6 w-6 ${
-                        insights.level === "urgent"
-                          ? "text-amber-500"
-                          : insights.level === "moderate"
-                            ? "text-blue-500"
-                            : "text-green-500"
-                      }`}
-                    />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Your Personalized Metabolic Profile
+                </h3>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                {/* Base Metabolism */}
+                <div className="athletic-card p-5 pl-8">
+                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
+                    Base Metabolism
                   </div>
-                  <div>
-                    <h4 className="font-black uppercase tracking-wide mb-2">
-                      {insights.level === "urgent"
-                        ? "Metabolic Reset Recommended"
-                        : insights.level === "moderate"
-                          ? "Optimization Opportunity"
-                          : "Strong Foundation"}
-                    </h4>
-                    <p className="text-sm font-bold text-muted-foreground leading-relaxed">
-                      {insights.message}
-                    </p>
+                  <div className="text-3xl font-black">{results.bmr.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground font-bold">cal/day</div>
+                </div>
+
+                {/* Lifestyle-Adjusted */}
+                <div className="athletic-card p-5 pl-8 gradient-electric/10">
+                  <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
+                    Lifestyle-Adjusted
+                  </div>
+                  <div className="text-3xl font-black text-primary">
+                    {results.tdee.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-bold">cal/day</div>
+                </div>
+              </div>
+
+              {/* Lifestyle Boost Banner */}
+              <div className="athletic-card p-4 pl-8 bg-emerald-950/30 border-emerald-800/30">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-emerald-400" />
+                  <p className="text-sm font-bold text-muted-foreground">
+                    Your lifestyle is boosting your metabolism by{" "}
+                    <span className="text-emerald-400">
+                      {lifestyleBoost.calories.toLocaleString()} calories/day (
+                      {lifestyleBoost.percentage}%)
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Action Plan Section */}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-1 gradient-electric" />
+                <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                  Your METABOLI-K-AL Action Plan
+                </h3>
+              </div>
+
+              <div className="athletic-card p-5 pl-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5 text-primary" />
+                  <h4 className="font-black uppercase tracking-wide">{actionPlan.name}</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="text-sm">
+                    <span className="font-black text-muted-foreground">Target:</span>{" "}
+                    <span className="font-bold">{actionPlan.target}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-black text-muted-foreground">Focus:</span>{" "}
+                    <span className="font-bold">{actionPlan.focus}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-black text-muted-foreground">Training:</span>{" "}
+                    <span className="font-bold">{actionPlan.training}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-black text-muted-foreground">Goal:</span>{" "}
+                    <span className="font-bold">{actionPlan.goal}</span>
                   </div>
                 </div>
               </div>
             </section>
+
+            {/* Priority Action Plan */}
+            {priorityRecommendations.length > 0 && (
+              <section>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-1 gradient-electric" />
+                  <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                    Your Priority Action Plan
+                  </h3>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {priorityRecommendations.map((rec: PriorityRecommendation) => {
+                    const IconComponent = getRecommendationIcon(rec.icon);
+                    return (
+                      <div key={rec.categoryId} className="athletic-card p-5 pl-8">
+                        {/* Priority Badge */}
+                        <div className="inline-block px-2 py-0.5 text-xs font-black uppercase tracking-wider bg-primary/20 text-primary mb-3">
+                          Priority {rec.priority}
+                        </div>
+
+                        {/* Category Header */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <IconComponent className="h-5 w-5 text-primary" />
+                          <h4 className="font-black uppercase tracking-wide text-sm">
+                            {rec.categoryLabel}
+                          </h4>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs text-muted-foreground font-bold mb-4 leading-relaxed">
+                          {rec.description}
+                        </p>
+
+                        {/* Impact & Timeline */}
+                        <div className="space-y-1 pt-3 border-t border-border">
+                          <div className="flex items-center gap-2 text-xs">
+                            <TrendingUp className="h-3 w-3 text-primary" />
+                            <span className="font-black text-muted-foreground">Impact:</span>{" "}
+                            <span className="font-bold">{rec.impact}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-bold">Timeline: {rec.timeline}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Metabolic Numbers Section */}
             <section>
@@ -305,7 +422,7 @@ export function ResultsModal({
                   <div className="flex items-center gap-2 mb-3">
                     <Target className="h-5 w-5 text-primary" />
                     <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                      Target ({goalLabel})
+                      Target
                     </span>
                   </div>
                   <div className="text-2xl font-black text-primary">

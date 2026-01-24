@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { ResultsModal } from "../results-modal";
 import { CalculatorResults } from "@/hooks/use-calculator";
 import { StoredAssessment } from "@/hooks/use-assessment-storage";
+import { AssessmentScores } from "@/hooks/use-assessment";
 
 describe("ResultsModal", () => {
   const defaultResults: CalculatorResults = {
@@ -14,6 +15,16 @@ describe("ResultsModal", () => {
     metabolicImpactPercent: 8,
   };
 
+  const defaultAssessmentScores: AssessmentScores = {
+    sleep: 5,
+    body: 6,
+    nutrition: 7,
+    mental: 4,
+    stress: 5,
+    support: 6,
+    hydration: 8,
+  };
+
   const defaultProps = {
     open: true,
     onOpenChange: jest.fn(),
@@ -22,6 +33,7 @@ describe("ResultsModal", () => {
     healthScore: 72,
     goal: "fat_loss" as const,
     onBookCall: jest.fn(),
+    assessmentScores: defaultAssessmentScores,
   };
 
   const mockPreviousAssessment: StoredAssessment = {
@@ -55,21 +67,22 @@ describe("ResultsModal", () => {
     expect(screen.queryByText(/Your.*Results/i)).not.toBeInTheDocument();
   });
 
-  it("renders Your Health Score section", () => {
+  it("renders METABOLI-K-AL Health Score section", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText("Your Health Score")).toBeInTheDocument();
+    expect(screen.getByText("METABOLI-K-AL Health Score")).toBeInTheDocument();
   });
 
-  it("displays Metabolic Health Score", () => {
+  it("displays health score value and tier", () => {
     render(<ResultsModal {...defaultProps} />);
     expect(screen.getByText("72")).toBeInTheDocument();
-    expect(screen.getByText("Metabolic Health Score")).toBeInTheDocument();
+    expect(screen.getByText("Good Metabolic Health")).toBeInTheDocument();
   });
 
-  it("displays Lifestyle Score", () => {
+  it("displays Physical Metrics and Lifestyle Factors scores", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText("65")).toBeInTheDocument();
-    expect(screen.getByText("Lifestyle Score")).toBeInTheDocument();
+    expect(screen.getByText("Physical Metrics")).toBeInTheDocument();
+    expect(screen.getByText("Lifestyle Factors")).toBeInTheDocument();
+    expect(screen.getByText("65")).toBeInTheDocument(); // Lifestyle score
   });
 
   it("renders Your Metabolic Numbers section", () => {
@@ -80,18 +93,20 @@ describe("ResultsModal", () => {
   it("displays BMR value", () => {
     render(<ResultsModal {...defaultProps} />);
     expect(screen.getByText("BMR")).toBeInTheDocument();
-    expect(screen.getByText("1,780")).toBeInTheDocument();
+    // BMR appears in both Metabolic Profile and Metabolic Numbers sections
+    expect(screen.getAllByText("1,780").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays TDEE value", () => {
     render(<ResultsModal {...defaultProps} />);
     expect(screen.getByText("TDEE")).toBeInTheDocument();
-    expect(screen.getByText("2,759")).toBeInTheDocument();
+    // TDEE appears in both Metabolic Profile and Metabolic Numbers sections
+    expect(screen.getAllByText("2,759").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("displays Target Calories with goal label", () => {
+  it("displays Target Calories", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText(/Target \(Fat Loss\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Target")).toBeInTheDocument();
     expect(screen.getByText("2,038")).toBeInTheDocument();
   });
 
@@ -116,23 +131,25 @@ describe("ResultsModal", () => {
     expect(screen.queryByText(/Your TDEE has been adjusted/i)).not.toBeInTheDocument();
   });
 
-  describe("Insights based on health score", () => {
-    it("shows urgent messaging for score < 50", () => {
+  describe("Health Score Tiers", () => {
+    it("shows Needs Attention for score < 51", () => {
       render(<ResultsModal {...defaultProps} healthScore={45} />);
-      expect(screen.getByText("Metabolic Reset Recommended")).toBeInTheDocument();
-      expect(screen.getByText(/urgent attention/i)).toBeInTheDocument();
+      expect(screen.getByText("Needs Attention")).toBeInTheDocument();
     });
 
-    it("shows moderate messaging for score 50-70", () => {
+    it("shows Moderate Metabolic Health for score 51-70", () => {
       render(<ResultsModal {...defaultProps} healthScore={60} />);
-      expect(screen.getByText("Optimization Opportunity")).toBeInTheDocument();
-      expect(screen.getByText(/optimization opportunities/i)).toBeInTheDocument();
+      expect(screen.getByText("Moderate Metabolic Health")).toBeInTheDocument();
     });
 
-    it("shows positive messaging for score > 70", () => {
+    it("shows Good Metabolic Health for score 71-85", () => {
       render(<ResultsModal {...defaultProps} healthScore={80} />);
-      expect(screen.getByText("Strong Foundation")).toBeInTheDocument();
-      expect(screen.getByText(/foundation is solid/i)).toBeInTheDocument();
+      expect(screen.getByText("Good Metabolic Health")).toBeInTheDocument();
+    });
+
+    it("shows Elite Metabolic Health for score > 85", () => {
+      render(<ResultsModal {...defaultProps} healthScore={90} />);
+      expect(screen.getByText("Elite Metabolic Health")).toBeInTheDocument();
     });
   });
 
@@ -171,14 +188,70 @@ describe("ResultsModal", () => {
     expect(screen.queryByText(/Your.*Results/i)).not.toBeInTheDocument();
   });
 
-  it("displays correct goal label for maintain", () => {
-    render(<ResultsModal {...defaultProps} goal="maintain" />);
-    expect(screen.getByText(/Target \(Maintain Weight\)/i)).toBeInTheDocument();
+  describe("Action Plan Section", () => {
+    it("displays Fat Loss Strategy for fat_loss goal", () => {
+      render(<ResultsModal {...defaultProps} goal="fat_loss" />);
+      expect(screen.getByText("Fat Loss Strategy")).toBeInTheDocument();
+    });
+
+    it("displays Maintenance Strategy for maintain goal", () => {
+      render(<ResultsModal {...defaultProps} goal="maintain" />);
+      expect(screen.getByText("Maintenance Strategy")).toBeInTheDocument();
+    });
+
+    it("displays Muscle Building Strategy for muscle_gain goal", () => {
+      render(<ResultsModal {...defaultProps} goal="muscle_gain" />);
+      expect(screen.getByText("Muscle Building Strategy")).toBeInTheDocument();
+    });
+
+    it("shows Target, Focus, Training, Goal fields", () => {
+      render(<ResultsModal {...defaultProps} />);
+      expect(screen.getByText("Target:")).toBeInTheDocument();
+      expect(screen.getByText("Focus:")).toBeInTheDocument();
+      expect(screen.getByText("Training:")).toBeInTheDocument();
+      expect(screen.getByText("Goal:")).toBeInTheDocument();
+    });
   });
 
-  it("displays correct goal label for muscle gain", () => {
-    render(<ResultsModal {...defaultProps} goal="muscle_gain" />);
-    expect(screen.getByText(/Target \(Muscle Gain\)/i)).toBeInTheDocument();
+  describe("Personalized Metabolic Profile", () => {
+    it("renders the metabolic profile section", () => {
+      render(<ResultsModal {...defaultProps} />);
+      expect(screen.getByText("Your Personalized Metabolic Profile")).toBeInTheDocument();
+    });
+
+    it("displays Base Metabolism and Lifestyle-Adjusted values", () => {
+      render(<ResultsModal {...defaultProps} />);
+      expect(screen.getByText("Base Metabolism")).toBeInTheDocument();
+      expect(screen.getByText("Lifestyle-Adjusted")).toBeInTheDocument();
+    });
+
+    it("shows lifestyle boost calculation", () => {
+      render(<ResultsModal {...defaultProps} />);
+      expect(screen.getByText(/Your lifestyle is boosting your metabolism/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Priority Action Plan", () => {
+    it("renders priority recommendations when assessment scores provided", () => {
+      render(<ResultsModal {...defaultProps} />);
+      expect(screen.getByText("Your Priority Action Plan")).toBeInTheDocument();
+      expect(screen.getByText("Priority 1")).toBeInTheDocument();
+      expect(screen.getByText("Priority 2")).toBeInTheDocument();
+      expect(screen.getByText("Priority 3")).toBeInTheDocument();
+    });
+
+    it("does not render priority recommendations when no assessment scores", () => {
+      render(<ResultsModal {...defaultProps} assessmentScores={undefined} />);
+      expect(screen.queryByText("Your Priority Action Plan")).not.toBeInTheDocument();
+    });
+
+    it("shows Impact and Timeline for each recommendation", () => {
+      render(<ResultsModal {...defaultProps} />);
+      const impactElements = screen.getAllByText("Impact:");
+      expect(impactElements.length).toBe(3);
+      const timelineElements = screen.getAllByText(/Timeline:/i);
+      expect(timelineElements.length).toBe(3);
+    });
   });
 
   describe("Score Comparison", () => {

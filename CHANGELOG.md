@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced Results Modal with Comprehensive Content Sections**: Expanded results display with personalized insights:
+  - Health score status tier labels (Elite/Good/Moderate/Needs Attention) with descriptions
+  - Physical Metrics vs Lifestyle Factors score breakdown section
+  - Personalized Metabolic Profile showing Base Metabolism vs Lifestyle-Adjusted comparison
+  - Lifestyle boost calculation banner showing calories/day increase percentage
+  - METABOLI-K-AL Action Plan section with goal-based strategy (Fat Loss/Maintenance/Muscle Building)
+  - Priority Action Plan with 3 personalized recommendations based on lowest scoring assessment categories
+  - New `lib/results-insights.ts` utility for tier calculation, action plan strategies, and recommendation generation
+  - 70 new/updated tests for results modal and insights utility
+
 - **Assessment History with Local Storage and Score Comparison**: localStorage persistence for anonymous users completing assessments:
   - `useAssessmentStorage` hook for saving/loading assessment data from localStorage
   - "Welcome Back" banner in assessment modal showing last assessment date and previous score

@@ -721,6 +721,7 @@ export default function LandingPage() {
         goal={(calculatorData?.goal as Goal) || "fat_loss"}
         onBookCall={() => openModal("calendly")}
         previousAssessment={previousAssessment}
+        assessmentScores={scores}
       />
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
