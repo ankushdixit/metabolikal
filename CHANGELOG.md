@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **YouTube Shorts Carousel on Landing Page**: Moved all transformation videos from modal to landing page for immediate visibility:
+  - 12 YouTube Shorts (portrait 9:16) displayed in horizontally scrollable carousel
+  - 3 full-length testimonial videos (landscape 16:9) appended to carousel end
+  - Lazy loading via IntersectionObserver for performance
+  - Navigation arrows on desktop, swipe support on mobile
+  - Mixed aspect ratio support with bottom alignment
+
+- **Before/After Photo Carousel in Modal**: New carousel component for transformation photos:
+  - Side-by-side before/after image layout
+  - Navigation arrows and dot indicators
+  - Keyboard navigation (left/right arrows)
+  - Auto-advance option with configurable interval
+  - Graceful image error handling with fallback UI
+  - Full accessibility support (ARIA attributes, screen reader announcements)
+
+- **Transformation Data Module**: New data structure for client transformations:
+  - TypeScript interface for transformation data
+  - Placeholder data for 6 client transformations
+  - Located at `lib/data/transformations.ts`
+
+### Changed
+
+- **Real Results Modal**: Restructured for better content hierarchy:
+  - Renamed to "Transformation Gallery"
+  - YouTube videos moved to landing page (no longer in modal)
+  - Now features Before/After photo carousel as primary content
+  - Instagram social section retained
+  - Button text changed from "View Transformation Gallery" to "View Before & After Gallery"
+
 - **Hero Section A/B Testing Variants**: Created 3 new hero section messaging variants for conversion testing:
   - **Variant A (Problem-Solution)**: "Tired of Diets That Ignore Your Demanding Schedule?" - addresses visitor frustration, positions Metabolikal as solution
   - **Variant B (Results-Focused)**: "Reclaim Your Energy. Lose the Weight. Keep Your Schedule." - leads with measurable outcomes, animated counters
