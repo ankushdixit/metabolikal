@@ -42,6 +42,7 @@ import {
 } from "@/hooks/use-profile-completion";
 import { CalculatorFormData } from "@/lib/validations";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Dynamic imports for modals - reduces initial bundle size
 // Modals are only loaded when opened
@@ -186,6 +187,15 @@ export default function LandingPage() {
       awardCalculatorPoints(25);
     }
   }, [calculatorResults, awardCalculatorPoints]);
+
+  // Handle modal query parameter (e.g., from thank you page redirect)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const modalParam = searchParams.get("modal");
+    if (modalParam === "assessment") {
+      openModal("assessment");
+    }
+  }, [searchParams, openModal]);
 
   // Handler for when assessment continues to calculator
   const handleAssessmentContinue = async () => {

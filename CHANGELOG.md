@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Custom Thank You Page After Calendly Booking**: Branded confirmation page at `/thank-you` route:
+  - Success confirmation with green checkmark icon
+  - Pre-session checklist with 3 steps (Check Inbox, Complete Form, Show Up Ready)
+  - Session expectations section with 4 bullet points
+  - Primary CTA to homepage, secondary CTA opens assessment modal
+  - Floating decorative icons (Star, Trophy, Crown) with pulse animations
+  - Follows Modern Athletic design system (athletic-card, btn-athletic, gradient-electric)
+  - Standalone layout without header/footer for focused post-booking experience
+  - URL parameter support (`?modal=assessment`) for deep-linking to modals
+  - Full test coverage (25 tests)
+
 - **YouTube Shorts Carousel on Landing Page**: Moved all transformation videos from modal to landing page for immediate visibility:
   - 12 YouTube Shorts (portrait 9:16) displayed in horizontally scrollable carousel
   - 3 full-length testimonial videos (landscape 16:9) appended to carousel end
