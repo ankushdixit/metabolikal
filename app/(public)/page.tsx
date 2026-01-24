@@ -14,6 +14,7 @@
 import dynamic from "next/dynamic";
 import { Trophy, HelpCircle, Flame, ChevronRight, Target, Zap, Dumbbell } from "lucide-react";
 import { HeroController } from "@/components/landing/hero";
+import { YouTubeShortsCarousel } from "@/components/landing/youtube-shorts-carousel";
 import {
   QuickAccessTray,
   PointsTray,
@@ -368,15 +369,20 @@ export default function LandingPage() {
           <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-4">
             Real People. <span className="gradient-athletic">Real Transformations.</span>
           </h2>
-          <p className="text-muted-foreground font-bold max-w-xl mb-12">
+          <p className="text-muted-foreground font-bold max-w-xl mb-8">
             See the results of executives who mastered their metabolic operating system
           </p>
+
+          {/* YouTube Shorts Carousel */}
+          <div className="mb-10">
+            <YouTubeShortsCarousel />
+          </div>
 
           <button
             onClick={() => openModal("real-results")}
             className="btn-athletic group flex items-center gap-3 px-8 py-4 bg-secondary text-foreground"
           >
-            View Transformation Gallery
+            View Before &amp; After Gallery
             <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </button>
         </div>

@@ -10,8 +10,17 @@ jest.mock("next/image", () => ({
     src: string;
     fill?: boolean;
     className?: string;
+    onError?: () => void;
   }) {
-    return <img alt={props.alt} src={props.src} data-testid="mock-image" />;
+    return (
+      <img
+        alt={props.alt}
+        src={props.src}
+        data-testid="mock-image"
+        className={props.className}
+        onError={props.onError}
+      />
+    );
   },
 }));
 
@@ -28,31 +37,38 @@ describe("RealResultsModal", () => {
   it("renders the modal title", () => {
     render(<RealResultsModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    // Title contains "Real People." and "Real Transformations."
+    // Title contains "Transformation" and "Gallery"
     expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+    expect(screen.getByText("Transformation")).toBeInTheDocument();
+    expect(screen.getByText("Gallery")).toBeInTheDocument();
   });
 
-  it("renders YouTube section heading", () => {
+  it("renders modal description", () => {
     render(<RealResultsModal {...defaultProps} />);
-    expect(screen.getByText("Client Transformation Stories")).toBeInTheDocument();
+    expect(
+      screen.getByText(/See the incredible before & after transformations/i)
+    ).toBeInTheDocument();
   });
 
-  it("renders YouTube video embeds", () => {
+  it("renders Before & After Results section heading", () => {
     render(<RealResultsModal {...defaultProps} />);
+    expect(screen.getByText("Before & After Results")).toBeInTheDocument();
+  });
+
+  it("renders Before/After carousel", () => {
+    render(<RealResultsModal {...defaultProps} />);
+    // The carousel should be present with navigation
+    expect(
+      screen.getByRole("region", { name: /before and after transformation gallery/i })
+    ).toBeInTheDocument();
+  });
+
+  it("does not render Client Testimonials section (moved to landing page)", () => {
+    render(<RealResultsModal {...defaultProps} />);
+    expect(screen.queryByText("Client Testimonials")).not.toBeInTheDocument();
+    // No YouTube videos in modal - they've been moved to the landing page
     const iframes = document.querySelectorAll("iframe");
-    // 12 YouTube Shorts + 3 full testimonial videos = 15 total
-    expect(iframes.length).toBe(15);
-  });
-
-  it("renders Client Testimonials section", () => {
-    render(<RealResultsModal {...defaultProps} />);
-    expect(screen.getByText("Client Testimonials")).toBeInTheDocument();
-  });
-
-  it("renders main transformation results image", () => {
-    render(<RealResultsModal {...defaultProps} />);
-    const image = screen.getByAltText("Client transformations");
-    expect(image).toBeInTheDocument();
+    expect(iframes.length).toBe(0);
   });
 
   it("renders three Instagram cards", () => {
@@ -81,9 +97,14 @@ describe("RealResultsModal", () => {
     expect(instagramLink).toHaveAttribute("rel", "noopener noreferrer");
   });
 
+  it("renders Connect With Our Community section", () => {
+    render(<RealResultsModal {...defaultProps} />);
+    expect(screen.getByText("Connect With Our Community")).toBeInTheDocument();
+  });
+
   it("does not render when closed", () => {
     render(<RealResultsModal {...defaultProps} open={false} />);
-    expect(screen.queryByText("Real People.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Transformation")).not.toBeInTheDocument();
   });
 
   it("calls onOpenChange when close button is clicked", async () => {
@@ -94,5 +115,16 @@ describe("RealResultsModal", () => {
     await user.click(closeButton);
 
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("does not render any YouTube video sections (all moved to landing page)", () => {
+    render(<RealResultsModal {...defaultProps} />);
+    // The YouTube Shorts "Client Transformation Stories" section should no longer exist
+    expect(screen.queryByText("Client Transformation Stories")).not.toBeInTheDocument();
+    // The Client Testimonials section should no longer exist either
+    expect(screen.queryByText("Client Testimonials")).not.toBeInTheDocument();
+    // No iframes at all - all videos are on landing page now
+    const iframes = document.querySelectorAll("iframe");
+    expect(iframes.length).toBe(0);
   });
 });

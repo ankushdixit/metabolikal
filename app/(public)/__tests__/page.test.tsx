@@ -14,10 +14,22 @@ jest.mock("next/image", () => ({
     src: string;
     fill?: boolean;
     className?: string;
+    onError?: () => void;
   }) {
-    return <img alt={props.alt} src={props.src} data-testid="mock-image" />;
+    return (
+      <img alt={props.alt} src={props.src} data-testid="mock-image" className={props.className} />
+    );
   },
 }));
+
+// Mock IntersectionObserver for YouTube Shorts carousel
+const mockIntersectionObserver = jest.fn();
+mockIntersectionObserver.mockReturnValue({
+  observe: () => null,
+  unobserve: () => null,
+  disconnect: () => null,
+});
+window.IntersectionObserver = mockIntersectionObserver;
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
@@ -105,10 +117,18 @@ describe("Landing Page", () => {
       expect(screen.getByText(/Real Transformations/i)).toBeInTheDocument();
     });
 
-    it("renders View Transformation Gallery button", () => {
+    it("renders YouTube Shorts carousel", () => {
+      renderWithProvider(<LandingPage />);
+      // The carousel should be present with its aria-label
+      expect(
+        screen.getByRole("region", { name: /client transformation video stories/i })
+      ).toBeInTheDocument();
+    });
+
+    it("renders View Before & After Gallery button", () => {
       renderWithProvider(<LandingPage />);
       expect(
-        screen.getByRole("button", { name: /View Transformation Gallery/i })
+        screen.getByRole("button", { name: /View Before & After Gallery/i })
       ).toBeInTheDocument();
     });
   });
