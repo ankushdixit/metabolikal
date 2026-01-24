@@ -70,7 +70,7 @@ export interface AssessmentScores {
   hydration: number;
 }
 
-const DEFAULT_SCORES: AssessmentScores = {
+export const DEFAULT_SCORES: AssessmentScores = {
   sleep: 5,
   body: 5,
   nutrition: 5,
@@ -83,9 +83,11 @@ const DEFAULT_SCORES: AssessmentScores = {
 /**
  * Hook to manage lifestyle assessment state and calculations.
  * Handles slider values, lifestyle score computation, and state persistence.
+ *
+ * @param initialScores - Optional initial scores to pre-populate sliders (e.g., from previous assessment)
  */
-export function useAssessment() {
-  const [scores, setScores] = useState<AssessmentScores>(DEFAULT_SCORES);
+export function useAssessment(initialScores?: AssessmentScores) {
+  const [scores, setScores] = useState<AssessmentScores>(initialScores || DEFAULT_SCORES);
 
   /**
    * Update a single assessment score.
@@ -97,6 +99,15 @@ export function useAssessment() {
       ...prev,
       [category]: Math.min(10, Math.max(0, value)),
     }));
+  }, []);
+
+  /**
+   * Set all scores at once.
+   * Used for pre-populating from previous assessment.
+   * @param newScores - Complete scores object
+   */
+  const setAllScores = useCallback((newScores: AssessmentScores) => {
+    setScores(newScores);
   }, []);
 
   /**
@@ -119,6 +130,7 @@ export function useAssessment() {
   return {
     scores,
     updateScore,
+    setAllScores,
     resetScores,
     lifestyleScore,
   };

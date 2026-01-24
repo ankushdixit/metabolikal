@@ -17,12 +17,15 @@ import {
   Users,
   Droplet,
   ChevronRight,
+  Trophy,
+  CheckCircle2,
 } from "lucide-react";
 import {
   ASSESSMENT_CATEGORIES,
   AssessmentScores,
   AssessmentCategoryId,
 } from "@/hooks/use-assessment";
+import { StoredAssessment, formatAssessmentDate } from "@/hooks/use-assessment-storage";
 
 interface AssessmentModalProps {
   open: boolean;
@@ -30,6 +33,7 @@ interface AssessmentModalProps {
   scores: AssessmentScores;
   onScoreChange: (category: AssessmentCategoryId, value: number) => void;
   onContinue: () => void;
+  previousAssessment?: StoredAssessment | null;
 }
 
 const ICON_MAP = {
@@ -48,6 +52,7 @@ export function AssessmentModal({
   scores,
   onScoreChange,
   onContinue,
+  previousAssessment,
 }: AssessmentModalProps) {
   const handleContinue = () => {
     onOpenChange(false);
@@ -69,6 +74,38 @@ export function AssessmentModal({
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            {/* Welcome Back Banner - shown when previous assessment exists */}
+            {previousAssessment && (
+              <div className="relative overflow-hidden bg-emerald-950/40 border border-emerald-800/50 p-5 pl-8">
+                {/* Green left accent stripe */}
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-emerald-400" />
+
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl" role="img" aria-label="Waving hand">
+                    👋
+                  </span>
+                  <div className="flex-1">
+                    <h4 className="font-black uppercase tracking-wide text-sm text-emerald-400 mb-2">
+                      Welcome Back!
+                    </h4>
+                    <p className="text-sm text-muted-foreground font-bold">
+                      Last assessment:{" "}
+                      <span className="text-primary">
+                        {formatAssessmentDate(previousAssessment.date)}
+                      </span>{" "}
+                      - Score:{" "}
+                      <span className="text-primary">{previousAssessment.totalScore}/100</span>{" "}
+                      <Trophy className="inline h-4 w-4 text-primary" />
+                    </p>
+                    <p className="text-sm text-emerald-400 font-bold mt-1 flex items-center gap-1">
+                      Let&apos;s see your progress!{" "}
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Assessment Sliders */}
             <section>
               <div className="flex items-center gap-3 mb-4">

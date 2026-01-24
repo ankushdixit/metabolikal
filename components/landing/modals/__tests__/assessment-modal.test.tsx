@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AssessmentModal } from "../assessment-modal";
 import { AssessmentScores, ASSESSMENT_CATEGORIES } from "@/hooks/use-assessment";
+import { StoredAssessment } from "@/hooks/use-assessment-storage";
 
 describe("AssessmentModal", () => {
   const defaultScores: AssessmentScores = {
@@ -20,6 +21,21 @@ describe("AssessmentModal", () => {
     scores: defaultScores,
     onScoreChange: jest.fn(),
     onContinue: jest.fn(),
+  };
+
+  const mockPreviousAssessment: StoredAssessment = {
+    date: "2026-01-20T10:00:00.000Z",
+    scores: {
+      sleep: 7,
+      body: 6,
+      nutrition: 8,
+      mental: 5,
+      stress: 6,
+      support: 7,
+      hydration: 8,
+    },
+    totalScore: 70,
+    lifestyleScore: 67,
   };
 
   beforeEach(() => {
@@ -152,5 +168,32 @@ describe("AssessmentModal", () => {
   it("does not render when closed", () => {
     render(<AssessmentModal {...defaultProps} open={false} />);
     expect(screen.queryByText(/METABOLI-K-AL Assessment/i)).not.toBeInTheDocument();
+  });
+
+  describe("Welcome Back banner", () => {
+    it("does not show Welcome Back banner when no previous assessment", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={null} />);
+      expect(screen.queryByText(/Welcome Back/i)).not.toBeInTheDocument();
+    });
+
+    it("shows Welcome Back banner when previous assessment exists", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      expect(screen.getByText(/Welcome Back!/i)).toBeInTheDocument();
+    });
+
+    it("displays last assessment date formatted correctly", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      expect(screen.getByText(/01\/20\/2026/)).toBeInTheDocument();
+    });
+
+    it("displays previous score with trophy emoji", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      expect(screen.getByText(/70\/100/)).toBeInTheDocument();
+    });
+
+    it("displays encouraging progress text", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      expect(screen.getByText(/Let's see your progress!/i)).toBeInTheDocument();
+    });
   });
 });
