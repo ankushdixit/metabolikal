@@ -4,10 +4,12 @@ import ResetPasswordPage from "../reset-password/page";
 
 // Mock next/navigation
 const mockPush = jest.fn();
+const mockSearchParams = new URLSearchParams();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // Mock next/image
@@ -111,7 +113,7 @@ describe("ResetPasswordPage", () => {
 
     await waitFor(() => {
       expect(mockSignOut).toHaveBeenCalled();
-      expect(mockPush).toHaveBeenCalledWith("/login?message=Password reset successful");
+      expect(mockPush).toHaveBeenCalledWith("/login?message=Password%20reset%20successful");
     });
   });
 

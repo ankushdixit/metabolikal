@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { FoodItemForm } from "@/components/admin/food-item-form";
 import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
 import { createBrowserSupabaseClient } from "@/lib/auth";
@@ -21,7 +22,6 @@ export default function EditFoodItemPage() {
   const params = useParams();
   const foodItemId = params.id as string;
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isFormInitialized = useRef(false);
 
@@ -185,17 +185,13 @@ export default function EditFoodItemPage() {
               await supabase.from("food_item_alternatives").insert(alternativeInserts);
             }
 
-            setSuccessMessage("Food item updated successfully!");
-            setTimeout(() => {
-              router.push("/admin/food-database");
-            }, 1500);
+            toast.success("Food item updated successfully!");
+            router.push("/admin/food-database");
           } catch (error) {
             console.error("Error saving relationships:", error);
             // Food item was still updated, just show partial success
-            setSuccessMessage("Food item updated, but some relationships failed to save.");
-            setTimeout(() => {
-              router.push("/admin/food-database");
-            }, 2000);
+            toast.warning("Food item updated, but some relationships failed to save.");
+            router.push("/admin/food-database");
           } finally {
             setIsSaving(false);
           }
@@ -260,13 +256,6 @@ export default function EditFoodItemPage() {
         </h1>
         <p className="text-sm text-muted-foreground font-bold">Update food item: {foodItem.name}</p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

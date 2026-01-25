@@ -85,14 +85,29 @@ export const refineAuthProvider: AuthProvider = {
       };
     }
 
-    // Get user role for redirect
+    // Get user profile including deactivation status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_deactivated")
       .eq("id", data.user.id)
       .single();
 
     const role = (profile?.role as UserRole) ?? "client";
+    const isDeactivated = profile?.is_deactivated ?? false;
+
+    // Block deactivated users from logging in (except admins)
+    if (isDeactivated && role !== "admin") {
+      // Sign out the deactivated user
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: {
+          name: "LoginError",
+          message: "Your account has been deactivated. Please contact support.",
+        },
+      };
+    }
+
     const redirectTo = role === "admin" ? "/admin" : "/dashboard";
 
     return {

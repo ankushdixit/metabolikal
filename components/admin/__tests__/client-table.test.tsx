@@ -17,6 +17,14 @@ describe("ClientTable Component", () => {
       phone: null,
       role: "client" as const,
       avatar_url: null,
+      date_of_birth: null,
+      gender: null,
+      address: null,
+      invited_at: null,
+      invitation_accepted_at: null,
+      is_deactivated: false,
+      deactivated_at: null,
+      deactivation_reason: null,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -56,6 +64,14 @@ describe("ClientTable Component", () => {
       phone: null,
       role: "client" as const,
       avatar_url: null,
+      date_of_birth: null,
+      gender: null,
+      address: null,
+      invited_at: null,
+      invitation_accepted_at: null,
+      is_deactivated: false,
+      deactivated_at: null,
+      deactivation_reason: null,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -95,6 +111,14 @@ describe("ClientTable Component", () => {
       phone: null,
       role: "client" as const,
       avatar_url: null,
+      date_of_birth: null,
+      gender: null,
+      address: null,
+      invited_at: null,
+      invitation_accepted_at: null,
+      is_deactivated: false,
+      deactivated_at: null,
+      deactivation_reason: null,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -178,6 +202,19 @@ describe("ClientTable Component", () => {
   it("shows active status for reviewed non-flagged clients", () => {
     render(<ClientTable {...defaultProps} />);
     expect(screen.getByText("Active")).toBeInTheDocument();
+  });
+
+  it("shows deactivated status for deactivated clients", () => {
+    const deactivatedClients = [
+      {
+        ...mockClients[0],
+        is_deactivated: true,
+        deactivated_at: "2025-01-20T00:00:00Z",
+        deactivation_reason: "Test reason",
+      },
+    ];
+    render(<ClientTable {...defaultProps} clients={deactivatedClients} />);
+    expect(screen.getByText("Deactivated")).toBeInTheDocument();
   });
 
   it("renders loading state", () => {

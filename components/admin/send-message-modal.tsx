@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCreate } from "@refinedev/core";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -54,10 +55,14 @@ export function SendMessageModal({
       },
       {
         onSuccess: () => {
+          toast.success(`Message sent to ${client?.full_name || "client"}`);
           setTitle("");
           setMessage("");
           onClose();
           onSuccess?.();
+        },
+        onError: (error) => {
+          toast.error(error?.message || "Failed to send message");
         },
       }
     );

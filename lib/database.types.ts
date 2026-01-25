@@ -24,6 +24,9 @@ export type WorkoutSection = "warmup" | "main" | "cooldown";
 
 export type Gender = "male" | "female";
 
+// Extended gender type for profile information (includes additional options)
+export type ProfileGender = "male" | "female" | "other" | "prefer_not_to_say";
+
 export type Goal = "fat_loss" | "maintain" | "muscle_gain";
 
 export type GenderRestriction = "male" | "female" | null;
@@ -108,6 +111,14 @@ export interface Database {
           phone: string | null;
           role: UserRole;
           avatar_url: string | null;
+          date_of_birth: string | null;
+          gender: ProfileGender | null;
+          address: string | null;
+          invited_at: string | null;
+          invitation_accepted_at: string | null;
+          is_deactivated: boolean;
+          deactivated_at: string | null;
+          deactivation_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -118,6 +129,14 @@ export interface Database {
           phone?: string | null;
           role?: UserRole;
           avatar_url?: string | null;
+          date_of_birth?: string | null;
+          gender?: ProfileGender | null;
+          address?: string | null;
+          invited_at?: string | null;
+          invitation_accepted_at?: string | null;
+          is_deactivated?: boolean;
+          deactivated_at?: string | null;
+          deactivation_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -128,6 +147,14 @@ export interface Database {
           phone?: string | null;
           role?: UserRole;
           avatar_url?: string | null;
+          date_of_birth?: string | null;
+          gender?: ProfileGender | null;
+          address?: string | null;
+          invited_at?: string | null;
+          invitation_accepted_at?: string | null;
+          is_deactivated?: boolean;
+          deactivated_at?: string | null;
+          deactivation_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };

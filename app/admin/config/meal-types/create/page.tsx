@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useCreate } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { z } from "zod";
 import { MealTypeForm, type MealTypeFormData } from "@/components/admin/meal-type-form";
 
@@ -37,8 +37,6 @@ const mealTypeSchema = z.object({
  */
 export default function CreateMealTypePage() {
   const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Create mutation
   const createMutation = useCreate();
@@ -62,7 +60,6 @@ export default function CreateMealTypePage() {
 
   // Handle form submission
   const onSubmit = handleSubmit((data) => {
-    setErrorMessage(null);
     createMutation.mutate(
       {
         resource: "meal_types",
@@ -70,14 +67,12 @@ export default function CreateMealTypePage() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage("Meal type created successfully!");
-          setTimeout(() => {
-            router.push("/admin/config/meal-types");
-          }, 1500);
+          toast.success("Meal type created successfully!");
+          router.push("/admin/config/meal-types");
         },
         onError: (error) => {
           console.error("Create error:", error);
-          setErrorMessage(
+          toast.error(
             error.message ||
               "Failed to create meal type. Make sure the database migration has been applied."
           );
@@ -108,20 +103,6 @@ export default function CreateMealTypePage() {
         </h1>
         <p className="text-sm text-muted-foreground font-bold">Create a new meal category</p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="athletic-card p-4 pl-8 bg-destructive/20 border-destructive/50">
-          <p className="text-red-500 font-bold">{errorMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

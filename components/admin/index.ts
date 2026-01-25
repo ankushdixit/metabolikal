@@ -13,3 +13,4 @@ export { FoodAlternativesSelector } from "./food-alternatives-selector";
 export { MealTypeForm } from "./meal-type-form";
 export { ConditionForm } from "./condition-form";
 export { SendMessageModal } from "./send-message-modal";
+export { AddClientModal } from "./add-client-modal";

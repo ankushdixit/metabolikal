@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useCreate } from "@refinedev/core";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -49,8 +49,6 @@ const conditionSchema = z.object({
  */
 export default function CreateConditionPage() {
   const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Create mutation
   const createMutation = useCreate();
@@ -77,8 +75,6 @@ export default function CreateConditionPage() {
 
   // Handle form submission
   const onSubmit = handleSubmit((data) => {
-    setErrorMessage(null);
-
     // Clean up data - convert empty description to null
     const cleanData = {
       ...data,
@@ -92,14 +88,12 @@ export default function CreateConditionPage() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage("Medical condition created successfully!");
-          setTimeout(() => {
-            router.push("/admin/config/conditions");
-          }, 1500);
+          toast.success("Medical condition created successfully!");
+          router.push("/admin/config/conditions");
         },
         onError: (error) => {
           console.error("Create error:", error);
-          setErrorMessage(error.message || "Failed to create condition. Please try again.");
+          toast.error(error.message || "Failed to create condition. Please try again.");
         },
       }
     );
@@ -129,20 +123,6 @@ export default function CreateConditionPage() {
           Create a new medical condition for metabolic calculations
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="athletic-card p-4 pl-8 bg-destructive/20 border-destructive/50">
-          <p className="text-red-500 font-bold">{errorMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

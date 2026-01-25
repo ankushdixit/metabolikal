@@ -84,11 +84,21 @@ export async function middleware(request: NextRequest) {
   if ((isAdminRoute || isClientRoute) && user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_deactivated")
       .eq("id", user.id)
       .single();
 
     const role = profile?.role ?? "challenger";
+    const isDeactivated = profile?.is_deactivated ?? false;
+
+    // Block deactivated users from all protected routes (except admins)
+    if (isDeactivated && role !== "admin") {
+      // Sign out the deactivated user and redirect to login
+      await supabase.auth.signOut();
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("error", "account_deactivated");
+      return NextResponse.redirect(loginUrl);
+    }
 
     // Block challengers from dashboard routes
     if (isClientRoute && role === "challenger") {
