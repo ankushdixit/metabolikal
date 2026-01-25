@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -103,14 +102,6 @@ export function HighPerformerTrapModal({
               </div>
 
               <div className="athletic-card overflow-hidden">
-                <div className="relative w-full aspect-[16/9]">
-                  <Image
-                    src="/images/revelation-section.jpg"
-                    alt="The revelation"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
                 <div className="p-6 pl-8">
                   <h4 className="text-xl font-black uppercase tracking-tight mb-4">
                     You weren&apos;t designed for generic solutions.

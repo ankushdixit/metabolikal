@@ -62,9 +62,9 @@ export function MeetExpertModal({ open, onOpenChange, onOpenCalendly }: MeetExpe
           <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
             {/* Expert photo and intro */}
             <div className="flex flex-col md:flex-row gap-6">
-              <div className="relative w-full md:w-48 h-48 flex-shrink-0">
+              <div className="relative w-full md:w-64 h-64 flex-shrink-0">
                 <Image
-                  src="/images/shivashish-lifestyle.jpg"
+                  src="/images/shivashish.webp"
                   alt="Shivashish Sinha"
                   fill
                   className="object-cover"
