@@ -1,4 +1,9 @@
-import { calculatorFormSchema, assessmentResultsSchema, foodItemSchema } from "../validations";
+import {
+  calculatorFormSchema,
+  assessmentResultsSchema,
+  foodItemSchema,
+  createClientSchema,
+} from "../validations";
 
 describe("calculatorFormSchema", () => {
   const validData = {
@@ -482,6 +487,166 @@ describe("foodItemSchema", () => {
         ...validData,
         meal_types: ["custom-meal-type"],
       });
+      expect(result.success).toBe(true);
+    });
+  });
+});
+
+describe("createClientSchema", () => {
+  const validData = {
+    full_name: "John Doe",
+    email: "john@example.com",
+  };
+
+  it("validates correct data with required fields only", () => {
+    const result = createClientSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("validates correct data with all fields", () => {
+    const result = createClientSchema.safeParse({
+      ...validData,
+      date_of_birth: "1990-05-15",
+      gender: "male",
+      address: "123 Main St, City",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  describe("full_name validation", () => {
+    it("rejects empty full_name", () => {
+      const result = createClientSchema.safeParse({ ...validData, full_name: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects full_name over 100 characters", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        full_name: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid full_name", () => {
+      const result = createClientSchema.safeParse({ ...validData, full_name: "Jane Smith" });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("email validation", () => {
+    it("rejects invalid email", () => {
+      const result = createClientSchema.safeParse({ ...validData, email: "not-an-email" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects empty email", () => {
+      const result = createClientSchema.safeParse({ ...validData, email: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid email", () => {
+      const result = createClientSchema.safeParse({ ...validData, email: "test@example.com" });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts email with subdomain", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        email: "user@mail.example.com",
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("date_of_birth validation", () => {
+    it("is optional", () => {
+      const result = createClientSchema.safeParse({ ...validData, date_of_birth: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts valid date format", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        date_of_birth: "1990-05-15",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects future date", () => {
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      const result = createClientSchema.safeParse({
+        ...validData,
+        date_of_birth: futureDate.toISOString().split("T")[0],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects invalid date format", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        date_of_birth: "not-a-date",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("gender validation", () => {
+    it("is optional", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts male", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: "male" });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts female", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: "female" });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts other", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: "other" });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts prefer_not_to_say", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: "prefer_not_to_say" });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid gender", () => {
+      const result = createClientSchema.safeParse({ ...validData, gender: "invalid" });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("address validation", () => {
+    it("is optional", () => {
+      const result = createClientSchema.safeParse({ ...validData, address: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts valid address", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        address: "123 Main St, City, State 12345",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects address over 500 characters", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        address: "a".repeat(501),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts empty string", () => {
+      const result = createClientSchema.safeParse({ ...validData, address: "" });
       expect(result.success).toBe(true);
     });
   });

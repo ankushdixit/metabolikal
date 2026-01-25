@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,12 +18,18 @@ import {
  * Reset Password Page
  * Allows users to set a new password after clicking the reset link.
  * This page is accessed via the email link from the password reset flow.
+ * Also used for invited users to set their initial password.
  */
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if this is a new invited user
+  const isInvitedUser = message?.includes("Welcome");
 
   const {
     register,
@@ -54,7 +60,10 @@ export default function ResetPasswordPage() {
       await supabase.auth.signOut();
 
       // Redirect to login with success message
-      router.push("/login?message=Password reset successful");
+      const successMessage = isInvitedUser
+        ? "Account setup complete! Please sign in."
+        : "Password reset successful";
+      router.push(`/login?message=${encodeURIComponent(successMessage)}`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
@@ -64,9 +73,21 @@ export default function ResetPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Reset password</h1>
-        <p className="text-muted-foreground">Enter your new password below</p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {isInvitedUser ? "Set your password" : "Reset password"}
+        </h1>
+        <p className="text-muted-foreground">
+          {isInvitedUser
+            ? "Create a password to complete your account setup"
+            : "Enter your new password below"}
+        </p>
       </div>
+
+      {message && (
+        <div className="bg-primary/10 border border-primary/20 rounded-sm p-3 text-sm text-primary">
+          {message}
+        </div>
+      )}
 
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-sm p-3 text-sm text-destructive">
@@ -104,7 +125,13 @@ export default function ResetPasswordPage() {
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Resetting..." : "Reset Password"}
+          {isLoading
+            ? isInvitedUser
+              ? "Setting up..."
+              : "Resetting..."
+            : isInvitedUser
+              ? "Set Password"
+              : "Reset Password"}
         </Button>
       </form>
 

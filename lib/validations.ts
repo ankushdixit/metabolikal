@@ -273,3 +273,39 @@ export const foodItemSchema = z.object({
 });
 
 export type FoodItemFormData = z.infer<typeof foodItemSchema>;
+
+/**
+ * Client creation validation schema.
+ * Used by admin to create new client accounts with invite.
+ */
+export const createClientSchema = z.object({
+  full_name: z
+    .string()
+    .min(1, { message: "Full name is required" })
+    .max(100, { message: "Full name must be 100 characters or less" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  date_of_birth: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: "Please enter a valid date" }
+    )
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        const today = new Date();
+        return date < today;
+      },
+      { message: "Date of birth must be in the past" }
+    ),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
+  address: z.string().max(500, { message: "Address must be 500 characters or less" }).optional(),
+});
+
+export type CreateClientFormData = z.infer<typeof createClientSchema>;

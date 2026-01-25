@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
-import { Search, Users } from "lucide-react";
+import { Search, Users, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
+import { AddClientModal } from "@/components/admin/add-client-modal";
 import { cn } from "@/lib/utils";
 import type { Profile, CheckIn } from "@/lib/database.types";
 
-type FilterTab = "all" | "active" | "flagged";
+type FilterTab = "all" | "active" | "flagged" | "invited" | "deactivated";
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +25,7 @@ export default function ClientsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [addClientModalOpen, setAddClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
 
   // Get current admin user ID
@@ -88,9 +91,23 @@ export default function ClientsPage() {
 
     // Apply tab filter
     if (activeTab === "flagged") {
-      result = result.filter((client) => client.lastCheckIn?.flagged_for_followup);
+      result = result.filter(
+        (client) => client.lastCheckIn?.flagged_for_followup && !client.is_deactivated
+      );
+    } else if (activeTab === "invited") {
+      result = result.filter(
+        (client) => client.invited_at && !client.invitation_accepted_at && !client.is_deactivated
+      );
+    } else if (activeTab === "deactivated") {
+      result = result.filter((client) => client.is_deactivated);
     } else if (activeTab === "active") {
-      result = result.filter((client) => !client.lastCheckIn?.flagged_for_followup);
+      // Active = not flagged, not pending invite, and not deactivated
+      result = result.filter(
+        (client) =>
+          !client.lastCheckIn?.flagged_for_followup &&
+          !(client.invited_at && !client.invitation_accepted_at) &&
+          !client.is_deactivated
+      );
     }
 
     return result;
@@ -107,20 +124,98 @@ export default function ClientsPage() {
 
   // Tab counts
   const allCount = clientsWithCheckIns.length;
+  const deactivatedCount = clientsWithCheckIns.filter((c) => c.is_deactivated).length;
   const flaggedCount = clientsWithCheckIns.filter(
-    (c) => c.lastCheckIn?.flagged_for_followup
+    (c) => c.lastCheckIn?.flagged_for_followup && !c.is_deactivated
   ).length;
-  const activeCount = allCount - flaggedCount;
+  const invitedCount = clientsWithCheckIns.filter(
+    (c) => c.invited_at && !c.invitation_accepted_at && !c.is_deactivated
+  ).length;
+  const activeCount = allCount - flaggedCount - invitedCount - deactivatedCount;
 
   const tabs: { label: string; value: FilterTab; count: number }[] = [
     { label: "All", value: "all", count: allCount },
     { label: "Active", value: "active", count: activeCount },
+    { label: "Invited", value: "invited", count: invitedCount },
     { label: "Flagged", value: "flagged", count: flaggedCount },
+    { label: "Deactivated", value: "deactivated", count: deactivatedCount },
   ];
 
   const handleSendMessage = (client: Profile) => {
     setSelectedClient(client);
     setMessageModalOpen(true);
+  };
+
+  const handleResendInvite = async (client: Profile) => {
+    try {
+      const response = await fetch("/api/admin/resend-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: client.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to resend invite:", result.error);
+        toast.error(result.error || "Failed to resend invite");
+        return;
+      }
+
+      toast.success("Invitation email resent successfully!");
+      clientsQuery.query.refetch();
+    } catch (error) {
+      console.error("Error resending invite:", error);
+      toast.error("An error occurred while resending the invite");
+    }
+  };
+
+  const handleDeactivateClient = async (client: Profile) => {
+    try {
+      const response = await fetch("/api/admin/deactivate-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: client.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to deactivate client:", result.error);
+        toast.error(result.error || "Failed to deactivate client");
+        return;
+      }
+
+      toast.success(`${client.full_name || client.email} has been deactivated.`);
+      clientsQuery.query.refetch();
+    } catch (error) {
+      console.error("Error deactivating client:", error);
+      toast.error("An error occurred while deactivating the client");
+    }
+  };
+
+  const handleReactivateClient = async (client: Profile) => {
+    try {
+      const response = await fetch("/api/admin/reactivate-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: client.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to reactivate client:", result.error);
+        toast.error(result.error || "Failed to reactivate client");
+        return;
+      }
+
+      toast.success(`${client.full_name || client.email} has been reactivated.`);
+      clientsQuery.query.refetch();
+    } catch (error) {
+      console.error("Error reactivating client:", error);
+      toast.error("An error occurred while reactivating the client");
+    }
   };
 
   return (
@@ -136,11 +231,20 @@ export default function ClientsPage() {
               Manage and review all client profiles
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1 bg-secondary">
-            <Users className="h-4 w-4 text-primary" />
-            <span className="font-bold uppercase tracking-wider text-sm">
-              {filteredClients.length} Client{filteredClients.length !== 1 ? "s" : ""}
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setAddClientModalOpen(true)}
+              className="btn-athletic flex items-center gap-2 px-4 py-2 gradient-electric text-black glow-power text-sm font-bold uppercase tracking-wider"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Client
+            </button>
+            <div className="flex items-center gap-2 px-3 py-1 bg-secondary">
+              <Users className="h-4 w-4 text-primary" />
+              <span className="font-bold uppercase tracking-wider text-sm">
+                {filteredClients.length} Client{filteredClients.length !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -186,6 +290,9 @@ export default function ClientsPage() {
         onPageChange={setCurrentPage}
         isLoading={isLoading}
         onSendMessage={handleSendMessage}
+        onResendInvite={handleResendInvite}
+        onDeactivateClient={handleDeactivateClient}
+        onReactivateClient={handleReactivateClient}
       />
 
       {/* Send Message Modal */}
@@ -200,6 +307,16 @@ export default function ClientsPage() {
           }}
         />
       )}
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        isOpen={addClientModalOpen}
+        onClose={() => setAddClientModalOpen(false)}
+        onSuccess={() => {
+          // Refetch clients list after successful creation
+          clientsQuery.query.refetch();
+        }}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { FoodItemForm } from "@/components/admin/food-item-form";
 import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
 import { createBrowserSupabaseClient } from "@/lib/auth";
@@ -17,7 +18,6 @@ import { createBrowserSupabaseClient } from "@/lib/auth";
  */
 export default function CreateFoodItemPage() {
   const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Create mutation
@@ -100,17 +100,13 @@ export default function CreateFoodItemPage() {
               await supabase.from("food_item_alternatives").insert(alternativeInserts);
             }
 
-            setSuccessMessage("Food item created successfully!");
-            setTimeout(() => {
-              router.push("/admin/food-database");
-            }, 1500);
+            toast.success("Food item created successfully!");
+            router.push("/admin/food-database");
           } catch (error) {
             console.error("Error saving relationships:", error);
             // Food item was still created, just show partial success
-            setSuccessMessage("Food item created, but some relationships failed to save.");
-            setTimeout(() => {
-              router.push("/admin/food-database");
-            }, 2000);
+            toast.warning("Food item created, but some relationships failed to save.");
+            router.push("/admin/food-database");
           } finally {
             setIsSaving(false);
           }
@@ -146,13 +142,6 @@ export default function CreateFoodItemPage() {
           Create a new food item for diet plans
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

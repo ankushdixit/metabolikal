@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useOne, useUpdate } from "@refinedev/core";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useParams } from "next/navigation";
@@ -53,7 +54,6 @@ export default function EditConditionPage() {
   const params = useParams();
   const conditionId = params.id as string;
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isFormReady, setIsFormReady] = useState(false);
 
   // Fetch existing condition
@@ -123,10 +123,11 @@ export default function EditConditionPage() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage("Medical condition updated successfully!");
-          setTimeout(() => {
-            router.push("/admin/config/conditions");
-          }, 1500);
+          toast.success("Medical condition updated successfully!");
+          router.push("/admin/config/conditions");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to update condition");
         },
       }
     );
@@ -187,13 +188,6 @@ export default function EditConditionPage() {
           Update condition: {condition.name}
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

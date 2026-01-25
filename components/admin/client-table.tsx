@@ -1,7 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Flag, Eye, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import {
+  Flag,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Mail,
+  Loader2,
+  UserX,
+  UserCheck,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,6 +34,24 @@ interface ClientTableProps {
   onPageChange: (page: number) => void;
   isLoading?: boolean;
   onSendMessage?: (client: Profile) => void;
+  onResendInvite?: (client: Profile) => Promise<void>;
+  onDeactivateClient?: (client: Profile) => Promise<void>;
+  onReactivateClient?: (client: Profile) => Promise<void>;
+}
+
+/**
+ * Helper to determine client status
+ */
+function getClientStatus(client: ClientWithCheckIn): "deactivated" | "invited" | "active" | null {
+  // Deactivated takes precedence
+  if (client.is_deactivated) {
+    return "deactivated";
+  }
+  // If invited but not accepted, show "Invited"
+  if (client.invited_at && !client.invitation_accepted_at) {
+    return "invited";
+  }
+  return null;
 }
 
 /**
@@ -36,7 +65,43 @@ export function ClientTable({
   onPageChange,
   isLoading = false,
   onSendMessage,
+  onResendInvite,
+  onDeactivateClient,
+  onReactivateClient,
 }: ClientTableProps) {
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+
+  const handleResendInvite = async (client: Profile) => {
+    if (!onResendInvite) return;
+    setResendingId(client.id);
+    try {
+      await onResendInvite(client);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleDeactivate = async (client: Profile) => {
+    if (!onDeactivateClient) return;
+    setDeactivatingId(client.id);
+    try {
+      await onDeactivateClient(client);
+    } finally {
+      setDeactivatingId(null);
+    }
+  };
+
+  const handleReactivate = async (client: Profile) => {
+    if (!onReactivateClient) return;
+    setReactivatingId(client.id);
+    try {
+      await onReactivateClient(client);
+    } finally {
+      setReactivatingId(null);
+    }
+  };
   if (isLoading) {
     return (
       <div className="athletic-card overflow-hidden">
@@ -115,7 +180,11 @@ export function ClientTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  {client.lastCheckIn?.flagged_for_followup ? (
+                  {getClientStatus(client) === "deactivated" ? (
+                    <span className="text-red-400 font-bold text-xs uppercase">Deactivated</span>
+                  ) : getClientStatus(client) === "invited" ? (
+                    <span className="text-blue-400 font-bold text-xs uppercase">Invited</span>
+                  ) : client.lastCheckIn?.flagged_for_followup ? (
                     <div className="flex items-center gap-2">
                       <Flag className="h-4 w-4 text-primary" />
                       <span className="text-primary font-bold text-xs uppercase">Flagged</span>
@@ -130,7 +199,52 @@ export function ClientTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    {onSendMessage && (
+                    {/* Resend Invite button for pending invitations */}
+                    {onResendInvite && getClientStatus(client) === "invited" && (
+                      <button
+                        onClick={() => handleResendInvite(client)}
+                        disabled={resendingId === client.id}
+                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-sm disabled:opacity-50"
+                        title="Resend invitation email"
+                      >
+                        {resendingId === client.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                    {/* Reactivate button for deactivated users */}
+                    {onReactivateClient && getClientStatus(client) === "deactivated" && (
+                      <button
+                        onClick={() => handleReactivate(client)}
+                        disabled={reactivatingId === client.id}
+                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm disabled:opacity-50"
+                        title="Reactivate client"
+                      >
+                        {reactivatingId === client.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserCheck className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                    {/* Deactivate button for active users */}
+                    {onDeactivateClient && getClientStatus(client) !== "deactivated" && (
+                      <button
+                        onClick={() => handleDeactivate(client)}
+                        disabled={deactivatingId === client.id}
+                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm disabled:opacity-50"
+                        title="Deactivate client"
+                      >
+                        {deactivatingId === client.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserX className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                    {onSendMessage && !client.is_deactivated && (
                       <button
                         onClick={() => onSendMessage(client)}
                         className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary hover:bg-primary/30 text-sm"

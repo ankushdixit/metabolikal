@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Deactivation Feature**: Admin ability to temporarily disable client access:
+  - New database fields: `is_deactivated`, `deactivated_at`, `deactivation_reason` on profiles table
+  - Multi-layer enforcement: middleware blocks deactivated users, auth callback redirects on login, login provider returns error
+  - API endpoints: `POST /api/admin/deactivate-client` and `POST /api/admin/reactivate-client`
+  - Admin UI: "Deactivated" filter tab on clients page, status indicator, deactivate/reactivate action buttons
+  - Database migration with indexes for efficient querying
+
+- **Custom Supabase Auth Email Templates**: Branded invite emails for new clients:
+  - Custom HTML template with METABOLI-K-AL branding (dark theme, orange accents)
+  - Configured in `supabase/config.toml` and pushed via CLI
+  - Template includes welcome message, feature list, and branded CTA button
+
+- **Toast Notification System**: Consistent feedback for admin actions across the app:
+  - Installed `sonner` toast library with dark theme styling
+  - Converted all admin actions from browser alerts to styled toasts
+  - Updated: client invite, resend invite, deactivate/reactivate, send message, food database CRUD, config CRUD
+  - Kept inline errors for form validation context (auth pages, server validation)
+
+### Changed
+
+- **Invite Performance Optimization**: Removed slow `listUsers()` O(n) check from invite API:
+  - Let `inviteUserByEmail()` handle duplicate email detection natively
+  - Expected improvement: ~500ms-2s faster per invite (scales with user count)
+
 - **Enhanced Food Item Form with Quantities, Conditions, and Alternatives**: Expanded food item management with three new capabilities:
   - **Quantity Information**: Raw and cooked quantity fields to track weight changes during cooking (e.g., 100g raw chicken = 75g cooked)
   - **Avoid For Conditions**: Multi-select to mark foods that should be avoided for specific medical conditions (e.g., high-sugar foods for diabetics)

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to METABOLI-K-AL</title>
+    <style>
+      /* Reset styles */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        background-color: #0a0a0a;
+        color: #fafafa;
+      }
+
+      /* Container */
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      /* Card */
+      .card {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 40px;
+      }
+
+      /* Logo/Header */
+      .header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .logo {
+        font-size: 28px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #fafafa;
+      }
+
+      .logo-accent {
+        color: #ff6b00;
+      }
+
+      /* Content */
+      .content {
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin: 0 0 16px 0;
+        color: #fafafa;
+      }
+
+      .highlight {
+        color: #ff6b00;
+      }
+
+      p {
+        margin: 0 0 16px 0;
+        color: #a3a3a3;
+      }
+
+      /* Button */
+      .button-container {
+        text-align: center;
+        margin: 32px 0;
+      }
+
+      .button {
+        display: inline-block;
+        background: linear-gradient(135deg, #ff6b00 0%, #fbbf24 100%);
+        color: #000000 !important;
+        text-decoration: none;
+        padding: 16px 32px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 4px;
+      }
+
+      .button:hover {
+        opacity: 0.9;
+      }
+
+      /* Divider */
+      .divider {
+        border: none;
+        border-top: 1px solid #333;
+        margin: 32px 0;
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .footer a {
+        color: #ff6b00;
+        text-decoration: none;
+      }
+
+      /* Link fallback */
+      .link-fallback {
+        font-size: 12px;
+        color: #666;
+        word-break: break-all;
+        margin-top: 16px;
+      }
+
+      .link-fallback a {
+        color: #ff6b00;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <!-- Header -->
+        <div class="header">
+          <div class="logo">METABOLI-<span class="logo-accent">K</span>-AL</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+          <h1>Welcome to Your <span class="highlight">Transformation</span></h1>
+
+          <p>Hi{{ if .Data.full_name }} {{ .Data.full_name }}{{ end }},</p>
+
+          <p>
+            You've been invited to join METABOLI-K-AL, your personalized platform for achieving your
+            health and fitness goals. Your coach has set up your account and is ready to help you on
+            your journey.
+          </p>
+
+          <p>
+            Click the button below to set your password and access your personalized dashboard with:
+          </p>
+
+          <ul style="color: #a3a3a3; margin: 16px 0; padding-left: 20px">
+            <li>Custom diet plans tailored to your goals</li>
+            <li>Personalized workout routines</li>
+            <li>Progress tracking and check-ins</li>
+            <li>Direct messaging with your coach</li>
+          </ul>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="button-container">
+          <a href="{{ .ConfirmationURL }}" class="button">Set Up Your Account</a>
+        </div>
+
+        <!-- Link Fallback -->
+        <div class="link-fallback">
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Footer -->
+        <div class="footer">
+          <p>This invitation was sent to {{ .Email }}</p>
+          <p>If you didn't expect this email, you can safely ignore it.</p>
+          <p style="margin-top: 16px">&copy; 2026 METABOLI-K-AL. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

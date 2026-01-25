@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useOne, useUpdate } from "@refinedev/core";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useParams } from "next/navigation";
@@ -41,7 +42,6 @@ export default function EditMealTypePage() {
   const params = useParams();
   const mealTypeId = params.id as string;
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isFormReady, setIsFormReady] = useState(false);
 
   // Fetch existing meal type
@@ -99,10 +99,11 @@ export default function EditMealTypePage() {
       },
       {
         onSuccess: () => {
-          setSuccessMessage("Meal type updated successfully!");
-          setTimeout(() => {
-            router.push("/admin/config/meal-types");
-          }, 1500);
+          toast.success("Meal type updated successfully!");
+          router.push("/admin/config/meal-types");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to update meal type");
         },
       }
     );
@@ -161,13 +162,6 @@ export default function EditMealTypePage() {
         </h1>
         <p className="text-sm text-muted-foreground font-bold">Update meal type: {mealType.name}</p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="athletic-card p-4 pl-8 bg-neon-green/20 border-neon-green/50">
-          <p className="text-neon-green font-bold">{successMessage}</p>
-        </div>
-      )}
 
       {/* Form */}
       <div className="athletic-card p-6 pl-8">

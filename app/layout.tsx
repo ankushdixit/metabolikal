@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import ClientRefineWrapper from "@/components/client-refine-wrapper";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://metabolikal.com";
@@ -84,6 +85,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ClientRefineWrapper>{children}</ClientRefineWrapper>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#1a1a1a",
+              border: "1px solid #333",
+              color: "#fafafa",
+            },
+          }}
+        />
       </body>
     </html>
   );
