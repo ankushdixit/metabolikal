@@ -84,7 +84,7 @@ describe("MobileNav Component", () => {
     expect(screen.getByText("Workout Plan")).toBeInTheDocument();
     expect(screen.getByText("Check-In")).toBeInTheDocument();
     expect(screen.getByText("Progress")).toBeInTheDocument();
-    expect(screen.getByText("Profile")).toBeInTheDocument();
+    // Profile is accessed via mini card at top, not main nav
   });
 
   it("closes menu when a navigation link is clicked", () => {

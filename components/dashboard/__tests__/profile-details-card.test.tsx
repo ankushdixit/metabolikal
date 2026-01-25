@@ -4,11 +4,17 @@ import type { Profile } from "@/lib/database.types";
 
 // Mock Supabase client
 const mockResetPasswordForEmail = jest.fn();
+const mockUpdate = jest.fn();
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: () => ({
     auth: {
       resetPasswordForEmail: mockResetPasswordForEmail,
     },
+    from: () => ({
+      update: () => ({
+        eq: mockUpdate,
+      }),
+    }),
   }),
 }));
 
@@ -35,6 +41,7 @@ describe("ProfileDetailsCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockResetPasswordForEmail.mockResolvedValue({ error: null });
+    mockUpdate.mockResolvedValue({ error: null });
   });
 
   describe("Personal Information Section", () => {
@@ -48,10 +55,9 @@ describe("ProfileDetailsCard", () => {
       expect(screen.getByText("John Doe")).toBeInTheDocument();
     });
 
-    it("displays email", () => {
+    it("renders Edit button for personal information", () => {
       render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
-      // Email appears in both the label and value
-      expect(screen.getAllByText(/test@example.com/i).length).toBeGreaterThan(0);
+      expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
     });
 
     it("displays phone number", () => {
@@ -111,6 +117,12 @@ describe("ProfileDetailsCard", () => {
     it("renders account details heading", () => {
       render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
       expect(screen.getByText(/Account Details/i)).toBeInTheDocument();
+    });
+
+    it("displays email in account details (read-only)", () => {
+      render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
+      // Email appears in account details section
+      expect(screen.getAllByText(/test@example.com/i).length).toBeGreaterThan(0);
     });
 
     it("displays formatted member since date", () => {
@@ -218,7 +230,8 @@ describe("ProfileDetailsCard", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(screen.getByRole("button")).toBeDisabled();
+        // Find the button with "Sending..." text (which is the disabled password reset button)
+        expect(screen.getByText(/Sending.../i).closest("button")).toBeDisabled();
       });
     });
 
@@ -280,6 +293,82 @@ describe("ProfileDetailsCard", () => {
 
       const notProvidedElements = screen.getAllByText("Not provided");
       expect(notProvidedElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Edit Mode", () => {
+    it("enters edit mode when Edit button is clicked", () => {
+      render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
+
+      fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+
+      // Should now show input fields
+      expect(screen.getByPlaceholderText(/enter your full name/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+    });
+
+    it("exits edit mode when Cancel is clicked", () => {
+      render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
+
+      fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+      fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+      // Should be back to view mode
+      expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
+    });
+
+    it("saves profile changes when Save is clicked", async () => {
+      const mockOnProfileUpdated = jest.fn();
+      render(
+        <ProfileDetailsCard
+          profile={mockProfile}
+          userEmail="test@example.com"
+          onProfileUpdated={mockOnProfileUpdated}
+        />
+      );
+
+      // Enter edit mode
+      fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+
+      // Change the name
+      const nameInput = screen.getByPlaceholderText(/enter your full name/i);
+      fireEvent.change(nameInput, { target: { value: "Jane Doe" } });
+
+      // Save
+      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        expect(mockOnProfileUpdated).toHaveBeenCalled();
+      });
+    });
+
+    it("shows success message after saving", async () => {
+      render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
+
+      fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Profile updated successfully/i)).toBeInTheDocument();
+      });
+    });
+
+    it("disables Save button when full name is empty", () => {
+      render(<ProfileDetailsCard profile={mockProfile} userEmail="test@example.com" />);
+
+      fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+
+      // Clear the name
+      const nameInput = screen.getByPlaceholderText(/enter your full name/i);
+      fireEvent.change(nameInput, { target: { value: "" } });
+
+      expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
     });
   });
 });

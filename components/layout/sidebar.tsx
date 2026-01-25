@@ -47,11 +47,6 @@ const navItems = [
     icon: LineChart,
     href: "/dashboard/progress",
   },
-  {
-    label: "Profile",
-    icon: User,
-    href: "/dashboard/profile",
-  },
 ];
 
 export function Sidebar() {
