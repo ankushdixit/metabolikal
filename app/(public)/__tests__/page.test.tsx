@@ -6,6 +6,54 @@ const renderWithProvider = (ui: React.ReactElement) => {
   return render(<ModalProvider>{ui}</ModalProvider>);
 };
 
+// Mock the medical conditions hook to avoid needing Refine context
+jest.mock("@/hooks/use-medical-conditions", () => ({
+  useMedicalConditions: () => ({
+    conditions: [
+      {
+        id: "1",
+        slug: "hypothyroidism",
+        name: "Hypothyroidism",
+        impact_percent: 8,
+        gender_restriction: null,
+      },
+      {
+        id: "2",
+        slug: "none",
+        name: "None of the above",
+        impact_percent: 0,
+        gender_restriction: null,
+      },
+    ],
+    allConditions: [],
+    isLoading: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+  calculateMetabolicImpactFromConditions: jest.fn().mockReturnValue(0),
+  DEFAULT_MEDICAL_CONDITIONS: [
+    { name: "Hypothyroidism", slug: "hypothyroidism", impact_percent: 8, gender_restriction: null },
+    { name: "None of the above", slug: "none", impact_percent: 0, gender_restriction: null },
+  ],
+}));
+
+// Mock the meal types hook to avoid needing Refine context
+jest.mock("@/hooks/use-meal-types", () => ({
+  useMealTypes: () => ({
+    mealTypes: [
+      { id: "1", slug: "breakfast", name: "Breakfast", display_order: 1, is_active: true },
+      { id: "2", slug: "lunch", name: "Lunch", display_order: 2, is_active: true },
+    ],
+    isLoading: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+  DEFAULT_MEAL_TYPES: [
+    { name: "Breakfast", slug: "breakfast" },
+    { name: "Lunch", slug: "lunch" },
+  ],
+}));
+
 // Mock next/image
 jest.mock("next/image", () => ({
   __esModule: true,

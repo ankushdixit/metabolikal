@@ -26,9 +26,80 @@ export type Gender = "male" | "female";
 
 export type Goal = "fat_loss" | "maintain" | "muscle_gain";
 
+export type GenderRestriction = "male" | "female" | null;
+
 export interface Database {
   public: {
     Tables: {
+      meal_types: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          display_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      medical_conditions: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          impact_percent: number;
+          gender_restriction: GenderRestriction;
+          description: string | null;
+          is_active: boolean;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          impact_percent?: number;
+          gender_restriction?: GenderRestriction;
+          description?: string | null;
+          is_active?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          impact_percent?: number;
+          gender_restriction?: GenderRestriction;
+          description?: string | null;
+          is_active?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -805,3 +876,11 @@ export type NotificationInsert = InsertTables<"notifications">;
 export type NotificationUpdate = UpdateTables<"notifications">;
 
 export type NotificationType = "message" | "checkin_review" | "system";
+
+export type MealTypeRow = Tables<"meal_types">;
+export type MealTypeInsert = InsertTables<"meal_types">;
+export type MealTypeUpdate = UpdateTables<"meal_types">;
+
+export type MedicalConditionRow = Tables<"medical_conditions">;
+export type MedicalConditionInsert = InsertTables<"medical_conditions">;
+export type MedicalConditionUpdate = UpdateTables<"medical_conditions">;

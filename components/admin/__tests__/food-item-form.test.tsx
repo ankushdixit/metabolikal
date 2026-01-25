@@ -4,6 +4,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FoodItemForm } from "../food-item-form";
 import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
 
+// Mock the meal types hook to avoid needing Refine context
+jest.mock("@/hooks/use-meal-types", () => ({
+  useMealTypes: () => ({
+    mealTypes: [
+      { id: "1", slug: "breakfast", name: "Breakfast", display_order: 1, is_active: true },
+      { id: "2", slug: "lunch", name: "Lunch", display_order: 2, is_active: true },
+      { id: "3", slug: "dinner", name: "Dinner", display_order: 3, is_active: true },
+      { id: "4", slug: "snack", name: "Snack", display_order: 4, is_active: true },
+      { id: "5", slug: "pre-workout", name: "Pre-Workout", display_order: 5, is_active: true },
+      { id: "6", slug: "post-workout", name: "Post-Workout", display_order: 6, is_active: true },
+    ],
+    isLoading: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+  DEFAULT_MEAL_TYPES: [
+    { name: "Breakfast", slug: "breakfast" },
+    { name: "Lunch", slug: "lunch" },
+    { name: "Dinner", slug: "dinner" },
+    { name: "Snack", slug: "snack" },
+    { name: "Pre-Workout", slug: "pre-workout" },
+    { name: "Post-Workout", slug: "post-workout" },
+  ],
+}));
+
 // Wrapper component to provide form context
 function TestWrapper({
   onCancel = jest.fn(),

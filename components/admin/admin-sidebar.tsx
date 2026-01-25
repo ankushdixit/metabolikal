@@ -11,6 +11,9 @@ import {
   UtensilsCrossed,
   LogOut,
   Trophy,
+  Settings,
+  Clock,
+  HeartPulse,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -19,7 +22,15 @@ import { createBrowserSupabaseClient } from "@/lib/auth";
  * Athletic-styled sidebar matching the landing page design
  */
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  isSection?: boolean;
+  indent?: boolean;
+}
+
+const navItems: NavItem[] = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -44,6 +55,24 @@ const navItems = [
     label: "Food Database",
     icon: UtensilsCrossed,
     href: "/admin/food-database",
+  },
+  {
+    label: "Configuration",
+    icon: Settings,
+    href: "/admin/config",
+    isSection: true,
+  },
+  {
+    label: "Meal Types",
+    icon: Clock,
+    href: "/admin/config/meal-types",
+    indent: true,
+  },
+  {
+    label: "Conditions",
+    icon: HeartPulse,
+    href: "/admin/config/conditions",
+    indent: true,
   },
 ];
 
@@ -83,13 +112,29 @@ export function AdminSidebar() {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Admin navigation">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+            pathname === item.href ||
+            (item.href !== "/admin" && !item.isSection && pathname.startsWith(item.href));
+
+          // Section headers are non-clickable dividers
+          if (item.isSection) {
+            return (
+              <div
+                key={item.href}
+                className="flex items-center gap-3 px-4 py-3 mt-4 text-xs font-black tracking-[0.15em] uppercase text-muted-foreground border-t border-border pt-4"
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 text-sm font-bold tracking-wider uppercase transition-all relative",
+                item.indent && "pl-8",
                 isActive
                   ? "bg-secondary text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"

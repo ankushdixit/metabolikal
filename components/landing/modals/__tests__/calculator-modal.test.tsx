@@ -2,6 +2,80 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalculatorModal } from "../calculator-modal";
 
+// Mock the medical conditions hook to avoid needing Refine context
+jest.mock("@/hooks/use-medical-conditions", () => {
+  const mockConditions = [
+    {
+      id: "1",
+      slug: "hypothyroidism",
+      name: "Hypothyroidism",
+      impact_percent: 8,
+      gender_restriction: null,
+    },
+    { id: "2", slug: "pcos", name: "PCOS", impact_percent: 10, gender_restriction: "female" },
+    {
+      id: "3",
+      slug: "type2-diabetes",
+      name: "Type 2 Diabetes",
+      impact_percent: 12,
+      gender_restriction: null,
+    },
+    {
+      id: "4",
+      slug: "insulin-resistance",
+      name: "Insulin Resistance",
+      impact_percent: 10,
+      gender_restriction: null,
+    },
+    {
+      id: "5",
+      slug: "sleep-apnea",
+      name: "Sleep Apnea",
+      impact_percent: 7,
+      gender_restriction: null,
+    },
+    {
+      id: "6",
+      slug: "metabolic-syndrome",
+      name: "Metabolic Syndrome",
+      impact_percent: 15,
+      gender_restriction: null,
+    },
+    {
+      id: "7",
+      slug: "thyroid-managed",
+      name: "Thyroid Medication Managed",
+      impact_percent: 3,
+      gender_restriction: null,
+    },
+    {
+      id: "8",
+      slug: "chronic-fatigue",
+      name: "Chronic Fatigue Syndrome",
+      impact_percent: 8,
+      gender_restriction: null,
+    },
+    {
+      id: "9",
+      slug: "none",
+      name: "None of the above",
+      impact_percent: 0,
+      gender_restriction: null,
+    },
+  ];
+  return {
+    useMedicalConditions: () => ({
+      conditions: mockConditions,
+      allConditions: mockConditions,
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    }),
+    calculateMetabolicImpactFromConditions: jest.fn().mockReturnValue(0),
+    DEFAULT_MEDICAL_CONDITIONS: mockConditions,
+  };
+});
+
 describe("CalculatorModal", () => {
   const defaultProps = {
     open: true,
