@@ -10,6 +10,7 @@ jest.mock("@/lib/auth", () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
+          single: () => Promise.resolve({ data: { avatar_url: null } }),
           order: () => ({
             limit: () => Promise.resolve({ data: [], error: null }),
           }),

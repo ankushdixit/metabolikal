@@ -4,6 +4,18 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // Image domains for Next.js Image component
+  // Allow Supabase storage images
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lbydgfvvsklxeebwnnfg.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
+
   // Security headers
   async headers() {
     return [

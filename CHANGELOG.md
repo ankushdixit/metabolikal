@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Profile Page with Photo Upload and Password Reset**: Complete profile management for clients at `/dashboard/profile`:
+  - Profile photo upload with preview, supporting JPG/PNG/WebP (max 5MB)
+  - Photos stored in Supabase Storage `avatars` bucket with cache-busting URLs
+  - Profile details display: name, email, phone, DOB, gender, address, member since
+  - Security section with "Change Password" button that sends reset email via Supabase Auth
+  - Profile photo displayed in header, sidebar, and mobile navigation
+  - Responsive layout with loading skeletons
+  - Next.js Image configuration for Supabase storage hostname
+
 - **Client Deactivation Feature**: Admin ability to temporarily disable client access:
   - New database fields: `is_deactivated`, `deactivated_at`, `deactivation_reason` on profiles table
   - Multi-layer enforcement: middleware blocks deactivated users, auth callback redirects on login, login provider returns error

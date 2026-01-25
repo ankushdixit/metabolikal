@@ -11,3 +11,5 @@ export { WorkoutItem } from "./workout-item";
 export { WorkoutSection, SECTION_CONFIG } from "./workout-section";
 export { PhotoUpload } from "./photo-upload";
 export { CheckInHistoryItem } from "./checkin-history-item";
+export { ProfilePhotoUpload } from "./profile-photo-upload";
+export { ProfileDetailsCard } from "./profile-details-card";

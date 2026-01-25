@@ -20,7 +20,17 @@ jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: jest.fn(() => ({
     auth: {
       signOut: jest.fn().mockResolvedValue({}),
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
     },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn().mockResolvedValue({
+            data: { avatar_url: null, full_name: "Test User" },
+          }),
+        })),
+      })),
+    })),
   })),
 }));
 
@@ -101,7 +111,19 @@ describe("Sidebar Component", () => {
     const { createBrowserSupabaseClient } = require("@/lib/auth");
     const mockSignOut = jest.fn().mockResolvedValue({});
     createBrowserSupabaseClient.mockReturnValue({
-      auth: { signOut: mockSignOut },
+      auth: {
+        signOut: mockSignOut,
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
+      },
+      from: jest.fn(() => ({
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            single: jest.fn().mockResolvedValue({
+              data: { avatar_url: null, full_name: "Test User" },
+            }),
+          })),
+        })),
+      })),
     });
 
     render(<Sidebar />);
