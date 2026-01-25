@@ -3,7 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { useList, useDelete } from "@refinedev/core";
 import Link from "next/link";
-import { Search, Plus, Leaf, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Leaf,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  ArrowLeftRight,
+} from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import {
   Table,
@@ -150,13 +160,29 @@ export default function FoodDatabasePage() {
               Manage food items for diet plans
             </p>
           </div>
-          <Link
-            href="/admin/food-database/create"
-            className="btn-athletic inline-flex items-center justify-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Add Food Item</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/food-database/import"
+              className="btn-athletic inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground"
+            >
+              <Upload className="h-5 w-5" />
+              <span>Import CSV</span>
+            </Link>
+            <Link
+              href="/admin/food-database/alternatives"
+              className="btn-athletic inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground"
+            >
+              <ArrowLeftRight className="h-5 w-5" />
+              <span>Manage Alternatives</span>
+            </Link>
+            <Link
+              href="/admin/food-database/create"
+              className="btn-athletic inline-flex items-center justify-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Add Food Item</span>
+            </Link>
+          </div>
         </div>
       </div>
 
