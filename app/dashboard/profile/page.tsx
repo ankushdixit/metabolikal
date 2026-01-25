@@ -93,7 +93,11 @@ export default function ProfilePage() {
 
         {/* Details Section */}
         <div className="lg:col-span-2">
-          <ProfileDetailsCard profile={profile || null} userEmail={userEmail} />
+          <ProfileDetailsCard
+            profile={profile || null}
+            userEmail={userEmail}
+            onProfileUpdated={handlePhotoUpdated}
+          />
         </div>
       </div>
     </div>

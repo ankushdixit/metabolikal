@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Progress Page with Charts and Photos**: New progress tracking page for clients at `/dashboard/progress`:
+  - Tabbed interface with "Progress Charts" and "Photos" tabs
+  - Weight trend line chart with date range filtering (30 days, 90 days, All Time)
+  - Body measurements trend chart (Arms, Chest, Thighs, Waist)
+  - Progress photos gallery grouped by check-in date
+  - Side-by-side photo comparison mode with view selector (Front/Side/Back)
+  - Photo lightbox for full-size viewing
+  - Empty state with CTA to submit first check-in
+  - Reuses existing admin components for consistency
+
+- **Editable Client Profile**: Clients can now edit their personal information:
+  - Edit button on Personal Information section
+  - Editable fields: Full Name, Phone, Date of Birth, Gender, Address
+  - Save/Cancel functionality with validation (Full Name required)
+  - Success/error feedback messages
+  - Account Details section remains read-only (Email, Member Since, Role)
+
 - **Client Profile Page with Photo Upload and Password Reset**: Complete profile management for clients at `/dashboard/profile`:
   - Profile photo upload with preview, supporting JPG/PNG/WebP (max 5MB)
   - Photos stored in Supabase Storage `avatars` bucket with cache-busting URLs
@@ -37,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Kept inline errors for form validation context (auth pages, server validation)
 
 ### Changed
+
+- **Simplified Dashboard Navigation**: Removed redundant "Profile" link from sidebar navigation:
+  - Profile now accessed only via user mini card at top of sidebar
+  - Cleaner navigation focused on feature pages
+  - Applied to both desktop sidebar and mobile navigation
 
 - **Invite Performance Optimization**: Removed slow `listUsers()` O(n) check from invite API:
   - Let `inviteUserByEmail()` handle duplicate email detection natively
