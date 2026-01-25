@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -60,17 +60,32 @@ const navItems = [
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (data.user) {
         setUserId(data.user.id);
+
+        // Fetch profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("avatar_url, full_name")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile) {
+          setAvatarUrl(profile.avatar_url);
+          setUserName(profile.full_name);
+        }
       }
     });
-  }, []);
+  }, [supabase]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -107,9 +122,20 @@ export function MobileNav() {
             </span>
           </Link>
 
-          {/* Notifications */}
-          <div className="w-10 flex items-center justify-center">
+          {/* Notifications and Profile */}
+          <div className="flex items-center gap-2">
             {userId && <NotificationsDropdown userId={userId} />}
+            <Link href="/dashboard/profile" className="p-1" aria-label="Profile">
+              {avatarUrl ? (
+                <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-primary/20">
+                  <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="32px" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+            </Link>
           </div>
         </div>
       </header>
@@ -154,6 +180,31 @@ export function MobileNav() {
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* User Profile Mini Card */}
+        <div className="px-4 py-3 border-b border-border">
+          <Link
+            href="/dashboard/profile"
+            onClick={closeMenu}
+            className="flex items-center gap-3 p-2 rounded-sm hover:bg-secondary/50 transition-all"
+          >
+            {avatarUrl ? (
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
+                <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="40px" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold truncate text-foreground">
+                {userName || "Loading..."}
+              </p>
+              <p className="text-xs text-muted-foreground">View Profile</p>
+            </div>
+          </Link>
         </div>
 
         {/* Navigation */}

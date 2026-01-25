@@ -22,6 +22,18 @@ jest.mock("@/lib/auth", () => ({
       signOut: jest.fn().mockResolvedValue({}),
       getUser: jest.fn().mockResolvedValue({ data: { user: { id: "test-user-id" } } }),
     },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn().mockResolvedValue({
+            data: { avatar_url: null, full_name: "Test User" },
+          }),
+          order: jest.fn(() => ({
+            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+          })),
+        })),
+      })),
+    })),
   })),
 }));
 

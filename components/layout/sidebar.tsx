@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -56,6 +57,28 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+
+  useEffect(() => {
+    // Get user profile
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("avatar_url, full_name")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile) {
+          setAvatarUrl(profile.avatar_url);
+          setUserName(profile.full_name);
+        }
+      }
+    });
+  }, [supabase]);
 
   const handleLogout = async () => {
     const supabase = createBrowserSupabaseClient();
@@ -81,6 +104,28 @@ export function Sidebar() {
             <span className="block text-[10px] font-bold tracking-[0.25em] text-muted-foreground uppercase">
               Client Portal
             </span>
+          </div>
+        </Link>
+      </div>
+
+      {/* User Profile Mini Card */}
+      <div className="px-4 py-3 border-b border-border shrink-0">
+        <Link
+          href="/dashboard/profile"
+          className="flex items-center gap-3 p-2 rounded-sm hover:bg-secondary/50 transition-all"
+        >
+          {avatarUrl ? (
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0">
+              <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="40px" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+              <User className="h-5 w-5 text-muted-foreground" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold truncate text-foreground">{userName || "Loading..."}</p>
+            <p className="text-xs text-muted-foreground">View Profile</p>
           </div>
         </Link>
       </div>
