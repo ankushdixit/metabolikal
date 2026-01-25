@@ -13,6 +13,10 @@ import {
   ClipboardCheck,
   UtensilsCrossed,
   LogOut,
+  Settings,
+  Clock,
+  HeartPulse,
+  Trophy,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -21,7 +25,15 @@ import { createBrowserSupabaseClient } from "@/lib/auth";
  * Athletic-styled mobile sidebar with hamburger toggle
  */
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  isSection?: boolean;
+  indent?: boolean;
+}
+
+const navItems: NavItem[] = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -33,6 +45,11 @@ const navItems = [
     href: "/admin/clients",
   },
   {
+    label: "Challengers",
+    icon: Trophy,
+    href: "/admin/challengers",
+  },
+  {
     label: "Pending Reviews",
     icon: ClipboardCheck,
     href: "/admin/pending-reviews",
@@ -41,6 +58,24 @@ const navItems = [
     label: "Food Database",
     icon: UtensilsCrossed,
     href: "/admin/food-database",
+  },
+  {
+    label: "Configuration",
+    icon: Settings,
+    href: "/admin/config",
+    isSection: true,
+  },
+  {
+    label: "Meal Types",
+    icon: Clock,
+    href: "/admin/config/meal-types",
+    indent: true,
+  },
+  {
+    label: "Conditions",
+    icon: HeartPulse,
+    href: "/admin/config/conditions",
+    indent: true,
   },
 ];
 
@@ -135,7 +170,22 @@ export function AdminMobileNav() {
         <nav className="flex-1 p-4 space-y-1" aria-label="Admin mobile navigation">
           {navItems.map((item) => {
             const isActive =
-              pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+              pathname === item.href ||
+              (item.href !== "/admin" && !item.isSection && pathname.startsWith(item.href));
+
+            // Section headers are non-clickable dividers
+            if (item.isSection) {
+              return (
+                <div
+                  key={item.href}
+                  className="flex items-center gap-3 px-4 py-3 mt-4 text-xs font-black tracking-[0.15em] uppercase text-muted-foreground border-t border-border pt-4"
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -143,6 +193,7 @@ export function AdminMobileNav() {
                 onClick={closeMenu}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 text-sm font-bold tracking-wider uppercase transition-all relative",
+                  item.indent && "pl-8",
                   isActive
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"

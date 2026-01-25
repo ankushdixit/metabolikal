@@ -24,14 +24,16 @@ import { calculatorFormSchema, CalculatorFormData } from "@/lib/validations";
 import {
   ACTIVITY_MULTIPLIERS,
   GOAL_ADJUSTMENTS,
-  MEDICAL_CONDITIONS,
   Gender,
   ActivityLevel,
   Goal,
-  MedicalConditionId,
-  calculateMetabolicImpact,
 } from "@/hooks/use-calculator";
-import { useState, useEffect } from "react";
+import {
+  useMedicalConditions,
+  calculateMetabolicImpactFromConditions,
+  DEFAULT_MEDICAL_CONDITIONS,
+} from "@/hooks/use-medical-conditions";
+import { useState, useEffect, useMemo } from "react";
 
 interface CalculatorModalProps {
   open: boolean;
@@ -46,7 +48,7 @@ export function CalculatorModal({
   onCalculate,
   onOpenBodyFatGuide,
 }: CalculatorModalProps) {
-  const [selectedConditions, setSelectedConditions] = useState<MedicalConditionId[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [metabolicImpact, setMetabolicImpact] = useState(0);
 
   const {
@@ -72,14 +74,69 @@ export function CalculatorModal({
 
   const watchedGender = watch("gender");
 
+  // Fetch medical conditions from database
+  const {
+    conditions: dbConditions,
+    isLoading: isLoadingConditions,
+    error: conditionsError,
+  } = useMedicalConditions({
+    gender: watchedGender,
+  });
+
+  // Use database conditions, fallback to defaults if fetch fails
+  interface ConditionOption {
+    id: string;
+    slug: string;
+    label: string;
+    impact: number;
+    genderRestriction: "male" | "female" | null;
+  }
+
+  const availableConditions: ConditionOption[] = useMemo(() => {
+    if (conditionsError || dbConditions.length === 0) {
+      return DEFAULT_MEDICAL_CONDITIONS.filter(
+        (c) => c.gender_restriction === null || c.gender_restriction === watchedGender
+      ).map((c) => ({
+        id: c.slug,
+        slug: c.slug,
+        label: c.name,
+        impact: c.impact_percent,
+        genderRestriction: c.gender_restriction,
+      }));
+    }
+    return dbConditions.map((c) => ({
+      id: c.slug,
+      slug: c.slug,
+      label: c.name,
+      impact: c.impact_percent,
+      genderRestriction: c.gender_restriction,
+    }));
+  }, [dbConditions, conditionsError, watchedGender]);
+
   // Update metabolic impact when conditions change
   useEffect(() => {
-    const impact = calculateMetabolicImpact(selectedConditions);
-    setMetabolicImpact(impact);
-    setValue("medicalConditions", selectedConditions);
-  }, [selectedConditions, setValue]);
+    const conditionsForCalc =
+      conditionsError || dbConditions.length === 0
+        ? DEFAULT_MEDICAL_CONDITIONS.map((c) => ({
+            id: c.slug,
+            slug: c.slug,
+            name: c.name,
+            impact_percent: c.impact_percent,
+            gender_restriction: c.gender_restriction,
+            description: null,
+            is_active: true,
+            display_order: 0,
+            created_at: "",
+            updated_at: "",
+          }))
+        : dbConditions;
 
-  const handleConditionToggle = (conditionId: MedicalConditionId) => {
+    const impact = calculateMetabolicImpactFromConditions(selectedConditions, conditionsForCalc);
+    setMetabolicImpact(impact);
+    setValue("medicalConditions", selectedConditions as CalculatorFormData["medicalConditions"]);
+  }, [selectedConditions, setValue, dbConditions, conditionsError]);
+
+  const handleConditionToggle = (conditionId: string) => {
     setSelectedConditions((prev) => {
       // If selecting "none", clear all other selections
       if (conditionId === "none") {
@@ -104,11 +161,6 @@ export function CalculatorModal({
     onOpenChange(false);
     onOpenBodyFatGuide();
   };
-
-  // Filter conditions based on gender
-  const visibleConditions = MEDICAL_CONDITIONS.filter(
-    (c) => c.genderRestriction === null || c.genderRestriction === watchedGender
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -351,29 +403,35 @@ export function CalculatorModal({
               </p>
 
               <div className="grid sm:grid-cols-2 gap-3">
-                {visibleConditions.map((condition) => (
-                  <div
-                    key={condition.id}
-                    className="athletic-card p-4 pl-6 flex items-center gap-3 cursor-pointer hover:glow-power transition-all"
-                    onClick={() => handleConditionToggle(condition.id)}
-                  >
-                    <Checkbox
-                      id={condition.id}
-                      checked={selectedConditions.includes(condition.id)}
-                      onCheckedChange={() => handleConditionToggle(condition.id)}
-                    />
-                    <div className="flex-1">
-                      <Label htmlFor={condition.id} className="font-bold text-sm cursor-pointer">
-                        {condition.label}
-                      </Label>
-                      {condition.impact > 0 && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          (-{condition.impact}%)
-                        </span>
-                      )}
-                    </div>
+                {isLoadingConditions ? (
+                  <div className="col-span-2 text-center py-4 text-muted-foreground">
+                    Loading conditions...
                   </div>
-                ))}
+                ) : (
+                  availableConditions.map((condition) => (
+                    <div
+                      key={condition.id}
+                      className="athletic-card p-4 pl-6 flex items-center gap-3 cursor-pointer hover:glow-power transition-all"
+                      onClick={() => handleConditionToggle(condition.id)}
+                    >
+                      <Checkbox
+                        id={condition.id}
+                        checked={selectedConditions.includes(condition.id)}
+                        onCheckedChange={() => handleConditionToggle(condition.id)}
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={condition.id} className="font-bold text-sm cursor-pointer">
+                          {condition.label}
+                        </Label>
+                        {condition.impact > 0 && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (-{condition.impact}%)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Metabolic Impact Display */}

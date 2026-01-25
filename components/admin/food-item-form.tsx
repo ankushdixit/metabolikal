@@ -1,9 +1,10 @@
 "use client";
 
 import { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from "react-hook-form";
-import { AlertCircle, Leaf } from "lucide-react";
+import { AlertCircle, Leaf, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MEAL_TYPES, type FoodItemFormData } from "@/lib/validations";
+import { useMealTypes, DEFAULT_MEAL_TYPES } from "@/hooks/use-meal-types";
+import { type FoodItemFormData } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 
 interface FoodItemFormProps {
@@ -32,19 +33,30 @@ export function FoodItemForm({
   const isVegetarian = watch("is_vegetarian");
   const selectedMealTypes = (watch("meal_types") || []) as string[];
 
-  const handleMealTypeToggle = (
-    mealType: FoodItemFormData["meal_types"] extends (infer T)[] | null | undefined ? T : never
-  ) => {
+  // Fetch meal types from database
+  const {
+    mealTypes: dbMealTypes,
+    isLoading: isLoadingMealTypes,
+    error: mealTypesError,
+  } = useMealTypes();
+
+  // Use database meal types, fallback to defaults if fetch fails
+  const mealTypes: { value: string; label: string }[] =
+    mealTypesError || dbMealTypes.length === 0
+      ? DEFAULT_MEAL_TYPES.map((mt) => ({ value: mt.slug, label: mt.name }))
+      : dbMealTypes.map((mt) => ({ value: mt.slug, label: mt.name }));
+
+  const handleMealTypeToggle = (mealType: string) => {
     const currentTypes = selectedMealTypes || [];
     const isSelected = currentTypes.includes(mealType);
 
     if (isSelected) {
       setValue(
         "meal_types",
-        currentTypes.filter((t) => t !== mealType) as FoodItemFormData["meal_types"]
+        currentTypes.filter((t) => t !== mealType)
       );
     } else {
-      setValue("meal_types", [...currentTypes, mealType] as FoodItemFormData["meal_types"]);
+      setValue("meal_types", [...currentTypes, mealType]);
     }
   };
 
@@ -226,26 +238,33 @@ export function FoodItemForm({
         <label className="block text-xs font-black tracking-[0.2em] uppercase text-muted-foreground mb-3">
           Meal Types
         </label>
-        <div className="flex flex-wrap gap-2">
-          {MEAL_TYPES.map((mealType) => {
-            const isSelected = selectedMealTypes?.includes(mealType.value);
-            return (
-              <button
-                key={mealType.value}
-                type="button"
-                onClick={() => handleMealTypeToggle(mealType.value)}
-                className={cn(
-                  "btn-athletic px-4 py-2 text-sm font-bold uppercase tracking-wider transition-all",
-                  isSelected
-                    ? "gradient-electric text-black"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {mealType.label}
-              </button>
-            );
-          })}
-        </div>
+        {isLoadingMealTypes ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm font-bold">Loading meal types...</span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {mealTypes.map((mealType: { value: string; label: string }) => {
+              const isSelected = selectedMealTypes?.includes(mealType.value);
+              return (
+                <button
+                  key={mealType.value}
+                  type="button"
+                  onClick={() => handleMealTypeToggle(mealType.value)}
+                  className={cn(
+                    "btn-athletic px-4 py-2 text-sm font-bold uppercase tracking-wider transition-all",
+                    isSelected
+                      ? "gradient-electric text-black"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {mealType.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Form Actions */}

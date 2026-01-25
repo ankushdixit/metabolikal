@@ -476,12 +476,13 @@ describe("foodItemSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects invalid meal types", () => {
+    it("accepts any string meal types (now dynamic from database)", () => {
+      // Meal types are now dynamic from the database, so any string is valid
       const result = foodItemSchema.safeParse({
         ...validData,
-        meal_types: ["invalid_type"],
+        meal_types: ["custom-meal-type"],
       });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
   });
 });

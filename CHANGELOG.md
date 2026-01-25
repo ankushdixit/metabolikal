@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Configuration for Meal Types and Medical Conditions**: Dynamic admin interface for managing calculator and food form options:
+  - New database tables `meal_types` and `medical_conditions` with proper RLS policies
+  - Admin CRUD pages at `/admin/config/meal-types` and `/admin/config/conditions`
+  - Meal types management with name, slug, display order, and active status
+  - Medical conditions management with metabolic impact percentage and gender restrictions
+  - New `useMealTypes` and `useMedicalConditions` hooks for fetching from database
+  - Calculator modal now fetches conditions dynamically from database
+  - Food item form now fetches meal types dynamically from database
+  - Fallback to hardcoded defaults when database tables don't exist
+  - Configuration section added to admin sidebar navigation
+  - 18 new tests for hooks, updated existing tests with proper mocks
+
 - **Enhanced Results Modal with Comprehensive Content Sections**: Expanded results display with personalized insights:
   - Health score status tier labels (Elite/Good/Moderate/Needs Attention) with descriptions
   - Physical Metrics vs Lifestyle Factors score breakdown section

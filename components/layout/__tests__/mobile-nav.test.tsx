@@ -20,6 +20,7 @@ jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: jest.fn(() => ({
     auth: {
       signOut: jest.fn().mockResolvedValue({}),
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "test-user-id" } } }),
     },
   })),
 }));

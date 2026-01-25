@@ -253,10 +253,8 @@ export const foodItemSchema = z.object({
     .min(1, { message: "Serving size is required" })
     .max(50, { message: "Serving size must be 50 characters or less" }),
   is_vegetarian: z.boolean(),
-  meal_types: z
-    .array(z.enum(["breakfast", "lunch", "dinner", "snack", "pre-workout", "post-workout"]))
-    .optional()
-    .nullable(),
+  // meal_types is now dynamic from database, so accept any string array
+  meal_types: z.array(z.string()).optional().nullable(),
 });
 
 export type FoodItemFormData = z.infer<typeof foodItemSchema>;
