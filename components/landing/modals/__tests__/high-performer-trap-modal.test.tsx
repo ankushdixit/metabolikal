@@ -2,19 +2,6 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HighPerformerTrapModal } from "../high-performer-trap-modal";
 
-// Mock next/image
-jest.mock("next/image", () => ({
-  __esModule: true,
-  default: function MockImage(props: {
-    alt: string;
-    src: string;
-    fill?: boolean;
-    className?: string;
-  }) {
-    return <img alt={props.alt} src={props.src} data-testid="mock-image" />;
-  },
-}));
-
 describe("HighPerformerTrapModal", () => {
   const defaultProps = {
     open: true,
@@ -58,12 +45,6 @@ describe("HighPerformerTrapModal", () => {
     expect(screen.getByText("You weren't designed for generic solutions.")).toBeInTheDocument();
     expect(screen.getByText(/Most executives aren't lacking/i)).toBeInTheDocument();
     expect(screen.getByText(/METABOLIC OPERATING SYSTEM/i)).toBeInTheDocument();
-  });
-
-  it("renders revelation image", () => {
-    render(<HighPerformerTrapModal {...defaultProps} />);
-    const image = screen.getByAltText("The revelation");
-    expect(image).toBeInTheDocument();
   });
 
   it("renders three CTAs", () => {

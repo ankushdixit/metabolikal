@@ -35,7 +35,7 @@ describe("MeetExpertModal", () => {
     render(<MeetExpertModal {...defaultProps} />);
     const image = screen.getByAltText("Shivashish Sinha");
     expect(image).toBeInTheDocument();
-    expect(image).toHaveAttribute("src", "/images/shivashish-lifestyle.jpg");
+    expect(image).toHaveAttribute("src", "/images/shivashish.webp");
   });
 
   it("renders expert name and title", () => {
