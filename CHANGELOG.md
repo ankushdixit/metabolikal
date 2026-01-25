@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bulk Food Import via CSV**: New CSV import functionality for the food database:
+  - "Import CSV" button on Food Database page linking to `/admin/food-database/import`
+  - Downloadable CSV template with correct column headers
+  - Drag-and-drop file upload with visual feedback
+  - Client-side CSV parsing using PapaParse library
+  - Comprehensive validation: required fields, data types, value ranges
+  - Duplicate detection within CSV and against existing database entries
+  - Preview table with error highlighting before import
+  - Option to skip invalid rows or cancel entire import
+  - Batch import with progress indicator
+  - Success/failure summary after import
+
+- **Visual Alternatives Linking**: New dedicated page for managing food alternatives at `/admin/food-database/alternatives`:
+  - "Manage Alternatives" button on Food Database page
+  - Two-panel interface: left panel for selecting primary food, right panel for managing alternatives
+  - Search and filter in both panels
+  - Visual display of food items with name, calories, protein, and serving size
+  - Click-to-add and click-to-remove alternatives
+  - Bidirectional linking option (if A→B, also create B→A)
+  - Pending changes tracking with add/remove counts
+  - Batch save for efficiency
+  - Visual indicator showing which foods already have alternatives
+
 - **Client Progress Page with Charts and Photos**: New progress tracking page for clients at `/dashboard/progress`:
   - Tabbed interface with "Progress Charts" and "Photos" tabs
   - Weight trend line chart with date range filtering (30 days, 90 days, All Time)
