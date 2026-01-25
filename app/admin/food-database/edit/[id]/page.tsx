@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOne, useUpdate } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FoodItemForm } from "@/components/admin/food-item-form";
 import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import type { FoodItem } from "@/lib/database.types";
 
 /**
@@ -21,7 +22,13 @@ export default function EditFoodItemPage() {
   const foodItemId = params.id as string;
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isFormReady, setIsFormReady] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isFormInitialized = useRef(false);
+
+  // State for existing relationships
+  const [existingConditionIds, setExistingConditionIds] = useState<string[]>([]);
+  const [existingAlternativeIds, setExistingAlternativeIds] = useState<string[]>([]);
+  const [isLoadingRelationships, setIsLoadingRelationships] = useState(true);
 
   // Fetch existing food item
   const foodItemQuery = useOne<FoodItem>({
@@ -56,12 +63,54 @@ export default function EditFoodItemPage() {
       serving_size: "",
       is_vegetarian: false,
       meal_types: [],
+      raw_quantity: null,
+      cooked_quantity: null,
+      avoid_for_conditions: [],
+      alternative_food_ids: [],
     },
   });
 
+  // Fetch existing relationships
+  useEffect(() => {
+    const fetchRelationships = async () => {
+      if (!foodItemId) return;
+
+      const supabase = createBrowserSupabaseClient();
+
+      try {
+        // Fetch existing conditions
+        const { data: conditionData } = await supabase
+          .from("food_item_conditions")
+          .select("condition_id")
+          .eq("food_item_id", foodItemId);
+
+        if (conditionData) {
+          setExistingConditionIds(conditionData.map((c) => c.condition_id));
+        }
+
+        // Fetch existing alternatives
+        const { data: alternativeData } = await supabase
+          .from("food_item_alternatives")
+          .select("alternative_food_id")
+          .eq("food_item_id", foodItemId)
+          .order("display_order", { ascending: true });
+
+        if (alternativeData) {
+          setExistingAlternativeIds(alternativeData.map((a) => a.alternative_food_id));
+        }
+      } catch (error) {
+        console.error("Error fetching relationships:", error);
+      } finally {
+        setIsLoadingRelationships(false);
+      }
+    };
+
+    fetchRelationships();
+  }, [foodItemId]);
+
   // Populate form with existing data
   useEffect(() => {
-    if (foodItem && !isFormReady) {
+    if (foodItem && !isLoadingRelationships && !isFormInitialized.current) {
       reset({
         name: foodItem.name,
         calories: foodItem.calories,
@@ -71,19 +120,35 @@ export default function EditFoodItemPage() {
         serving_size: foodItem.serving_size,
         is_vegetarian: foodItem.is_vegetarian,
         meal_types: (foodItem.meal_types as FoodItemFormData["meal_types"]) || [],
+        raw_quantity: foodItem.raw_quantity || null,
+        cooked_quantity: foodItem.cooked_quantity || null,
+        avoid_for_conditions: existingConditionIds,
+        alternative_food_ids: existingAlternativeIds,
       });
-      setIsFormReady(true);
+      isFormInitialized.current = true;
     }
-  }, [foodItem, reset, isFormReady]);
+  }, [foodItem, isLoadingRelationships, existingConditionIds, existingAlternativeIds, reset]);
 
   // Handle form submission
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    setIsSaving(true);
+
+    // Extract junction table data
+    const avoidForConditions = data.avoid_for_conditions || [];
+    const alternativeFoodIds = data.alternative_food_ids || [];
+
     // Clean up data - convert empty strings and NaN to null for optional fields
     const cleanData = {
-      ...data,
+      name: data.name,
+      calories: data.calories,
+      protein: data.protein,
       carbs: data.carbs && !isNaN(data.carbs) ? data.carbs : null,
       fats: data.fats && !isNaN(data.fats) ? data.fats : null,
+      serving_size: data.serving_size,
+      is_vegetarian: data.is_vegetarian,
       meal_types: data.meal_types && data.meal_types.length > 0 ? data.meal_types : null,
+      raw_quantity: data.raw_quantity?.trim() || null,
+      cooked_quantity: data.cooked_quantity?.trim() || null,
     };
 
     updateMutation.mutate(
@@ -93,11 +158,50 @@ export default function EditFoodItemPage() {
         values: cleanData,
       },
       {
-        onSuccess: () => {
-          setSuccessMessage("Food item updated successfully!");
-          setTimeout(() => {
-            router.push("/admin/food-database");
-          }, 1500);
+        onSuccess: async () => {
+          const supabase = createBrowserSupabaseClient();
+
+          try {
+            // Delete existing conditions and re-insert
+            await supabase.from("food_item_conditions").delete().eq("food_item_id", foodItemId);
+
+            if (avoidForConditions.length > 0) {
+              const conditionInserts = avoidForConditions.map((conditionId) => ({
+                food_item_id: foodItemId,
+                condition_id: conditionId,
+              }));
+              await supabase.from("food_item_conditions").insert(conditionInserts);
+            }
+
+            // Delete existing alternatives and re-insert
+            await supabase.from("food_item_alternatives").delete().eq("food_item_id", foodItemId);
+
+            if (alternativeFoodIds.length > 0) {
+              const alternativeInserts = alternativeFoodIds.map((altId, index) => ({
+                food_item_id: foodItemId,
+                alternative_food_id: altId,
+                display_order: index,
+              }));
+              await supabase.from("food_item_alternatives").insert(alternativeInserts);
+            }
+
+            setSuccessMessage("Food item updated successfully!");
+            setTimeout(() => {
+              router.push("/admin/food-database");
+            }, 1500);
+          } catch (error) {
+            console.error("Error saving relationships:", error);
+            // Food item was still updated, just show partial success
+            setSuccessMessage("Food item updated, but some relationships failed to save.");
+            setTimeout(() => {
+              router.push("/admin/food-database");
+            }, 2000);
+          } finally {
+            setIsSaving(false);
+          }
+        },
+        onError: () => {
+          setIsSaving(false);
         },
       }
     );
@@ -108,7 +212,7 @@ export default function EditFoodItemPage() {
   };
 
   // Loading state
-  if (foodItemQuery.query.isLoading) {
+  if (foodItemQuery.query.isLoading || isLoadingRelationships) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="athletic-card p-6 pl-8 animate-pulse">
@@ -172,9 +276,10 @@ export default function EditFoodItemPage() {
             errors={errors}
             watch={watch}
             setValue={setValue}
-            isSubmitting={updateMutation.mutation.isPending}
+            isSubmitting={updateMutation.mutation.isPending || isSaving}
             onCancel={handleCancel}
             submitLabel="Save Changes"
+            foodItemId={foodItemId}
           />
         </form>
       </div>

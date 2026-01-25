@@ -255,6 +255,21 @@ export const foodItemSchema = z.object({
   is_vegetarian: z.boolean(),
   // meal_types is now dynamic from database, so accept any string array
   meal_types: z.array(z.string()).optional().nullable(),
+  // Quantity information for raw vs cooked tracking
+  raw_quantity: z
+    .string()
+    .max(50, { message: "Raw quantity must be 50 characters or less" })
+    .optional()
+    .nullable(),
+  cooked_quantity: z
+    .string()
+    .max(50, { message: "Cooked quantity must be 50 characters or less" })
+    .optional()
+    .nullable(),
+  // Avoid for conditions - array of condition IDs
+  avoid_for_conditions: z.array(z.string().uuid()).optional().nullable(),
+  // Food alternatives - array of food item IDs
+  alternative_food_ids: z.array(z.string().uuid()).optional().nullable(),
 });
 
 export type FoodItemFormData = z.infer<typeof foodItemSchema>;

@@ -151,6 +151,8 @@ export interface Database {
           serving_size: string;
           is_vegetarian: boolean;
           meal_types: string[] | null;
+          raw_quantity: string | null;
+          cooked_quantity: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -164,6 +166,8 @@ export interface Database {
           serving_size: string;
           is_vegetarian?: boolean;
           meal_types?: string[] | null;
+          raw_quantity?: string | null;
+          cooked_quantity?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -177,10 +181,83 @@ export interface Database {
           serving_size?: string;
           is_vegetarian?: boolean;
           meal_types?: string[] | null;
+          raw_quantity?: string | null;
+          cooked_quantity?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      food_item_conditions: {
+        Row: {
+          id: string;
+          food_item_id: string;
+          condition_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          food_item_id: string;
+          condition_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          food_item_id?: string;
+          condition_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "food_item_conditions_food_item_id_fkey";
+            columns: ["food_item_id"];
+            referencedRelation: "food_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "food_item_conditions_condition_id_fkey";
+            columns: ["condition_id"];
+            referencedRelation: "medical_conditions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      food_item_alternatives: {
+        Row: {
+          id: string;
+          food_item_id: string;
+          alternative_food_id: string;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          food_item_id: string;
+          alternative_food_id: string;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          food_item_id?: string;
+          alternative_food_id?: string;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "food_item_alternatives_food_item_id_fkey";
+            columns: ["food_item_id"];
+            referencedRelation: "food_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "food_item_alternatives_alternative_food_id_fkey";
+            columns: ["alternative_food_id"];
+            referencedRelation: "food_items";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       diet_plans: {
         Row: {
@@ -884,3 +961,11 @@ export type MealTypeUpdate = UpdateTables<"meal_types">;
 export type MedicalConditionRow = Tables<"medical_conditions">;
 export type MedicalConditionInsert = InsertTables<"medical_conditions">;
 export type MedicalConditionUpdate = UpdateTables<"medical_conditions">;
+
+export type FoodItemCondition = Tables<"food_item_conditions">;
+export type FoodItemConditionInsert = InsertTables<"food_item_conditions">;
+export type FoodItemConditionUpdate = UpdateTables<"food_item_conditions">;
+
+export type FoodItemAlternativeRow = Tables<"food_item_alternatives">;
+export type FoodItemAlternativeInsert = InsertTables<"food_item_alternatives">;
+export type FoodItemAlternativeUpdate = UpdateTables<"food_item_alternatives">;

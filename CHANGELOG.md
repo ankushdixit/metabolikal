@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced Food Item Form with Quantities, Conditions, and Alternatives**: Expanded food item management with three new capabilities:
+  - **Quantity Information**: Raw and cooked quantity fields to track weight changes during cooking (e.g., 100g raw chicken = 75g cooked)
+  - **Avoid For Conditions**: Multi-select to mark foods that should be avoided for specific medical conditions (e.g., high-sugar foods for diabetics)
+  - **Food Alternatives**: Search and link other food items as substitutes for diet plan flexibility
+  - New database tables: `food_item_conditions` and `food_item_alternatives` junction tables with proper RLS policies
+  - New columns: `raw_quantity` and `cooked_quantity` added to `food_items` table
+  - New components: `ConditionSelector` and `FoodAlternativesSelector` for the enhanced form
+  - Updated create and edit pages to handle junction table relationships
+  - 43 new tests for new components and updated form
+
 - **Admin Configuration for Meal Types and Medical Conditions**: Dynamic admin interface for managing calculator and food form options:
   - New database tables `meal_types` and `medical_conditions` with proper RLS policies
   - Admin CRUD pages at `/admin/config/meal-types` and `/admin/config/conditions`

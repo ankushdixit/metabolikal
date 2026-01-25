@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FoodItemForm } from "@/components/admin/food-item-form";
 import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 
 /**
  * Create Food Item Page
@@ -17,6 +18,7 @@ import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
 export default function CreateFoodItemPage() {
   const router = useRouter();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Create mutation
   const createMutation = useCreate();
@@ -39,17 +41,33 @@ export default function CreateFoodItemPage() {
       serving_size: "",
       is_vegetarian: false,
       meal_types: [],
+      raw_quantity: null,
+      cooked_quantity: null,
+      avoid_for_conditions: [],
+      alternative_food_ids: [],
     },
   });
 
   // Handle form submission
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    setIsSaving(true);
+
+    // Extract junction table data
+    const avoidForConditions = data.avoid_for_conditions || [];
+    const alternativeFoodIds = data.alternative_food_ids || [];
+
     // Clean up data - convert empty strings and NaN to null for optional fields
     const cleanData = {
-      ...data,
+      name: data.name,
+      calories: data.calories,
+      protein: data.protein,
       carbs: data.carbs && !isNaN(data.carbs) ? data.carbs : null,
       fats: data.fats && !isNaN(data.fats) ? data.fats : null,
+      serving_size: data.serving_size,
+      is_vegetarian: data.is_vegetarian,
       meal_types: data.meal_types && data.meal_types.length > 0 ? data.meal_types : null,
+      raw_quantity: data.raw_quantity?.trim() || null,
+      cooked_quantity: data.cooked_quantity?.trim() || null,
     };
 
     createMutation.mutate(
@@ -58,11 +76,47 @@ export default function CreateFoodItemPage() {
         values: cleanData,
       },
       {
-        onSuccess: () => {
-          setSuccessMessage("Food item created successfully!");
-          setTimeout(() => {
-            router.push("/admin/food-database");
-          }, 1500);
+        onSuccess: async (response) => {
+          const foodItemId = response.data.id;
+          const supabase = createBrowserSupabaseClient();
+
+          try {
+            // Save avoid-for conditions
+            if (avoidForConditions.length > 0) {
+              const conditionInserts = avoidForConditions.map((conditionId) => ({
+                food_item_id: foodItemId,
+                condition_id: conditionId,
+              }));
+              await supabase.from("food_item_conditions").insert(conditionInserts);
+            }
+
+            // Save alternatives
+            if (alternativeFoodIds.length > 0) {
+              const alternativeInserts = alternativeFoodIds.map((altId, index) => ({
+                food_item_id: foodItemId,
+                alternative_food_id: altId,
+                display_order: index,
+              }));
+              await supabase.from("food_item_alternatives").insert(alternativeInserts);
+            }
+
+            setSuccessMessage("Food item created successfully!");
+            setTimeout(() => {
+              router.push("/admin/food-database");
+            }, 1500);
+          } catch (error) {
+            console.error("Error saving relationships:", error);
+            // Food item was still created, just show partial success
+            setSuccessMessage("Food item created, but some relationships failed to save.");
+            setTimeout(() => {
+              router.push("/admin/food-database");
+            }, 2000);
+          } finally {
+            setIsSaving(false);
+          }
+        },
+        onError: () => {
+          setIsSaving(false);
         },
       }
     );
@@ -108,7 +162,7 @@ export default function CreateFoodItemPage() {
             errors={errors}
             watch={watch}
             setValue={setValue}
-            isSubmitting={createMutation.mutation.isPending}
+            isSubmitting={createMutation.mutation.isPending || isSaving}
             onCancel={handleCancel}
             submitLabel="Create Food Item"
           />

@@ -29,17 +29,77 @@ jest.mock("@/hooks/use-meal-types", () => ({
   ],
 }));
 
+// Mock the medical conditions hook
+jest.mock("@/hooks/use-medical-conditions", () => ({
+  useMedicalConditions: () => ({
+    conditions: [
+      {
+        id: "cond-1",
+        name: "Type 2 Diabetes",
+        slug: "type2-diabetes",
+        impact_percent: 12,
+      },
+      {
+        id: "cond-2",
+        name: "Hypothyroidism",
+        slug: "hypothyroidism",
+        impact_percent: 8,
+      },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+  DEFAULT_MEDICAL_CONDITIONS: [
+    {
+      name: "Type 2 Diabetes",
+      slug: "type2-diabetes",
+      impact_percent: 12,
+      gender_restriction: null,
+    },
+    { name: "Hypothyroidism", slug: "hypothyroidism", impact_percent: 8, gender_restriction: null },
+  ],
+}));
+
+// Mock the useList hook for food alternatives selector
+jest.mock("@refinedev/core", () => ({
+  useList: jest.fn(() => ({
+    query: {
+      data: {
+        data: [
+          {
+            id: "food-1",
+            name: "Grilled Chicken Breast",
+            calories: 165,
+            protein: 31,
+            serving_size: "100g",
+          },
+          {
+            id: "food-2",
+            name: "Grilled Fish",
+            calories: 150,
+            protein: 28,
+            serving_size: "100g",
+          },
+        ],
+      },
+      isLoading: false,
+    },
+  })),
+}));
+
 // Wrapper component to provide form context
 function TestWrapper({
   onCancel = jest.fn(),
   submitLabel = "Create Food Item",
   isSubmitting = false,
   defaultValues = {},
+  foodItemId,
 }: {
   onCancel?: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
   defaultValues?: Partial<FoodItemFormData>;
+  foodItemId?: string;
 }) {
   const {
     register,
@@ -57,6 +117,10 @@ function TestWrapper({
       serving_size: "",
       is_vegetarian: false,
       meal_types: [],
+      raw_quantity: null,
+      cooked_quantity: null,
+      avoid_for_conditions: [],
+      alternative_food_ids: [],
       ...defaultValues,
     },
   });
@@ -70,6 +134,7 @@ function TestWrapper({
       isSubmitting={isSubmitting}
       onCancel={onCancel}
       submitLabel={submitLabel}
+      foodItemId={foodItemId}
     />
   );
 }
@@ -154,7 +219,8 @@ describe("FoodItemForm Component", () => {
   it("toggles vegetarian checkbox", () => {
     render(<TestWrapper />);
 
-    const checkbox = screen.getByRole("checkbox");
+    // Get the vegetarian checkbox specifically
+    const checkbox = screen.getByRole("checkbox", { name: /vegetarian/i });
     expect(checkbox).not.toBeChecked();
 
     fireEvent.click(checkbox);
@@ -193,7 +259,7 @@ describe("FoodItemForm Component", () => {
     expect(screen.getByLabelText(/calories/i)).toHaveValue(100);
     expect(screen.getByLabelText(/protein/i)).toHaveValue(20);
     expect(screen.getByLabelText(/serving size/i)).toHaveValue("100g");
-    expect(screen.getByRole("checkbox")).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /vegetarian/i })).toBeChecked();
   });
 
   it("uses athletic button styling", () => {
@@ -216,5 +282,86 @@ describe("FoodItemForm Component", () => {
     render(<TestWrapper />);
 
     expect(screen.getByText("Meal Types")).toBeInTheDocument();
+  });
+
+  // New tests for enhanced form
+
+  it("renders quantity information section", () => {
+    render(<TestWrapper />);
+
+    expect(screen.getByText("Quantity Information")).toBeInTheDocument();
+    expect(screen.getByLabelText(/raw quantity/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/cooked quantity/i)).toBeInTheDocument();
+  });
+
+  it("allows typing in quantity fields", () => {
+    render(<TestWrapper />);
+
+    const rawQuantityInput = screen.getByLabelText(/raw quantity/i);
+    fireEvent.change(rawQuantityInput, { target: { value: "100g raw" } });
+    expect(rawQuantityInput).toHaveValue("100g raw");
+
+    const cookedQuantityInput = screen.getByLabelText(/cooked quantity/i);
+    fireEvent.change(cookedQuantityInput, { target: { value: "75g cooked" } });
+    expect(cookedQuantityInput).toHaveValue("75g cooked");
+  });
+
+  it("renders avoid for conditions section", () => {
+    render(<TestWrapper />);
+
+    expect(screen.getByText("Avoid For Conditions")).toBeInTheDocument();
+    expect(screen.getByText("Type 2 Diabetes")).toBeInTheDocument();
+    expect(screen.getByText("Hypothyroidism")).toBeInTheDocument();
+  });
+
+  it("renders alternatives section", () => {
+    render(<TestWrapper />);
+
+    expect(screen.getByText("Alternatives")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Search foods to add as alternatives...")
+    ).toBeInTheDocument();
+  });
+
+  it("renders with pre-filled quantity values", () => {
+    render(
+      <TestWrapper
+        defaultValues={{
+          name: "Test Food",
+          calories: 100,
+          protein: 20,
+          serving_size: "100g",
+          raw_quantity: "150g raw",
+          cooked_quantity: "100g cooked",
+        }}
+      />
+    );
+
+    expect(screen.getByLabelText(/raw quantity/i)).toHaveValue("150g raw");
+    expect(screen.getByLabelText(/cooked quantity/i)).toHaveValue("100g cooked");
+  });
+
+  it("shows description text for quantity section", () => {
+    render(<TestWrapper />);
+
+    expect(
+      screen.getByText(/Track raw and cooked quantities for accurate meal planning/)
+    ).toBeInTheDocument();
+  });
+
+  it("shows description text for conditions section", () => {
+    render(<TestWrapper />);
+
+    expect(
+      screen.getByText(/Select medical conditions that should avoid this food/)
+    ).toBeInTheDocument();
+  });
+
+  it("shows description text for alternatives section", () => {
+    render(<TestWrapper />);
+
+    expect(
+      screen.getByText(/Add food items that can substitute for this one in diet plans/)
+    ).toBeInTheDocument();
   });
 });

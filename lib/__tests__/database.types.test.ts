@@ -124,6 +124,8 @@ describe("Database Types", () => {
         serving_size: "100g",
         is_vegetarian: false,
         meal_types: ["lunch", "dinner"],
+        raw_quantity: "100g raw",
+        cooked_quantity: "75g cooked",
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
