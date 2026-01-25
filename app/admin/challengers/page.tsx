@@ -59,25 +59,28 @@ export default function ChallengersPage() {
     },
   });
 
-  // Fetch challenge progress for all users
+  // Fetch challenge progress for all users (disable pagination to get all records)
   const progressQuery = useList<ChallengeProgress>({
     resource: "challenge_progress",
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
   });
 
-  // Fetch assessment results
+  // Fetch assessment results (disable pagination to get all records)
   const assessmentQuery = useList<AssessmentResult>({
     resource: "assessment_results",
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
   });
 
-  // Fetch calculator results
+  // Fetch calculator results (disable pagination to get all records)
   const calculatorQuery = useList<CalculatorResult>({
     resource: "calculator_results",
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },

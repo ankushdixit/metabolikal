@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Flag, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Flag, Eye, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ interface ClientTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
+  onSendMessage?: (client: Profile) => void;
 }
 
 /**
@@ -34,6 +35,7 @@ export function ClientTable({
   totalPages,
   onPageChange,
   isLoading = false,
+  onSendMessage,
 }: ClientTableProps) {
   if (isLoading) {
     return (
@@ -127,13 +129,24 @@ export function ClientTable({
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Link
-                    href={`/admin/clients/${client.id}`}
-                    className="btn-athletic inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span>View</span>
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    {onSendMessage && (
+                      <button
+                        onClick={() => onSendMessage(client)}
+                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary hover:bg-primary/30 text-sm"
+                        title="Send message"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </button>
+                    )}
+                    <Link
+                      href={`/admin/clients/${client.id}`}
+                      className="btn-athletic inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View</span>
+                    </Link>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

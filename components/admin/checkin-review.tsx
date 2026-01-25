@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUpdate } from "@refinedev/core";
+import { useUpdate, useCreate } from "@refinedev/core";
 import {
   ChevronDown,
   ChevronUp,
@@ -30,21 +30,55 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
   const [isExpanded, setIsExpanded] = useState(false);
   const [adminNotes, setAdminNotes] = useState(checkIn.admin_notes || "");
   const [isFlagged, setIsFlagged] = useState(checkIn.flagged_for_followup);
+  const [notesSaved, setNotesSaved] = useState(false);
 
   const updateMutation = useUpdate();
+  const createNotification = useCreate();
 
   const handleSaveNotes = () => {
+    const trimmedNotes = adminNotes.trim();
+    const previousNotes = checkIn.admin_notes?.trim() || "";
+
+    // Only proceed if there are notes and they've changed
+    if (!trimmedNotes || trimmedNotes === previousNotes) {
+      return;
+    }
+
     updateMutation.mutate(
       {
         resource: "check_ins",
         id: checkIn.id,
         values: {
-          admin_notes: adminNotes,
+          admin_notes: trimmedNotes,
         },
       },
       {
         onSuccess: () => {
-          onUpdate?.();
+          // Create a notification for the client
+          createNotification.mutate(
+            {
+              resource: "notifications",
+              values: {
+                user_id: checkIn.client_id,
+                sender_id: adminId,
+                type: "checkin_review",
+                title: "Check-in Feedback",
+                message: trimmedNotes,
+                related_checkin_id: checkIn.id,
+              },
+            },
+            {
+              onSuccess: () => {
+                setNotesSaved(true);
+                setTimeout(() => setNotesSaved(false), 2000);
+                onUpdate?.();
+              },
+              onError: () => {
+                // Notes saved but notification failed - still call onUpdate
+                onUpdate?.();
+              },
+            }
+          );
         },
       }
     );
@@ -371,10 +405,15 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
               />
               <button
                 onClick={handleSaveNotes}
-                disabled={updateMutation.mutation.isPending}
-                className="mt-2 btn-athletic px-4 py-2 bg-secondary text-foreground text-sm disabled:opacity-50"
+                disabled={
+                  updateMutation.mutation.isPending || createNotification.mutation.isPending
+                }
+                className={cn(
+                  "mt-2 btn-athletic px-4 py-2 text-sm disabled:opacity-50",
+                  notesSaved ? "bg-neon-green/20 text-neon-green" : "bg-secondary text-foreground"
+                )}
               >
-                Save Notes
+                {notesSaved ? "Saved & Notified!" : "Save Notes"}
               </button>
             </div>
 

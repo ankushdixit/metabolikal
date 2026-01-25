@@ -684,6 +684,61 @@ export interface Database {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          sender_id: string | null;
+          type: "message" | "checkin_review" | "system";
+          title: string;
+          message: string;
+          read_at: string | null;
+          related_checkin_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          sender_id?: string | null;
+          type: "message" | "checkin_review" | "system";
+          title: string;
+          message: string;
+          read_at?: string | null;
+          related_checkin_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          sender_id?: string | null;
+          type?: "message" | "checkin_review" | "system";
+          title?: string;
+          message?: string;
+          read_at?: string | null;
+          related_checkin_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_sender_id_fkey";
+            columns: ["sender_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_related_checkin_id_fkey";
+            columns: ["related_checkin_id"];
+            referencedRelation: "check_ins";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -744,3 +799,9 @@ export type AssessmentResultUpdate = UpdateTables<"assessment_results">;
 export type CalculatorResult = Tables<"calculator_results">;
 export type CalculatorResultInsert = InsertTables<"calculator_results">;
 export type CalculatorResultUpdate = UpdateTables<"calculator_results">;
+
+export type Notification = Tables<"notifications">;
+export type NotificationInsert = InsertTables<"notifications">;
+export type NotificationUpdate = UpdateTables<"notifications">;
+
+export type NotificationType = "message" | "checkin_review" | "system";

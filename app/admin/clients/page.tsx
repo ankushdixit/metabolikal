@@ -5,6 +5,7 @@ import { useList } from "@refinedev/core";
 import { Search, Users } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ClientTable } from "@/components/admin/client-table";
+import { SendMessageModal } from "@/components/admin/send-message-modal";
 import { cn } from "@/lib/utils";
 import type { Profile, CheckIn } from "@/lib/database.types";
 
@@ -21,6 +22,8 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
 
   // Get current admin user ID
   useEffect(() => {
@@ -115,6 +118,11 @@ export default function ClientsPage() {
     { label: "Flagged", value: "flagged", count: flaggedCount },
   ];
 
+  const handleSendMessage = (client: Profile) => {
+    setSelectedClient(client);
+    setMessageModalOpen(true);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header Section */}
@@ -177,7 +185,21 @@ export default function ClientsPage() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         isLoading={isLoading}
+        onSendMessage={handleSendMessage}
       />
+
+      {/* Send Message Modal */}
+      {adminId && (
+        <SendMessageModal
+          client={selectedClient}
+          adminId={adminId}
+          isOpen={messageModalOpen}
+          onClose={() => {
+            setMessageModalOpen(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
     </div>
   );
 }

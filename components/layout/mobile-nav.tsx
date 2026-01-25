@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { NotificationsDropdown } from "./notifications-dropdown";
 
 /**
  * Mobile navigation component
@@ -58,8 +59,18 @@ const navItems = [
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+      }
+    });
+  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -96,8 +107,10 @@ export function MobileNav() {
             </span>
           </Link>
 
-          {/* Spacer for centering */}
-          <div className="w-10" />
+          {/* Notifications */}
+          <div className="w-10 flex items-center justify-center">
+            {userId && <NotificationsDropdown userId={userId} />}
+          </div>
         </div>
       </header>
 

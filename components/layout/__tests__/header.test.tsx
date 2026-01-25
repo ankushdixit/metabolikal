@@ -1,5 +1,23 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Header } from "../header";
+
+// Mock the auth module
+jest.mock("@/lib/auth", () => ({
+  createBrowserSupabaseClient: () => ({
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: { id: "test-user-id" } } }),
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          order: () => ({
+            limit: () => Promise.resolve({ data: [], error: null }),
+          }),
+        }),
+      }),
+    }),
+  }),
+}));
 
 describe("Header Component", () => {
   it("renders header element", () => {
@@ -13,9 +31,11 @@ describe("Header Component", () => {
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
-  it("renders notifications button", () => {
+  it("renders notifications button after user loads", async () => {
     render(<Header />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+    });
   });
 
   it("renders profile link", () => {

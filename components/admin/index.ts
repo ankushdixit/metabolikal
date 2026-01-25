@@ -8,3 +8,4 @@ export { ProgressCharts } from "./progress-charts";
 export { PhotosGallery } from "./photos-gallery";
 export { PlansSummary } from "./plans-summary";
 export { FoodItemForm } from "./food-item-form";
+export { SendMessageModal } from "./send-message-modal";
