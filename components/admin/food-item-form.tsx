@@ -1,9 +1,11 @@
 "use client";
 
 import { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from "react-hook-form";
-import { AlertCircle, Leaf, Loader2 } from "lucide-react";
+import { AlertCircle, Leaf, Loader2, Scale, Ban, ArrowLeftRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMealTypes, DEFAULT_MEAL_TYPES } from "@/hooks/use-meal-types";
+import { ConditionSelector } from "./condition-selector";
+import { FoodAlternativesSelector } from "./food-alternatives-selector";
 import { type FoodItemFormData } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +17,7 @@ interface FoodItemFormProps {
   isSubmitting?: boolean;
   onCancel: () => void;
   submitLabel: string;
+  foodItemId?: string; // For edit mode - exclude current item from alternatives
 }
 
 /**
@@ -29,9 +32,12 @@ export function FoodItemForm({
   isSubmitting = false,
   onCancel,
   submitLabel,
+  foodItemId,
 }: FoodItemFormProps) {
   const isVegetarian = watch("is_vegetarian");
   const selectedMealTypes = (watch("meal_types") || []) as string[];
+  const selectedConditionIds = (watch("avoid_for_conditions") || []) as string[];
+  const selectedAlternativeIds = (watch("alternative_food_ids") || []) as string[];
 
   // Fetch meal types from database
   const {
@@ -193,6 +199,68 @@ export function FoodItemForm({
         </div>
       </div>
 
+      {/* Quantity Information */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <Scale className="h-5 w-5 text-primary" />
+          <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
+            Quantity Information
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Track raw and cooked quantities for accurate meal planning (e.g., 100g raw chicken = 75g
+          cooked)
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Raw Quantity */}
+          <div>
+            <label
+              htmlFor="raw_quantity"
+              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
+            >
+              Raw Quantity
+            </label>
+            <input
+              id="raw_quantity"
+              type="text"
+              placeholder="e.g., 100g raw"
+              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+              {...register("raw_quantity")}
+            />
+            {errors.raw_quantity && (
+              <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errors.raw_quantity.message as string}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Cooked Quantity */}
+          <div>
+            <label
+              htmlFor="cooked_quantity"
+              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
+            >
+              Cooked Quantity
+            </label>
+            <input
+              id="cooked_quantity"
+              type="text"
+              placeholder="e.g., 75g cooked"
+              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+              {...register("cooked_quantity")}
+            />
+            {errors.cooked_quantity && (
+              <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
+                <AlertCircle className="h-4 w-4" />
+                <span>{errors.cooked_quantity.message as string}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Serving Size - Required */}
       <div>
         <label
@@ -265,6 +333,41 @@ export function FoodItemForm({
             })}
           </div>
         )}
+      </div>
+
+      {/* Avoid For Conditions */}
+      <div>
+        <div className="flex items-center gap-3 mb-3">
+          <Ban className="h-5 w-5 text-red-500" />
+          <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
+            Avoid For Conditions
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select medical conditions that should avoid this food
+        </p>
+        <ConditionSelector
+          selectedConditionIds={selectedConditionIds}
+          onChange={(conditionIds) => setValue("avoid_for_conditions", conditionIds)}
+        />
+      </div>
+
+      {/* Alternatives */}
+      <div>
+        <div className="flex items-center gap-3 mb-3">
+          <ArrowLeftRight className="h-5 w-5 text-primary" />
+          <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
+            Alternatives
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Add food items that can substitute for this one in diet plans
+        </p>
+        <FoodAlternativesSelector
+          selectedFoodIds={selectedAlternativeIds}
+          excludeFoodId={foodItemId}
+          onChange={(foodIds) => setValue("alternative_food_ids", foodIds)}
+        />
       </div>
 
       {/* Form Actions */}
