@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Lifestyle Activities Library Management**: Full CRUD interface for managing the lifestyle activity types master library:
+  - Lifestyle activities list page at `/admin/config/lifestyle-activities` with data table, search by name, filter by category, and pagination (10 items per page)
+  - Create activity type page at `/admin/config/lifestyle-activities/create` with form validation
+  - Edit activity type page at `/admin/config/lifestyle-activities/edit/[id]` with pre-populated data
+  - Reusable `LifestyleActivityTypeForm` component with category selection (8 categories: movement, mindfulness, sleep, hydration, sunlight, social, recovery, other), visual icon picker (12 Lucide icons), default target value/unit, description, rationale, and active toggle
+  - `IconSelector` component for visual icon selection with `RenderIcon` and `getIconComponent` helpers
+  - Soft delete functionality (deactivates activity types) with confirmation dialog and usage warning for items used in lifestyle plans
+  - Zod validation schema with `LIFESTYLE_ACTIVITY_CATEGORIES` and `LIFESTYLE_ACTIVITY_ICONS` constants
+  - Navigation link added under Configuration section in admin sidebar and mobile nav
+  - Seed SQL file with 10 common lifestyle activities (Daily Steps, Sunlight Exposure, Gratitude Journaling, Evening Walk, Hydration, Sleep, Floor Climbing, Meditation, Social Connection, Active Recovery)
+  - 38 new tests for icon selector (16 tests) and form component (22 tests)
+
 - **Admin Exercises Library Management**: Full CRUD interface for managing the exercises master library:
   - Exercises list page at `/admin/config/exercises` with data table, search by name, filter by category, filter by muscle group, and pagination
   - Create exercise page at `/admin/config/exercises/create` with form validation

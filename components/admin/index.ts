@@ -16,3 +16,5 @@ export { MealTypeForm } from "./meal-type-form";
 export { ConditionForm } from "./condition-form";
 export { SendMessageModal } from "./send-message-modal";
 export { AddClientModal } from "./add-client-modal";
+export { LifestyleActivityTypeForm } from "./lifestyle-activity-type-form";
+export { IconSelector, RenderIcon, getIconComponent } from "./icon-selector";
