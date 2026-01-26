@@ -5,14 +5,13 @@ import { useList, useUpdate } from "@refinedev/core";
 import { Search, Trophy, UserPlus, Calendar, Target, Loader2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type {
   Profile,
   ChallengeProgress,
   AssessmentResult,
   CalculatorResult,
 } from "@/lib/database.types";
-
-const PAGE_SIZE = 10;
 
 interface ChallengerWithStats extends Profile {
   daysCompleted: number;
@@ -132,10 +131,10 @@ export default function ChallengersPage() {
   }, [challengersWithStats, searchQuery]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredChallengers.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredChallengers.length / ADMIN_PAGE_SIZE);
   const paginatedChallengers = filteredChallengers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading =

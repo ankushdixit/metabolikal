@@ -32,10 +32,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { EXERCISE_CATEGORIES, MUSCLE_GROUPS } from "@/lib/validations";
 import type { Exercise } from "@/lib/database.types";
-
-const PAGE_SIZE = 10;
 
 /**
  * Exercises Library Page
@@ -106,10 +105,10 @@ export default function ExercisesLibraryPage() {
   }, [exercises, searchQuery, categoryFilter, muscleGroupFilter]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredExercises.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredExercises.length / ADMIN_PAGE_SIZE);
   const paginatedItems = filteredExercises.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading = exercisesQuery.query.isLoading;

@@ -159,11 +159,11 @@ export default function CSVImportPage() {
       {/* Header Section */}
       <div className="athletic-card p-6 pl-8">
         <Link
-          href="/admin/food-database"
+          href="/admin/config/food-items"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Food Database</span>
+          <span>Back to Food Items</span>
         </Link>
         <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
           Import <span className="gradient-athletic">Food Items</span>
@@ -370,10 +370,10 @@ export default function CSVImportPage() {
               Import More
             </button>
             <Link
-              href="/admin/food-database"
+              href="/admin/config/food-items"
               className="btn-athletic flex-1 px-6 py-3 gradient-electric text-black glow-power text-center"
             >
-              View Food Database
+              View Food Items
             </Link>
           </div>
         </div>

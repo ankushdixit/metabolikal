@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Users,
   ClipboardCheck,
-  UtensilsCrossed,
   LogOut,
   Settings,
   Clock,
@@ -20,6 +19,7 @@ import {
   Pill,
   Dumbbell,
   Activity,
+  Utensils,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -58,31 +58,21 @@ const navItems: NavItem[] = [
     href: "/admin/pending-reviews",
   },
   {
-    label: "Food Database",
-    icon: UtensilsCrossed,
-    href: "/admin/food-database",
-  },
-  {
-    label: "Supplements",
-    icon: Pill,
-    href: "/admin/supplements",
-  },
-  {
     label: "Configuration",
     icon: Settings,
     href: "/admin/config",
     isSection: true,
   },
   {
-    label: "Meal Types",
-    icon: Clock,
-    href: "/admin/config/meal-types",
+    label: "Food Items",
+    icon: Utensils,
+    href: "/admin/config/food-items",
     indent: true,
   },
   {
-    label: "Conditions",
-    icon: HeartPulse,
-    href: "/admin/config/conditions",
+    label: "Supplements",
+    icon: Pill,
+    href: "/admin/config/supplements",
     indent: true,
   },
   {
@@ -95,6 +85,18 @@ const navItems: NavItem[] = [
     label: "Lifestyle Activities",
     icon: Activity,
     href: "/admin/config/lifestyle-activities",
+    indent: true,
+  },
+  {
+    label: "Meal Types",
+    icon: Clock,
+    href: "/admin/config/meal-types",
+    indent: true,
+  },
+  {
+    label: "Conditions",
+    icon: HeartPulse,
+    href: "/admin/config/conditions",
     indent: true,
   },
 ];

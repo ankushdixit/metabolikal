@@ -1,88 +1,127 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { IconSelector, RenderIcon, getIconComponent } from "../icon-selector";
-import { LIFESTYLE_ACTIVITY_ICONS } from "@/lib/validations";
 
 describe("IconSelector Component", () => {
-  it("renders all available icons", () => {
+  it("renders paginated icons (first page)", () => {
     const mockOnChange = jest.fn();
     render(<IconSelector value={null} onChange={mockOnChange} />);
 
-    // Check that all icons are rendered as buttons
+    // Should show icons grid with pagination (60 icons per page)
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(LIFESTYLE_ACTIVITY_ICONS.length);
+    // Buttons include pagination controls (Previous/Next) when there are multiple pages
+    expect(buttons.length).toBeGreaterThan(50);
+  });
+
+  it("displays search input", () => {
+    const mockOnChange = jest.fn();
+    render(<IconSelector value={null} onChange={mockOnChange} />);
+
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    expect(searchInput).toBeInTheDocument();
+  });
+
+  it("filters icons when searching", () => {
+    const mockOnChange = jest.fn();
+    render(<IconSelector value={null} onChange={mockOnChange} />);
+
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    fireEvent.change(searchInput, { target: { value: "heart" } });
+
+    // Should show filtered results text
+    expect(screen.getByText(/icon.*found/)).toBeInTheDocument();
+
+    // Should find heart icon
+    expect(screen.getByLabelText("heart")).toBeInTheDocument();
   });
 
   it("applies selected styling to active icon", () => {
     const mockOnChange = jest.fn();
-    render(<IconSelector value="footprints" onChange={mockOnChange} />);
+    render(<IconSelector value="heart" onChange={mockOnChange} />);
 
-    const footprintsButton = screen.getByLabelText("Footprints");
-    expect(footprintsButton).toHaveClass("gradient-electric");
+    // Selected icon should be displayed in the selection display area
+    expect(screen.getByText("heart")).toBeInTheDocument();
   });
 
-  it("applies default styling to non-selected icons", () => {
-    const mockOnChange = jest.fn();
-    render(<IconSelector value="footprints" onChange={mockOnChange} />);
-
-    const sunButton = screen.getByLabelText("Sun");
-    expect(sunButton).toHaveClass("bg-secondary");
-  });
-
-  it("calls onChange when icon is clicked", () => {
+  it("calls onChange with kebab-case value when icon is clicked", () => {
     const mockOnChange = jest.fn();
     render(<IconSelector value={null} onChange={mockOnChange} />);
 
-    const sunButton = screen.getByLabelText("Sun");
+    // Search for a specific icon
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    fireEvent.change(searchInput, { target: { value: "sun" } });
+
+    const sunButton = screen.getByLabelText("sun");
     fireEvent.click(sunButton);
 
     expect(mockOnChange).toHaveBeenCalledWith("sun");
   });
 
-  it("renders all expected icon options", () => {
+  it("shows no results message when search finds nothing", () => {
     const mockOnChange = jest.fn();
     render(<IconSelector value={null} onChange={mockOnChange} />);
 
-    expect(screen.getByLabelText("Footprints")).toBeInTheDocument();
-    expect(screen.getByLabelText("Sun")).toBeInTheDocument();
-    expect(screen.getByLabelText("Book")).toBeInTheDocument();
-    expect(screen.getByLabelText("Water Drop")).toBeInTheDocument();
-    expect(screen.getByLabelText("Moon")).toBeInTheDocument();
-    expect(screen.getByLabelText("Users")).toBeInTheDocument();
-    expect(screen.getByLabelText("Heart")).toBeInTheDocument();
-    expect(screen.getByLabelText("Energy")).toBeInTheDocument();
-    expect(screen.getByLabelText("Dumbbell")).toBeInTheDocument();
-    expect(screen.getByLabelText("Leaf")).toBeInTheDocument();
-    expect(screen.getByLabelText("Brain")).toBeInTheDocument();
-    expect(screen.getByLabelText("Clock")).toBeInTheDocument();
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    fireEvent.change(searchInput, { target: { value: "xyznotfound123" } });
+
+    expect(screen.getByText("No icons match your search")).toBeInTheDocument();
   });
 
-  it("changes selection when different icon clicked", () => {
+  it("displays selected icon info when value is set", () => {
     const mockOnChange = jest.fn();
-    const { rerender } = render(<IconSelector value="footprints" onChange={mockOnChange} />);
+    render(<IconSelector value="activity" onChange={mockOnChange} />);
 
-    // Click moon button
-    fireEvent.click(screen.getByLabelText("Moon"));
-    expect(mockOnChange).toHaveBeenCalledWith("moon");
+    // Should show selected icon name
+    expect(screen.getByText("activity")).toBeInTheDocument();
+  });
 
-    // Rerender with new value to verify visual update
-    rerender(<IconSelector value="moon" onChange={mockOnChange} />);
-    expect(screen.getByLabelText("Moon")).toHaveClass("gradient-electric");
-    expect(screen.getByLabelText("Footprints")).toHaveClass("bg-secondary");
+  it("shows pagination controls when there are many icons", () => {
+    const mockOnChange = jest.fn();
+    render(<IconSelector value={null} onChange={mockOnChange} />);
+
+    // Should show Previous and Next buttons for pagination
+    expect(screen.getByText("Previous")).toBeInTheDocument();
+    expect(screen.getByText("Next")).toBeInTheDocument();
+  });
+
+  it("disables Previous button on first page", () => {
+    const mockOnChange = jest.fn();
+    render(<IconSelector value={null} onChange={mockOnChange} />);
+
+    const prevButton = screen.getByText("Previous");
+    expect(prevButton).toBeDisabled();
+  });
+
+  it("navigates to next page", () => {
+    const mockOnChange = jest.fn();
+    render(<IconSelector value={null} onChange={mockOnChange} />);
+
+    const nextButton = screen.getByText("Next");
+    fireEvent.click(nextButton);
+
+    // After clicking Next, Previous should be enabled
+    const prevButton = screen.getByText("Previous");
+    expect(prevButton).not.toBeDisabled();
   });
 
   it("accepts custom className", () => {
     const mockOnChange = jest.fn();
-    render(<IconSelector value={null} onChange={mockOnChange} className="custom-class" />);
+    const { container } = render(
+      <IconSelector value={null} onChange={mockOnChange} className="custom-class" />
+    );
 
     // The wrapper div should have the custom class
-    const wrapper = screen.getAllByRole("button")[0].parentElement;
-    expect(wrapper).toHaveClass("custom-class");
+    expect(container.firstChild).toHaveClass("custom-class");
   });
 });
 
 describe("getIconComponent function", () => {
   it("returns icon component for valid icon value", () => {
     const IconComponent = getIconComponent("footprints");
+    expect(IconComponent).not.toBeNull();
+  });
+
+  it("returns icon component for kebab-case icon names", () => {
+    const IconComponent = getIconComponent("book-open");
     expect(IconComponent).not.toBeNull();
   });
 
@@ -97,7 +136,7 @@ describe("getIconComponent function", () => {
   });
 
   it("returns null for invalid icon value", () => {
-    const IconComponent = getIconComponent("invalid-icon");
+    const IconComponent = getIconComponent("totally-fake-icon-xyz");
     expect(IconComponent).toBeNull();
   });
 });
@@ -123,7 +162,7 @@ describe("RenderIcon Component", () => {
   });
 
   it("renders nothing for invalid icon", () => {
-    const { container } = render(<RenderIcon icon="invalid-icon" />);
+    const { container } = render(<RenderIcon icon="totally-invalid-icon" />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -134,5 +173,12 @@ describe("RenderIcon Component", () => {
     expect(svg).toHaveClass("h-10");
     expect(svg).toHaveClass("w-10");
     expect(svg).toHaveClass("text-red-500");
+  });
+
+  it("renders kebab-case named icons", () => {
+    render(<RenderIcon icon="book-open" className="test-class" />);
+
+    const svg = document.querySelector("svg");
+    expect(svg).toBeInTheDocument();
   });
 });

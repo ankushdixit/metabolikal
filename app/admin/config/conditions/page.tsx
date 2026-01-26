@@ -23,9 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { MedicalConditionRow } from "@/lib/database.types";
-
-const PAGE_SIZE = 10;
 
 /**
  * Medical Conditions Configuration Page
@@ -49,8 +48,11 @@ export default function ConditionsPage() {
   const isDeleting = deleteMutation.mutation.isPending;
 
   // Paginate
-  const totalPages = Math.ceil(conditions.length / PAGE_SIZE);
-  const paginatedItems = conditions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(conditions.length / ADMIN_PAGE_SIZE);
+  const paginatedItems = conditions.slice(
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
+  );
 
   // Handle delete confirmation
   const handleDeleteClick = (item: MedicalConditionRow) => {
@@ -174,6 +176,9 @@ export default function ConditionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground w-16">
+                      Order
+                    </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
                       Name
                     </TableHead>
@@ -194,6 +199,9 @@ export default function ConditionsPage() {
                 <TableBody>
                   {paginatedItems.map((item: MedicalConditionRow) => (
                     <TableRow key={item.id} className="border-border">
+                      <TableCell className="text-muted-foreground font-mono">
+                        {item.display_order}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <span className="font-bold">{item.name}</span>

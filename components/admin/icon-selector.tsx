@@ -1,40 +1,33 @@
 "use client";
 
-import {
-  Footprints,
-  Sun,
-  BookOpen,
-  Droplet,
-  Moon,
-  Users,
-  Heart,
-  Zap,
-  Dumbbell,
-  Leaf,
-  Brain,
-  Clock,
-  LucideIcon,
-} from "lucide-react";
+import { useState, useMemo } from "react";
+import { icons, Search, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LIFESTYLE_ACTIVITY_ICONS } from "@/lib/validations";
 
-/**
- * Map of icon string values to Lucide icon components
- */
-const ICON_MAP: Record<string, LucideIcon> = {
-  footprints: Footprints,
-  sun: Sun,
-  "book-open": BookOpen,
-  droplet: Droplet,
-  moon: Moon,
-  users: Users,
-  heart: Heart,
-  zap: Zap,
-  dumbbell: Dumbbell,
-  leaf: Leaf,
-  brain: Brain,
-  clock: Clock,
-};
+/** Number of icons to display per page */
+const ICONS_PER_PAGE = 60;
+
+/** Convert PascalCase to kebab-case for display */
+function toKebabCase(str: string): string {
+  return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+}
+
+/** Convert kebab-case to PascalCase for lookup */
+function toPascalCase(str: string): string {
+  return str
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
+}
+
+/** All available icon names (kebab-case for storage, PascalCase keys for lookup) */
+const ALL_ICON_NAMES = Object.keys(icons)
+  .filter((name) => name !== "createLucideIcon") // Filter out utility functions
+  .map((pascalName) => ({
+    pascalName,
+    kebabName: toKebabCase(pascalName),
+    searchName: pascalName.toLowerCase(),
+  }));
 
 interface IconSelectorProps {
   value: string | null | undefined;
@@ -44,47 +37,132 @@ interface IconSelectorProps {
 
 /**
  * Icon Selector Component
- * Visual icon picker for lifestyle activity types
+ * Visual icon picker with access to all 1500+ Lucide icons
  */
 export function IconSelector({ value, onChange, className }: IconSelectorProps) {
-  return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
-      {LIFESTYLE_ACTIVITY_ICONS.map((iconOption) => {
-        const IconComponent = ICON_MAP[iconOption.value];
-        const isSelected = value === iconOption.value;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
 
-        return (
+  // Filter icons based on search query
+  const filteredIcons = useMemo(() => {
+    if (!searchQuery) return ALL_ICON_NAMES;
+    const query = searchQuery.toLowerCase().replace(/-/g, "");
+    return ALL_ICON_NAMES.filter(
+      (icon) => icon.searchName.includes(query) || icon.kebabName.replace(/-/g, "").includes(query)
+    );
+  }, [searchQuery]);
+
+  // Reset page when search changes
+  useMemo(() => {
+    setPage(0);
+  }, [searchQuery]);
+
+  // Paginate results
+  const totalPages = Math.ceil(filteredIcons.length / ICONS_PER_PAGE);
+  const paginatedIcons = filteredIcons.slice(page * ICONS_PER_PAGE, (page + 1) * ICONS_PER_PAGE);
+
+  // Find selected icon info for display
+  const selectedIconInfo = value ? ALL_ICON_NAMES.find((icon) => icon.kebabName === value) : null;
+
+  return (
+    <div className={cn("space-y-3", className)}>
+      {/* Selected Icon Display */}
+      {selectedIconInfo && (
+        <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20">
+          {(() => {
+            const IconComponent = icons[
+              selectedIconInfo.pascalName as keyof typeof icons
+            ] as LucideIcon;
+            return IconComponent ? <IconComponent className="h-5 w-5 text-primary" /> : null;
+          })()}
+          <span className="text-sm font-bold text-primary">{selectedIconInfo.kebabName}</span>
+        </div>
+      )}
+
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search 1500+ icons..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 text-sm bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {/* Results Count */}
+      <p className="text-xs text-muted-foreground">
+        {filteredIcons.length} icon{filteredIcons.length !== 1 ? "s" : ""} found
+        {totalPages > 1 && ` • Page ${page + 1} of ${totalPages}`}
+      </p>
+
+      {/* Icons Grid */}
+      <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto">
+        {paginatedIcons.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No icons match your search</p>
+        ) : (
+          paginatedIcons.map((iconInfo) => {
+            const IconComponent = icons[iconInfo.pascalName as keyof typeof icons] as LucideIcon;
+            const isSelected = value === iconInfo.kebabName;
+
+            return (
+              <button
+                key={iconInfo.pascalName}
+                type="button"
+                onClick={() => onChange(iconInfo.kebabName)}
+                className={cn(
+                  "p-3 transition-all flex items-center justify-center",
+                  isSelected
+                    ? "gradient-electric text-black"
+                    : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                )}
+                aria-label={iconInfo.kebabName}
+                title={iconInfo.kebabName}
+              >
+                {IconComponent && <IconComponent className="h-5 w-5" />}
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
           <button
-            key={iconOption.value}
             type="button"
-            onClick={() => onChange(iconOption.value)}
-            className={cn(
-              "p-3 transition-all flex items-center justify-center",
-              isSelected
-                ? "gradient-electric text-black"
-                : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-            )}
-            aria-label={iconOption.label}
-            title={iconOption.label}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-3 py-1 text-xs font-bold bg-secondary text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {IconComponent && <IconComponent className="h-5 w-5" />}
+            Previous
           </button>
-        );
-      })}
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="px-3 py-1 text-xs font-bold bg-secondary text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Get the Lucide icon component for a given icon string value
+ * Get the Lucide icon component for a given icon string value (kebab-case)
  */
 export function getIconComponent(iconValue: string | null | undefined): LucideIcon | null {
   if (!iconValue) return null;
-  return ICON_MAP[iconValue] || null;
+  const pascalName = toPascalCase(iconValue);
+  return (icons[pascalName as keyof typeof icons] as LucideIcon) || null;
 }
 
 /**
- * Render an icon by its string value
+ * Render an icon by its string value (kebab-case)
  */
 export function RenderIcon({
   icon,

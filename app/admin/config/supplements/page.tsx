@@ -31,16 +31,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { SUPPLEMENT_CATEGORIES } from "@/lib/validations";
 import type { Supplement } from "@/lib/database.types";
 
-const PAGE_SIZE = 10;
-
 /**
- * Supplements Database Page
+ * Supplements Page
  * Lists all supplements with search, filter, and CRUD operations
  */
-export default function SupplementsDatabasePage() {
+export default function SupplementsPage() {
   const [adminId, setAdminId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -99,10 +98,10 @@ export default function SupplementsDatabasePage() {
   }, [supplements, searchQuery, categoryFilter]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredSupplements.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredSupplements.length / ADMIN_PAGE_SIZE);
   const paginatedItems = filteredSupplements.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading = supplementsQuery.query.isLoading;
@@ -164,14 +163,14 @@ export default function SupplementsDatabasePage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
-              Supplements <span className="gradient-athletic">Database</span>
+              Supplements <span className="gradient-athletic">Library</span>
             </h1>
             <p className="text-sm text-muted-foreground font-bold">
               Manage supplements for client plans
             </p>
           </div>
           <Link
-            href="/admin/supplements/create"
+            href="/admin/config/supplements/create"
             className="btn-athletic inline-flex items-center justify-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
           >
             <Plus className="h-5 w-5" />
@@ -242,7 +241,7 @@ export default function SupplementsDatabasePage() {
             </p>
             {!searchQuery && !categoryFilter && (
               <Link
-                href="/admin/supplements/create"
+                href="/admin/config/supplements/create"
                 className="btn-athletic inline-flex items-center gap-2 px-4 py-2 mt-4 gradient-electric text-black"
               >
                 <Plus className="h-4 w-4" />
@@ -308,7 +307,7 @@ export default function SupplementsDatabasePage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            href={`/admin/supplements/edit/${item.id}`}
+                            href={`/admin/config/supplements/edit/${item.id}`}
                             className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-secondary text-foreground text-sm"
                           >
                             <Pencil className="h-4 w-4" />

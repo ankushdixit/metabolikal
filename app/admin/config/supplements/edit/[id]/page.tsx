@@ -96,7 +96,7 @@ export default function EditSupplementPage() {
       {
         onSuccess: () => {
           toast.success("Supplement updated successfully!");
-          router.push("/admin/supplements");
+          router.push("/admin/config/supplements");
         },
         onError: () => {
           toast.error("Failed to update supplement. Please try again.");
@@ -106,7 +106,7 @@ export default function EditSupplementPage() {
   });
 
   const handleCancel = () => {
-    router.push("/admin/supplements");
+    router.push("/admin/config/supplements");
   };
 
   // Loading state
@@ -129,7 +129,7 @@ export default function EditSupplementPage() {
         <div className="athletic-card p-8 pl-10 text-center">
           <p className="text-muted-foreground font-bold">Supplement not found</p>
           <Link
-            href="/admin/supplements"
+            href="/admin/config/supplements"
             className="btn-athletic inline-flex items-center gap-2 px-4 py-2 mt-4 bg-secondary text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -144,7 +144,7 @@ export default function EditSupplementPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Back Link */}
       <Link
-        href="/admin/supplements"
+        href="/admin/config/supplements"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm uppercase tracking-wider transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />

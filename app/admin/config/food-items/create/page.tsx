@@ -101,12 +101,12 @@ export default function CreateFoodItemPage() {
             }
 
             toast.success("Food item created successfully!");
-            router.push("/admin/food-database");
+            router.push("/admin/config/food-items");
           } catch (error) {
             console.error("Error saving relationships:", error);
             // Food item was still created, just show partial success
             toast.warning("Food item created, but some relationships failed to save.");
-            router.push("/admin/food-database");
+            router.push("/admin/config/food-items");
           } finally {
             setIsSaving(false);
           }
@@ -119,18 +119,18 @@ export default function CreateFoodItemPage() {
   });
 
   const handleCancel = () => {
-    router.push("/admin/food-database");
+    router.push("/admin/config/food-items");
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Back Link */}
       <Link
-        href="/admin/food-database"
+        href="/admin/config/food-items"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm uppercase tracking-wider transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Back to Food Database</span>
+        <span>Back to Food Items</span>
       </Link>
 
       {/* Header Section */}
