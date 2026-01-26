@@ -27,6 +27,8 @@ import type {
   ClientAnchorTimes,
   MealCategory,
   Profile,
+  ClientCondition,
+  MedicalConditionRow,
 } from "@/lib/database.types";
 import {
   timeToMinutes,
@@ -52,6 +54,10 @@ export interface WorkoutPlanWithExercise extends WorkoutPlan {
 
 export interface LifestyleActivityPlanWithType extends LifestyleActivityPlan {
   lifestyle_activity_types?: LifestyleActivityType | null;
+}
+
+export interface ClientConditionWithDetails extends ClientCondition {
+  medical_conditions?: MedicalConditionRow | null;
 }
 
 /**
@@ -570,6 +576,8 @@ export interface UseTimelineDataReturn {
   rawLifestyleActivityPlans: LifestyleActivityPlanWithType[];
   // Plan configuration from client profile
   planConfig: PlanConfig;
+  // Client's medical conditions for food compatibility checks
+  clientConditions: ClientConditionWithDetails[];
 }
 
 /**
@@ -663,11 +671,24 @@ export function useTimelineData({
     },
   });
 
+  // Fetch client conditions with medical condition details (for food compatibility warnings)
+  const clientConditionsQuery = useList<ClientConditionWithDetails>({
+    resource: "client_conditions",
+    filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    meta: {
+      select: "*, medical_conditions(id, name, slug)",
+    },
+    queryOptions: {
+      enabled: enabled && !!clientId,
+    },
+  });
+
   // Raw data for mutations
   const rawDietPlans = dietPlansQuery.query.data?.data || [];
   const rawSupplementPlans = supplementPlansQuery.query.data?.data || [];
   const rawWorkoutPlans = workoutPlansQuery.query.data?.data || [];
   const rawLifestyleActivityPlans = lifestyleActivityPlansQuery.query.data?.data || [];
+  const clientConditions = clientConditionsQuery.query.data?.data || [];
 
   // Compute actual anchor times from meals with fixed times
   // This ensures relative items (supplements, workouts) use the actual meal times
@@ -746,7 +767,8 @@ export function useTimelineData({
     dietPlansQuery.query.isLoading ||
     supplementPlansQuery.query.isLoading ||
     workoutPlansQuery.query.isLoading ||
-    lifestyleActivityPlansQuery.query.isLoading;
+    lifestyleActivityPlansQuery.query.isLoading ||
+    clientConditionsQuery.query.isLoading;
 
   // Error state
   const isError =
@@ -754,7 +776,8 @@ export function useTimelineData({
     dietPlansQuery.query.isError ||
     supplementPlansQuery.query.isError ||
     workoutPlansQuery.query.isError ||
-    lifestyleActivityPlansQuery.query.isError;
+    lifestyleActivityPlansQuery.query.isError ||
+    clientConditionsQuery.query.isError;
 
   // Refetch all data
   const refetchAll = useCallback(() => {
@@ -795,5 +818,6 @@ export function useTimelineData({
     rawWorkoutPlans,
     rawLifestyleActivityPlans,
     planConfig,
+    clientConditions,
   };
 }

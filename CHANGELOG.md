@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Food-Condition Compatibility Warnings**: Warns admins when adding food items that may be incompatible with a client's medical conditions:
+  - `useFoodCompatibility` hook that cross-references food_item_conditions with client conditions
+  - `FoodWarningDialog` component showing incompatible conditions with Cancel/Add Anyway options
+  - Inline warning indicator in MealItemForm when food is selected
+  - Client conditions fetched via `useTimelineData` hook with medical_conditions join
+  - Seed data SQL script for testing (`supabase/seed-compatibility-test-data.sql`)
+  - Comprehensive test coverage (13 tests for useFoodCompatibility hook)
+
+- **Week-Based Day Selector Navigation**: Improved day selector for plans with many days (>14):
+  - Shows 7 days at a time instead of all days (like travel booking sites)
+  - Navigation buttons: first week (<<), previous week (<), next week (>), last week (>>)
+  - Week indicator showing current range and week number
+  - "Go to day..." input for direct navigation to any day
+  - Resolves scroll issues with long plans (60+ days)
+
 - **Plan Limits Management UI**: New UI for managing date-range based macro limits for client diet plans:
   - `useClientPlanLimits` hook with CRUD operations using Refine hooks
   - Utility functions for date overlap detection and range categorization (current/future/past)

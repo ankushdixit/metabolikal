@@ -25,3 +25,4 @@ export { GroupedMealModal } from "./grouped-meal-modal";
 export { GroupedWorkoutModal } from "./grouped-workout-modal";
 export { GroupedSupplementModal } from "./grouped-supplement-modal";
 export { GroupedLifestyleModal } from "./grouped-lifestyle-modal";
+export { FoodWarningDialog } from "./food-warning-dialog";

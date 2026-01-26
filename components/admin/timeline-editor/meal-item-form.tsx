@@ -3,13 +3,14 @@
  *
  * Form for adding/editing meal items on the timeline.
  * Allows selecting food from database, timing, and serving multiplier.
+ * Shows warnings when food items have potential incompatibilities with client conditions.
  */
 
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { useList, useCreate, useUpdate } from "@refinedev/core";
-import { Search, Loader2, Utensils, X } from "lucide-react";
+import { Search, Loader2, Utensils, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -29,6 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TimingSelector, type TimingValues } from "./timing-selector";
+import { FoodWarningDialog } from "./food-warning-dialog";
+import { useFoodCompatibility } from "@/hooks/use-food-compatibility";
+import type { ClientConditionWithDetails } from "@/hooks/use-timeline-data";
 import type { FoodItem, MealCategory, DietPlan, DietPlanInsert } from "@/lib/database.types";
 
 // Meal categories
@@ -48,6 +52,7 @@ interface MealItemFormProps {
   clientId: string;
   dayNumber: number;
   editItem?: DietPlan & { food_items?: FoodItem | null };
+  clientConditions?: ClientConditionWithDetails[];
 }
 
 /**
@@ -60,6 +65,7 @@ export function MealItemForm({
   clientId,
   dayNumber,
   editItem,
+  clientConditions = [],
 }: MealItemFormProps) {
   const isEditing = !!editItem;
 
@@ -78,6 +84,15 @@ export function MealItemForm({
     relativeOffsetMinutes: 0,
   });
 
+  // Warning dialog state
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+
+  // Food compatibility check
+  const { incompatibleConditions, hasIncompatibility, isChecking } = useFoodCompatibility(
+    selectedFood?.id || null,
+    clientConditions
+  );
+
   // Reset form when modal opens or editItem changes
   useEffect(() => {
     if (isOpen) {
@@ -94,6 +109,7 @@ export function MealItemForm({
         relativeAnchor: editItem?.relative_anchor || null,
         relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
       });
+      setShowWarningDialog(false);
     }
   }, [isOpen, editItem]);
 
@@ -128,13 +144,9 @@ export function MealItemForm({
     };
   }, [selectedFood, servingMultiplier]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedFood) {
-      toast.error("Please select a food item");
-      return;
-    }
+  // Perform the actual save operation
+  const performSave = async () => {
+    if (!selectedFood) return;
 
     const data: DietPlanInsert = {
       client_id: clientId,
@@ -173,6 +185,30 @@ export function MealItemForm({
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedFood) {
+      toast.error("Please select a food item");
+      return;
+    }
+
+    // Check for incompatibilities before submitting
+    if (hasIncompatibility) {
+      setShowWarningDialog(true);
+      return;
+    }
+
+    // No incompatibilities, proceed with save
+    await performSave();
+  };
+
+  // Handle confirm from warning dialog (add anyway)
+  const handleWarningConfirm = async () => {
+    setShowWarningDialog(false);
+    await performSave();
+  };
+
   const handleClose = () => {
     if (!isSubmitting) {
       onClose();
@@ -206,21 +242,36 @@ export function MealItemForm({
               </Label>
 
               {selectedFood ? (
-                <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-foreground">{selectedFood.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedFood.calories} cal | {selectedFood.protein}g protein |{" "}
-                      {selectedFood.serving_size}
-                    </p>
+                <div className="space-y-2">
+                  <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-foreground">{selectedFood.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedFood.calories} cal | {selectedFood.protein}g protein |{" "}
+                        {selectedFood.serving_size}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFood(null)}
+                      className="p-1 hover:bg-secondary rounded"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFood(null)}
-                    className="p-1 hover:bg-secondary rounded"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {/* Compatibility warning indicator */}
+                  {!isChecking && hasIncompatibility && (
+                    <div className="flex items-start gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-sm">
+                      <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-amber-400">Compatibility Warning</p>
+                        <p className="text-xs text-muted-foreground">
+                          This food may be unsuitable for client conditions:{" "}
+                          {incompatibleConditions.map((c) => c.name).join(", ")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -372,6 +423,15 @@ export function MealItemForm({
           </div>
         </form>
       </DialogContent>
+
+      {/* Food Compatibility Warning Dialog */}
+      <FoodWarningDialog
+        isOpen={showWarningDialog}
+        onClose={() => setShowWarningDialog(false)}
+        onConfirm={handleWarningConfirm}
+        foodName={selectedFood?.name || ""}
+        incompatibleConditions={incompatibleConditions}
+      />
     </Dialog>
   );
 }
