@@ -31,11 +31,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { LIFESTYLE_ACTIVITY_CATEGORIES } from "@/lib/validations";
 import { RenderIcon } from "@/components/admin/icon-selector";
 import type { LifestyleActivityType } from "@/lib/database.types";
-
-const PAGE_SIZE = 10;
 
 /**
  * Lifestyle Activities Library Page
@@ -99,10 +98,10 @@ export default function LifestyleActivitiesLibraryPage() {
   }, [activityTypes, searchQuery, categoryFilter]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredActivityTypes.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredActivityTypes.length / ADMIN_PAGE_SIZE);
   const paginatedItems = filteredActivityTypes.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading = activityTypesQuery.query.isLoading;

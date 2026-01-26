@@ -23,9 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { MealTypeRow } from "@/lib/database.types";
-
-const PAGE_SIZE = 10;
 
 /**
  * Meal Types Configuration Page
@@ -45,8 +44,11 @@ export default function MealTypesPage() {
   const isDeleting = deleteMutation.mutation.isPending;
 
   // Paginate
-  const totalPages = Math.ceil(mealTypes.length / PAGE_SIZE);
-  const paginatedItems = mealTypes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(mealTypes.length / ADMIN_PAGE_SIZE);
+  const paginatedItems = mealTypes.slice(
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
+  );
 
   // Handle delete confirmation
   const handleDeleteClick = (item: MealTypeRow) => {

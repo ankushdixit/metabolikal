@@ -4,6 +4,16 @@
  * Central configuration for feature flags and application settings.
  */
 
+// =============================================================================
+// Admin Settings
+// =============================================================================
+
+/**
+ * Number of items to display per page in admin tables.
+ * Used across all admin list pages for consistent pagination.
+ */
+export const ADMIN_PAGE_SIZE = 10;
+
 /**
  * Hero section variant type.
  * - 'A': Problem-Solution Focus - Addresses visitor's frustration, positions Metabolikal as solution

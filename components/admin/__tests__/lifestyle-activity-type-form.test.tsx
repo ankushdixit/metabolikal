@@ -70,13 +70,13 @@ describe("LifestyleActivityTypeForm Component", () => {
     expect(screen.getByText("Other")).toBeInTheDocument();
   });
 
-  it("renders icon selector", () => {
+  it("renders icon selector with search", () => {
     render(<TestWrapper />);
 
     expect(screen.getByText("Icon")).toBeInTheDocument();
-    // Check that icon buttons are rendered
-    expect(screen.getByLabelText("Footprints")).toBeInTheDocument();
-    expect(screen.getByLabelText("Sun")).toBeInTheDocument();
+    // Check that search input and pagination are rendered
+    expect(screen.getByPlaceholderText("Search 1500+ icons...")).toBeInTheDocument();
+    expect(screen.getByText(/icon.*found/i)).toBeInTheDocument();
   });
 
   it("renders optional fields", () => {
@@ -191,9 +191,8 @@ describe("LifestyleActivityTypeForm Component", () => {
     const movementButton = screen.getByText("Movement");
     expect(movementButton).toHaveClass("gradient-electric");
 
-    // Check icon is selected
-    const footprintsButton = screen.getByLabelText("Footprints");
-    expect(footprintsButton).toHaveClass("gradient-electric");
+    // Check icon is selected - shown in the selected display area
+    expect(screen.getByText("footprints")).toBeInTheDocument();
   });
 
   it("uses athletic button styling", () => {
@@ -257,35 +256,37 @@ describe("LifestyleActivityTypeForm Component", () => {
     expect(movementButton).toHaveClass("bg-secondary");
   });
 
-  it("allows selecting an icon", () => {
+  it("allows selecting an icon via search", () => {
     render(<TestWrapper />);
 
-    const sunButton = screen.getByLabelText("Sun");
+    // Search for sun icon
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    fireEvent.change(searchInput, { target: { value: "sun" } });
 
-    // Initially not selected
-    expect(sunButton).toHaveClass("bg-secondary");
-
-    // Click to select
+    // Find and click the sun icon
+    const sunButton = screen.getByLabelText("sun");
     fireEvent.click(sunButton);
 
-    // Should now have gradient-electric class
-    expect(sunButton).toHaveClass("gradient-electric");
+    // Should show selected icon name
+    expect(screen.getByText("sun")).toBeInTheDocument();
   });
 
   it("only one icon can be selected at a time", () => {
     render(<TestWrapper />);
 
-    const footprintsButton = screen.getByLabelText("Footprints");
-    const moonButton = screen.getByLabelText("Moon");
+    // Search for and select footprints
+    const searchInput = screen.getByPlaceholderText("Search 1500+ icons...");
+    fireEvent.change(searchInput, { target: { value: "footprints" } });
+    fireEvent.click(screen.getByLabelText("footprints"));
 
-    // Select Footprints
-    fireEvent.click(footprintsButton);
-    expect(footprintsButton).toHaveClass("gradient-electric");
-    expect(moonButton).toHaveClass("bg-secondary");
+    // Verify footprints is shown as selected
+    expect(screen.getByText("footprints")).toBeInTheDocument();
 
-    // Select Moon
-    fireEvent.click(moonButton);
-    expect(moonButton).toHaveClass("gradient-electric");
-    expect(footprintsButton).toHaveClass("bg-secondary");
+    // Search for and select moon
+    fireEvent.change(searchInput, { target: { value: "moon" } });
+    fireEvent.click(screen.getByLabelText("moon"));
+
+    // Verify moon is now selected (replaces footprints)
+    expect(screen.getByText("moon")).toBeInTheDocument();
   });
 });

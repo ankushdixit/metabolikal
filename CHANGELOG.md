@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Full Lucide Icon Library for IconSelector**: Expanded icon selection from 12 curated icons to 1500+ Lucide icons:
+  - Search input to filter icons by name
+  - Pagination (60 icons per page) for browsing
+  - Selected icon display with name preview
+  - Backward compatible with existing icon values (kebab-case storage)
+
+### Changed
+
+- **Admin Sidebar Reorganization**: Reorganized admin navigation with improved grouping:
+  - Moved Food Items and Supplements under Configuration section
+  - Updated URLs from `/admin/food-database` to `/admin/config/food-items`
+  - Updated URLs from `/admin/supplements` to `/admin/config/supplements`
+  - Consistent navigation structure across sidebar and mobile nav
+
+- **Admin UI Consistency Improvements**:
+  - Added Utensils icon to Food Items table name column (matching Supplements/Exercises pattern)
+  - Added Order column to Conditions table (matching Meal Types pattern)
+  - Consistent icon + name display pattern across all config tables
+
 - **Admin Lifestyle Activities Library Management**: Full CRUD interface for managing the lifestyle activity types master library:
   - Lifestyle activities list page at `/admin/config/lifestyle-activities` with data table, search by name, filter by category, and pagination (10 items per page)
   - Create activity type page at `/admin/config/lifestyle-activities/create` with form validation

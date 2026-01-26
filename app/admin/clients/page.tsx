@@ -9,11 +9,10 @@ import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
 import { AddClientModal } from "@/components/admin/add-client-modal";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { Profile, CheckIn } from "@/lib/database.types";
 
 type FilterTab = "all" | "active" | "flagged" | "invited" | "deactivated";
-
-const PAGE_SIZE = 10;
 
 /**
  * Client List Page
@@ -114,10 +113,10 @@ export default function ClientsPage() {
   }, [clientsWithCheckIns, searchQuery, activeTab]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredClients.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredClients.length / ADMIN_PAGE_SIZE);
   const paginatedClients = filteredClients.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading = clientsQuery.query.isLoading || checkInsQuery.query.isLoading;

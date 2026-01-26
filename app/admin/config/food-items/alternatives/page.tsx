@@ -149,11 +149,11 @@ export default function AlternativesPage() {
       {/* Header Section */}
       <div className="athletic-card p-6 pl-8">
         <Link
-          href="/admin/food-database"
+          href="/admin/config/food-items"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Food Database</span>
+          <span>Back to Food Items</span>
         </Link>
         <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
           Manage <span className="gradient-athletic">Alternatives</span>

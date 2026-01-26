@@ -61,7 +61,7 @@ export default function CreateSupplementPage() {
       {
         onSuccess: () => {
           toast.success("Supplement created successfully!");
-          router.push("/admin/supplements");
+          router.push("/admin/config/supplements");
         },
         onError: () => {
           toast.error("Failed to create supplement. Please try again.");
@@ -71,14 +71,14 @@ export default function CreateSupplementPage() {
   });
 
   const handleCancel = () => {
-    router.push("/admin/supplements");
+    router.push("/admin/config/supplements");
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Back Link */}
       <Link
-        href="/admin/supplements"
+        href="/admin/config/supplements"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm uppercase tracking-wider transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />

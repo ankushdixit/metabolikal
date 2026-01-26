@@ -16,6 +16,34 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Redirects for reorganized admin routes
+  async redirects() {
+    return [
+      // Food Database -> Food Items (under config)
+      {
+        source: "/admin/food-database",
+        destination: "/admin/config/food-items",
+        permanent: true,
+      },
+      {
+        source: "/admin/food-database/:path*",
+        destination: "/admin/config/food-items/:path*",
+        permanent: true,
+      },
+      // Supplements -> config/supplements
+      {
+        source: "/admin/supplements",
+        destination: "/admin/config/supplements",
+        permanent: true,
+      },
+      {
+        source: "/admin/supplements/:path*",
+        destination: "/admin/config/supplements/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   // Security headers
   async headers() {
     return [

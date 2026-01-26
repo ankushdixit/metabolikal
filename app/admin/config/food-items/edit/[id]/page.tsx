@@ -186,12 +186,12 @@ export default function EditFoodItemPage() {
             }
 
             toast.success("Food item updated successfully!");
-            router.push("/admin/food-database");
+            router.push("/admin/config/food-items");
           } catch (error) {
             console.error("Error saving relationships:", error);
             // Food item was still updated, just show partial success
             toast.warning("Food item updated, but some relationships failed to save.");
-            router.push("/admin/food-database");
+            router.push("/admin/config/food-items");
           } finally {
             setIsSaving(false);
           }
@@ -204,7 +204,7 @@ export default function EditFoodItemPage() {
   });
 
   const handleCancel = () => {
-    router.push("/admin/food-database");
+    router.push("/admin/config/food-items");
   };
 
   // Loading state
@@ -227,11 +227,11 @@ export default function EditFoodItemPage() {
         <div className="athletic-card p-8 pl-10 text-center">
           <p className="text-muted-foreground font-bold">Food item not found</p>
           <Link
-            href="/admin/food-database"
+            href="/admin/config/food-items"
             className="btn-athletic inline-flex items-center gap-2 px-4 py-2 mt-4 bg-secondary text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Food Database</span>
+            <span>Back to Food Items</span>
           </Link>
         </div>
       </div>
@@ -242,11 +242,11 @@ export default function EditFoodItemPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Back Link */}
       <Link
-        href="/admin/food-database"
+        href="/admin/config/food-items"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm uppercase tracking-wider transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Back to Food Database</span>
+        <span>Back to Food Items</span>
       </Link>
 
       {/* Header Section */}

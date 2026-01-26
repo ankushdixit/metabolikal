@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Upload,
   ArrowLeftRight,
+  Utensils,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import {
@@ -32,15 +33,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { FoodItem } from "@/lib/database.types";
 
-const PAGE_SIZE = 10;
-
 /**
- * Food Database Page
+ * Food Items Page
  * Lists all food items with search and CRUD operations
  */
-export default function FoodDatabasePage() {
+export default function FoodItemsPage() {
   const [adminId, setAdminId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,10 +88,10 @@ export default function FoodDatabasePage() {
   }, [foodItems, searchQuery]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredFoodItems.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredFoodItems.length / ADMIN_PAGE_SIZE);
   const paginatedItems = filteredFoodItems.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * ADMIN_PAGE_SIZE,
+    currentPage * ADMIN_PAGE_SIZE
   );
 
   const isLoading = foodItemsQuery.query.isLoading;
@@ -154,7 +154,7 @@ export default function FoodDatabasePage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
-              Food <span className="gradient-athletic">Database</span>
+              Food <span className="gradient-athletic">Items</span>
             </h1>
             <p className="text-sm text-muted-foreground font-bold">
               Manage food items for diet plans
@@ -162,21 +162,21 @@ export default function FoodDatabasePage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href="/admin/food-database/import"
+              href="/admin/config/food-items/import"
               className="btn-athletic inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground"
             >
               <Upload className="h-5 w-5" />
               <span>Import CSV</span>
             </Link>
             <Link
-              href="/admin/food-database/alternatives"
+              href="/admin/config/food-items/alternatives"
               className="btn-athletic inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground"
             >
               <ArrowLeftRight className="h-5 w-5" />
               <span>Manage Alternatives</span>
             </Link>
             <Link
-              href="/admin/food-database/create"
+              href="/admin/config/food-items/create"
               className="btn-athletic inline-flex items-center justify-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
             >
               <Plus className="h-5 w-5" />
@@ -226,7 +226,7 @@ export default function FoodDatabasePage() {
             </p>
             {!searchQuery && (
               <Link
-                href="/admin/food-database/create"
+                href="/admin/config/food-items/create"
                 className="btn-athletic inline-flex items-center gap-2 px-4 py-2 mt-4 gradient-electric text-black"
               >
                 <Plus className="h-4 w-4" />
@@ -264,7 +264,12 @@ export default function FoodDatabasePage() {
                   {paginatedItems.map((item: FoodItem) => (
                     <TableRow key={item.id} className="border-border">
                       <TableCell>
-                        <span className="font-bold">{item.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10">
+                            <Utensils className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="font-bold">{item.name}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{item.calories} kcal</TableCell>
                       <TableCell className="text-muted-foreground">{item.protein}g</TableCell>
@@ -279,7 +284,7 @@ export default function FoodDatabasePage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            href={`/admin/food-database/edit/${item.id}`}
+                            href={`/admin/config/food-items/edit/${item.id}`}
                             className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-secondary text-foreground text-sm"
                           >
                             <Pencil className="h-4 w-4" />
