@@ -363,3 +363,135 @@ export const supplementSchema = z.object({
 });
 
 export type SupplementFormData = z.infer<typeof supplementSchema>;
+
+/**
+ * Exercise categories for the exercises database.
+ */
+export const EXERCISE_CATEGORIES = [
+  { value: "strength", label: "Strength" },
+  { value: "cardio", label: "Cardio" },
+  { value: "flexibility", label: "Flexibility" },
+  { value: "balance", label: "Balance" },
+  { value: "hiit", label: "HIIT" },
+  { value: "warmup", label: "Warmup" },
+  { value: "cooldown", label: "Cooldown" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type ExerciseCategoryValue = (typeof EXERCISE_CATEGORIES)[number]["value"];
+
+/**
+ * Muscle groups for the exercises database.
+ */
+export const MUSCLE_GROUPS = [
+  { value: "chest", label: "Chest" },
+  { value: "back", label: "Back" },
+  { value: "shoulders", label: "Shoulders" },
+  { value: "biceps", label: "Biceps" },
+  { value: "triceps", label: "Triceps" },
+  { value: "forearms", label: "Forearms" },
+  { value: "core", label: "Core" },
+  { value: "quadriceps", label: "Quadriceps" },
+  { value: "hamstrings", label: "Hamstrings" },
+  { value: "glutes", label: "Glutes" },
+  { value: "calves", label: "Calves" },
+  { value: "full_body", label: "Full Body" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type MuscleGroupValue = (typeof MUSCLE_GROUPS)[number]["value"];
+
+/**
+ * Exercise validation schema.
+ * Validates exercise data for the admin exercises database.
+ */
+export const exerciseSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be 100 characters or less" }),
+  category: z.enum(
+    ["strength", "cardio", "flexibility", "balance", "hiit", "warmup", "cooldown", "other"],
+    { message: "Please select a category" }
+  ),
+  muscle_group: z.enum(
+    [
+      "chest",
+      "back",
+      "shoulders",
+      "biceps",
+      "triceps",
+      "forearms",
+      "core",
+      "quadriceps",
+      "hamstrings",
+      "glutes",
+      "calves",
+      "full_body",
+      "other",
+    ],
+    { message: "Please select a muscle group" }
+  ),
+  equipment: z
+    .string()
+    .max(50, { message: "Equipment must be 50 characters or less" })
+    .optional()
+    .nullable(),
+  default_sets: z
+    .number()
+    .int({ message: "Sets must be a whole number" })
+    .positive({ message: "Sets must be positive" })
+    .max(20, { message: "Sets must be 20 or less" })
+    .optional()
+    .nullable(),
+  default_reps: z
+    .number()
+    .int({ message: "Reps must be a whole number" })
+    .positive({ message: "Reps must be positive" })
+    .max(100, { message: "Reps must be 100 or less" })
+    .optional()
+    .nullable(),
+  default_duration_seconds: z
+    .number()
+    .int({ message: "Duration must be a whole number" })
+    .positive({ message: "Duration must be positive" })
+    .max(3600, { message: "Duration must be 3600 seconds or less" })
+    .optional()
+    .nullable(),
+  rest_seconds: z
+    .number()
+    .int({ message: "Rest must be a whole number" })
+    .nonnegative({ message: "Rest cannot be negative" })
+    .max(600, { message: "Rest must be 600 seconds or less" })
+    .optional()
+    .nullable(),
+  instructions: z
+    .string()
+    .max(1000, { message: "Instructions must be 1000 characters or less" })
+    .optional()
+    .nullable(),
+  video_url: z
+    .string()
+    .url({ message: "Please enter a valid URL" })
+    .max(500, { message: "URL must be 500 characters or less" })
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  thumbnail_url: z
+    .string()
+    .url({ message: "Please enter a valid URL" })
+    .max(500, { message: "URL must be 500 characters or less" })
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  difficulty_level: z
+    .number()
+    .int({ message: "Difficulty must be a whole number" })
+    .min(1, { message: "Difficulty must be between 1 and 5" })
+    .max(5, { message: "Difficulty must be between 1 and 5" })
+    .optional()
+    .nullable(),
+  is_active: z.boolean().optional().nullable(),
+});
+
+export type ExerciseFormData = z.infer<typeof exerciseSchema>;
