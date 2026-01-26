@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Timeline Database Schema and Master Libraries**: Foundation for the "Today's Plan" timeline view:
+  - New scheduling enums: `time_type` (fixed, relative, period, all_day), `time_period` (early_morning through before_sleep), `relative_anchor` (wake_up, meals, workout, sleep)
+  - Category enums: `supplement_category`, `exercise_category`, `muscle_group`, `lifestyle_activity_category`
+  - Master library tables: `supplements`, `exercises`, `lifestyle_activity_types` with reusable definitions
+  - Plan tables: `supplement_plans`, `lifestyle_activity_plans` linking clients to library items with scheduling
+  - Enhanced `workout_plans` with exercise library reference and timeline scheduling fields
+  - Enhanced `diet_plans` with timeline scheduling fields and migration from meal_category
+  - RLS policies: admin manages all, clients view active library items and own plans
+  - Seed data: 12 common supplements, 37 exercises, 12 lifestyle activity types
+  - TypeScript types for all new tables and scheduling interfaces
+  - Timeline utility functions for time conversion, relative time calculation, sorting, and display formatting
+  - Comprehensive test suite (76 tests, 95% coverage)
+
 - **Bulk Food Import via CSV**: New CSV import functionality for the food database:
   - "Import CSV" button on Food Database page linking to `/admin/food-database/import`
   - Downloadable CSV template with correct column headers

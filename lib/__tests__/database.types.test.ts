@@ -172,6 +172,13 @@ describe("Database Types", () => {
         food_item_id: "food-123",
         serving_multiplier: 1.5,
         notes: "Add extra protein",
+        // Timeline scheduling fields
+        time_type: "period",
+        time_start: null,
+        time_end: null,
+        time_period: "morning",
+        relative_anchor: null,
+        relative_offset_minutes: 0,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
@@ -228,6 +235,15 @@ describe("Database Types", () => {
         video_url: "https://example.com/video.mp4",
         section: "main",
         display_order: 1,
+        // Timeline scheduling fields
+        exercise_id: null,
+        time_type: "period",
+        time_start: null,
+        time_end: null,
+        time_period: "morning",
+        relative_anchor: null,
+        relative_offset_minutes: 0,
+        scheduled_duration_minutes: 60,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
