@@ -238,6 +238,8 @@ export interface Database {
           is_deactivated: boolean;
           deactivated_at: string | null;
           deactivation_reason: string | null;
+          plan_start_date: string | null;
+          plan_duration_days: number;
           created_at: string;
           updated_at: string;
         };
@@ -256,6 +258,8 @@ export interface Database {
           is_deactivated?: boolean;
           deactivated_at?: string | null;
           deactivation_reason?: string | null;
+          plan_start_date?: string | null;
+          plan_duration_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -274,6 +278,8 @@ export interface Database {
           is_deactivated?: boolean;
           deactivated_at?: string | null;
           deactivation_reason?: string | null;
+          plan_start_date?: string | null;
+          plan_duration_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -421,6 +427,7 @@ export interface Database {
           time_period: TimePeriod | null;
           relative_anchor: RelativeAnchor | null;
           relative_offset_minutes: number;
+          display_order: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -439,6 +446,7 @@ export interface Database {
           time_period?: TimePeriod | null;
           relative_anchor?: RelativeAnchor | null;
           relative_offset_minutes?: number;
+          display_order?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -457,6 +465,7 @@ export interface Database {
           time_period?: TimePeriod | null;
           relative_anchor?: RelativeAnchor | null;
           relative_offset_minutes?: number;
+          display_order?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1527,6 +1536,8 @@ export interface TimelineItem {
     // Lifestyle-specific
     targetValue?: number;
     targetUnit?: string;
+    // Ordering
+    displayOrder?: number;
   };
 }
 

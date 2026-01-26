@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Plan Start Date and Duration Settings**: Added ability to configure client plan start dates and duration:
+  - New `plan_start_date` and `plan_duration_days` columns on profiles table
+  - Plan Settings UI in client Plans tab showing start date, duration, and calculated end date
+  - Day selector tabs now show calendar dates alongside day numbers when start date is set
+  - "Today" highlighting for the current day based on plan start date
+  - "Go to day" input for quick navigation on plans with many days
+  - Scroll buttons for navigating day tabs on long plans (>14 days)
+  - Support for plans up to 365 days (removed 7-day limit)
+  - Migration to remove day_number upper limit constraints from supplement_plans and lifestyle_activity_plans
+
+- **Plan Date Utilities** (`lib/utils/plan-dates.ts`): New utility functions for working with plan dates:
+  - `getDayDate()` - Get calendar date for a day number
+  - `getDayNumber()` - Get day number for a calendar date
+  - `formatDayLabel()` - Format "Day X - Mon, Jan 27" labels
+  - `isToday()`, `isPastDay()`, `isFutureDay()` - Date comparison helpers
+  - `parsePlanDate()`, `formatPlanDateForStorage()` - Date parsing utilities
+  - Comprehensive test suite (32 tests)
+
+- **Client Management Enhancement Work Items**: Created 7 detailed work items for comprehensive client page improvements:
+  - Database schema for client conditions and plan limits tables
+  - Add Client modal enhancement with phone, plan settings, conditions
+  - Client Profile Editor modal
+  - Client Detail Header enhancement with gender, age, conditions display
+  - Plan Limits Management UI for date-range based macro limits
+  - Plans Tab Redesign with daily view of all 4 plan types
+  - Food-Condition Compatibility Warnings when adding diet items
+
 - **Full Lucide Icon Library for IconSelector**: Expanded icon selection from 12 curated icons to 1500+ Lucide icons:
   - Search input to filter icons by name
   - Pagination (60 icons per page) for browsing
