@@ -14,6 +14,7 @@ import type {
 } from "@/lib/database.types";
 import { parsePlanDate } from "@/lib/utils/plan-dates";
 import { cn } from "@/lib/utils";
+import { PlanLimitsManager } from "./plan-limits-manager";
 
 interface DietPlanWithFood extends DietPlan {
   food_items?: { name: string; calories: number; protein: number } | null;
@@ -352,6 +353,9 @@ export function PlansSummary({ clientId, dietPlans, workoutPlans }: PlansSummary
             )}
           </div>
         )}
+
+        {/* Plan Limits Manager */}
+        <PlanLimitsManager clientId={clientId} />
       </div>
 
       {/* Diet Plan Summary */}

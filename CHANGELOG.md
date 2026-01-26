@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Plan Limits Management UI**: New UI for managing date-range based macro limits for client diet plans:
+  - `useClientPlanLimits` hook with CRUD operations using Refine hooks
+  - Utility functions for date overlap detection and range categorization (current/future/past)
+  - `PlanLimitsManager` component displaying current, future, and past limit ranges
+  - Current range highlighted, future ranges with edit/delete buttons, past ranges collapsed
+  - `AddLimitRangeModal` for adding/editing limit ranges with form validation
+  - Real-time date overlap detection with visual warnings
+  - Required fields: max calories, min protein; optional: max protein, min/max carbs, min/max fats, notes
+  - Integrated into Plan Settings section of client detail page
+  - Comprehensive test coverage (57 tests across 3 test files)
+
 - **Edit Client Profile Modal**: New modal for editing existing client profiles from the admin client detail page:
   - Edit all personal info fields: name, email, phone, date of birth, gender, address
   - Edit plan settings: plan start date, plan duration (with preset buttons and custom input)
