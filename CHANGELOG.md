@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Add Client Modal Enhancement**: Enhanced the Add Client modal to collect additional information at client creation:
+  - Phone number field with E.164 validation (e.g., +919876543210)
+  - Plan Start Date picker to set when Day 1 begins
+  - Plan Duration selector with preset buttons (7, 14, 21, 28, 30, 60, 90 days) plus custom input
+  - Medical Conditions multi-select that fetches from database, with gender restriction indicators
+  - Selected conditions shown as removable tags
+  - API route updated to save all new fields and insert client_conditions records
+  - Comprehensive test coverage (26 tests)
+
 - **Database Schema - Client Conditions & Plan Limits**: Added foundational database tables for client management:
   - `client_conditions` table to link clients with medical conditions for food compatibility warnings
   - `client_plan_limits` table for date-range based calorie and macro limits with non-overlapping constraint
