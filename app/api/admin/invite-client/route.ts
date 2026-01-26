@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createServerSupabaseClient, isAdmin } from "@/lib/auth-server";
+import { createServerSupabaseClient, isAdmin, getUser } from "@/lib/auth-server";
 import { createClientSchema } from "@/lib/validations";
 import type { ProfileGender } from "@/lib/database.types";
 
@@ -35,7 +35,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const { full_name, email, date_of_birth, gender, address } = validationResult.data;
+    const {
+      full_name,
+      email,
+      phone,
+      date_of_birth,
+      gender,
+      address,
+      plan_start_date,
+      plan_duration_days,
+      condition_ids,
+    } = validationResult.data;
 
     // Check for required environment variable
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -100,9 +110,12 @@ export async function POST(request: Request) {
     };
 
     // Add optional fields if they have values
+    if (phone) profileUpdateData.phone = phone;
     if (date_of_birth) profileUpdateData.date_of_birth = date_of_birth;
     if (gender) profileUpdateData.gender = gender as ProfileGender;
     if (address) profileUpdateData.address = address;
+    if (plan_start_date) profileUpdateData.plan_start_date = plan_start_date;
+    if (plan_duration_days !== undefined) profileUpdateData.plan_duration_days = plan_duration_days;
 
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
@@ -135,6 +148,27 @@ export async function POST(request: Request) {
         { success: false, error: `Failed to update client profile: ${profileError.message}` },
         { status: 500 }
       );
+    }
+
+    // Insert client conditions if any were provided
+    if (condition_ids && condition_ids.length > 0) {
+      // Get the current admin user to track who assigned the conditions
+      const adminUser = await getUser();
+      const conditionRecords = condition_ids.map((condition_id) => ({
+        client_id: authData.user!.id,
+        condition_id,
+        created_by: adminUser?.id ?? null, // Track which admin assigned the conditions
+      }));
+
+      const { error: conditionsError } = await supabaseAdmin
+        .from("client_conditions")
+        .insert(conditionRecords);
+
+      if (conditionsError) {
+        console.error("Error inserting client conditions:", conditionsError);
+        // Don't fail the whole operation - log the error but continue
+        // The client is already created, conditions can be added later
+      }
     }
 
     // Fetch the created profile to return

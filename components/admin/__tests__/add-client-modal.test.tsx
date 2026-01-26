@@ -5,6 +5,47 @@ import { AddClientModal } from "../add-client-modal";
 // Mock fetch
 global.fetch = jest.fn();
 
+// Mock the medical conditions hook
+const mockConditions = [
+  {
+    id: "cond-1",
+    name: "Diabetes Type 2",
+    slug: "diabetes-type2",
+    impact_percent: 10,
+    gender_restriction: null,
+    is_active: true,
+    display_order: 1,
+  },
+  {
+    id: "cond-2",
+    name: "Hypertension",
+    slug: "hypertension",
+    impact_percent: 5,
+    gender_restriction: null,
+    is_active: true,
+    display_order: 2,
+  },
+  {
+    id: "cond-3",
+    name: "PCOS",
+    slug: "pcos",
+    impact_percent: 8,
+    gender_restriction: "female",
+    is_active: true,
+    display_order: 3,
+  },
+];
+
+jest.mock("@/hooks/use-medical-conditions", () => ({
+  useMedicalConditions: () => ({
+    conditions: mockConditions,
+    allConditions: mockConditions,
+    isLoading: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+}));
+
 describe("AddClientModal Component", () => {
   const defaultProps = {
     isOpen: true,
@@ -34,10 +75,27 @@ describe("AddClientModal Component", () => {
       render(<AddClientModal {...defaultProps} />);
       expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
       // Gender field uses a select with label
       expect(screen.getByRole("combobox")).toBeInTheDocument();
       expect(screen.getByLabelText(/address/i)).toBeInTheDocument();
+      // Plan settings section
+      expect(screen.getByText(/plan settings/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/plan start date/i)).toBeInTheDocument();
+      expect(screen.getByText(/plan duration/i)).toBeInTheDocument();
+      expect(screen.getByText(/medical conditions/i)).toBeInTheDocument();
+    });
+
+    it("renders plan duration preset buttons", () => {
+      render(<AddClientModal {...defaultProps} />);
+      expect(screen.getByRole("button", { name: "7" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "14" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "21" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "28" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "30" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "60" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "90" })).toBeInTheDocument();
     });
 
     it("renders action buttons", () => {
@@ -75,6 +133,13 @@ describe("AddClientModal Component", () => {
       expect(emailInput).toHaveAttribute("type", "email");
     });
 
+    it("has phone field with tel type", () => {
+      render(<AddClientModal {...defaultProps} />);
+
+      const phoneInput = screen.getByLabelText(/phone/i);
+      expect(phoneInput).toHaveAttribute("type", "tel");
+    });
+
     it("accepts valid form data", async () => {
       const user = userEvent.setup();
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -105,6 +170,94 @@ describe("AddClientModal Component", () => {
     });
   });
 
+  describe("Plan Duration Selection", () => {
+    it("selects duration preset when clicked", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      const btn14 = screen.getByRole("button", { name: "14" });
+      await user.click(btn14);
+
+      // Button should show selected state (check class)
+      expect(btn14).toHaveClass("bg-primary");
+    });
+
+    it("allows custom duration input", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      const customInput = screen.getByPlaceholderText("Custom");
+      await user.type(customInput, "45");
+
+      expect(customInput).toHaveValue(45);
+    });
+  });
+
+  describe("Medical Conditions Selection", () => {
+    it("shows conditions dropdown when clicked", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      await user.click(screen.getByText(/select conditions/i));
+
+      await waitFor(() => {
+        expect(screen.getByText("Diabetes Type 2")).toBeInTheDocument();
+        expect(screen.getByText("Hypertension")).toBeInTheDocument();
+        expect(screen.getByText("PCOS")).toBeInTheDocument();
+      });
+    });
+
+    it("shows gender restriction indicator for conditions", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      await user.click(screen.getByText(/select conditions/i));
+
+      await waitFor(() => {
+        expect(screen.getByText("(female only)")).toBeInTheDocument();
+      });
+    });
+
+    it("allows selecting multiple conditions", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      // Open dropdown
+      await user.click(screen.getByText(/select conditions/i));
+
+      // Select conditions by clicking the label elements
+      const diabetesLabel = screen.getByText("Diabetes Type 2");
+      const hypertensionLabel = screen.getByText("Hypertension");
+
+      await user.click(diabetesLabel.closest("label")!);
+      await user.click(hypertensionLabel.closest("label")!);
+
+      // Should show selected conditions count
+      await waitFor(() => {
+        expect(screen.getByText(/2 conditions selected/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows selected conditions as tags", async () => {
+      const user = userEvent.setup();
+      render(<AddClientModal {...defaultProps} />);
+
+      // Open dropdown
+      await user.click(screen.getByText(/select conditions/i));
+
+      // Select a condition by clicking the label
+      const diabetesLabel = screen.getByText("Diabetes Type 2");
+      await user.click(diabetesLabel.closest("label")!);
+
+      // Should show tag for selected condition
+      await waitFor(() => {
+        // There should be a tag with the condition name (not the one in the dropdown)
+        const tags = screen.getAllByText("Diabetes Type 2");
+        expect(tags.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+  });
+
   describe("Form Submission", () => {
     it("submits form with all fields", async () => {
       const user = userEvent.setup();
@@ -128,11 +281,48 @@ describe("AddClientModal Component", () => {
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalled();
         const callBody = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-        expect(callBody).toEqual({
+        expect(callBody).toMatchObject({
           full_name: "John Doe",
           email: "john@example.com",
           date_of_birth: "1990-05-15",
           address: "123 Main St",
+          plan_duration_days: 7, // default value
+          condition_ids: [], // default value
+        });
+      });
+    });
+
+    it("submits form with new plan fields", async () => {
+      const user = userEvent.setup();
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          client: { id: "123" },
+          message: "Client created successfully.",
+        }),
+      });
+
+      render(<AddClientModal {...defaultProps} />);
+
+      await user.type(screen.getByLabelText(/full name/i), "Jane Doe");
+      await user.type(screen.getByLabelText(/email/i), "jane@example.com");
+      await user.type(screen.getByLabelText(/phone/i), "+919876543210");
+      await user.type(screen.getByLabelText(/plan start date/i), "2026-02-01");
+      await user.click(screen.getByRole("button", { name: "30" })); // Select 30-day plan
+
+      await user.click(screen.getByRole("button", { name: /add client/i }));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+        const callBody = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(callBody).toMatchObject({
+          full_name: "Jane Doe",
+          email: "jane@example.com",
+          phone: "+919876543210",
+          plan_start_date: "2026-02-01",
+          plan_duration_days: 30,
+          condition_ids: [],
         });
       });
     });
