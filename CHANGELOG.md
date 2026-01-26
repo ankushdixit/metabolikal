@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Database Schema - Client Conditions & Plan Limits**: Added foundational database tables for client management:
+  - `client_conditions` table to link clients with medical conditions for food compatibility warnings
+  - `client_plan_limits` table for date-range based calorie and macro limits with non-overlapping constraint
+  - PostgreSQL exclusion constraint using btree_gist to prevent overlapping date ranges per client
+  - RLS policies: admins can CRUD, clients can read their own data
+  - TypeScript types and comprehensive test coverage (38 type tests passing)
+  - Required fields: max_calories_per_day, min_protein_per_day; optional: max_protein, min/max carbs, min/max fats
+
 - **Plan Start Date and Duration Settings**: Added ability to configure client plan start dates and duration:
   - New `plan_start_date` and `plan_duration_days` columns on profiles table
   - Plan Settings UI in client Plans tab showing start date, duration, and calculated end date

@@ -411,6 +411,119 @@ export interface Database {
           },
         ];
       };
+      client_conditions: {
+        Row: {
+          id: string;
+          client_id: string;
+          condition_id: string;
+          diagnosed_at: string | null;
+          notes: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          condition_id: string;
+          diagnosed_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          condition_id?: string;
+          diagnosed_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_conditions_client_id_fkey";
+            columns: ["client_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_conditions_condition_id_fkey";
+            columns: ["condition_id"];
+            referencedRelation: "medical_conditions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_conditions_created_by_fkey";
+            columns: ["created_by"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_plan_limits: {
+        Row: {
+          id: string;
+          client_id: string;
+          start_date: string;
+          end_date: string;
+          max_calories_per_day: number;
+          min_protein_per_day: number;
+          max_protein_per_day: number | null;
+          min_carbs_per_day: number | null;
+          max_carbs_per_day: number | null;
+          min_fats_per_day: number | null;
+          max_fats_per_day: number | null;
+          notes: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          start_date: string;
+          end_date: string;
+          max_calories_per_day: number;
+          min_protein_per_day: number;
+          max_protein_per_day?: number | null;
+          min_carbs_per_day?: number | null;
+          max_carbs_per_day?: number | null;
+          min_fats_per_day?: number | null;
+          max_fats_per_day?: number | null;
+          notes?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          start_date?: string;
+          end_date?: string;
+          max_calories_per_day?: number;
+          min_protein_per_day?: number;
+          max_protein_per_day?: number | null;
+          min_carbs_per_day?: number | null;
+          max_carbs_per_day?: number | null;
+          min_fats_per_day?: number | null;
+          max_fats_per_day?: number | null;
+          notes?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_plan_limits_client_id_fkey";
+            columns: ["client_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_plan_limits_created_by_fkey";
+            columns: ["created_by"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       diet_plans: {
         Row: {
           id: string;
@@ -1474,6 +1587,14 @@ export type FoodItemConditionUpdate = UpdateTables<"food_item_conditions">;
 export type FoodItemAlternativeRow = Tables<"food_item_alternatives">;
 export type FoodItemAlternativeInsert = InsertTables<"food_item_alternatives">;
 export type FoodItemAlternativeUpdate = UpdateTables<"food_item_alternatives">;
+
+export type ClientCondition = Tables<"client_conditions">;
+export type ClientConditionInsert = InsertTables<"client_conditions">;
+export type ClientConditionUpdate = UpdateTables<"client_conditions">;
+
+export type ClientPlanLimit = Tables<"client_plan_limits">;
+export type ClientPlanLimitInsert = InsertTables<"client_plan_limits">;
+export type ClientPlanLimitUpdate = UpdateTables<"client_plan_limits">;
 
 // =============================================================================
 // TIMELINE MASTER LIBRARY TYPE EXPORTS
