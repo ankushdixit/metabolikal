@@ -182,7 +182,7 @@ export function DaySelectorTabs({
         )}
 
         {/* Day buttons */}
-        <div className="flex flex-wrap gap-2 flex-1">
+        <div className="flex flex-wrap gap-2">
           {(usePagination ? visibleDays : Array.from({ length: totalDays }, (_, i) => i + 1)).map(
             (day) => {
               const isSelected = day === selectedDay;
