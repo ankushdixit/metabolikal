@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Supplements Database Management**: Full CRUD interface for managing the supplements master library:
+  - Supplements list page at `/admin/supplements` with data table, search by name, filter by category, and pagination
+  - Create supplement page at `/admin/supplements/create` with form validation
+  - Edit supplement page at `/admin/supplements/edit/[id]` with pre-populated data
+  - Reusable `SupplementForm` component with category selection, dosage fields, instructions, and notes
+  - Delete functionality with confirmation dialog and usage protection (prevents deletion if supplement is used in client plans)
+  - Zod validation schema for supplement data
+  - Navigation links added to admin sidebar and mobile nav
+  - Unit tests for the form component (19 tests)
+
 - **Timeline Database Schema and Master Libraries**: Foundation for the "Today's Plan" timeline view:
   - New scheduling enums: `time_type` (fixed, relative, period, all_day), `time_period` (early_morning through before_sleep), `relative_anchor` (wake_up, meals, workout, sleep)
   - Category enums: `supplement_category`, `exercise_category`, `muscle_group`, `lifestyle_activity_category`

@@ -309,3 +309,57 @@ export const createClientSchema = z.object({
 });
 
 export type CreateClientFormData = z.infer<typeof createClientSchema>;
+
+/**
+ * Supplement categories for the supplements database.
+ */
+export const SUPPLEMENT_CATEGORIES = [
+  { value: "vitamin", label: "Vitamin" },
+  { value: "mineral", label: "Mineral" },
+  { value: "protein", label: "Protein" },
+  { value: "amino_acid", label: "Amino Acid" },
+  { value: "fatty_acid", label: "Fatty Acid" },
+  { value: "herbal", label: "Herbal" },
+  { value: "probiotic", label: "Probiotic" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type SupplementCategoryValue = (typeof SUPPLEMENT_CATEGORIES)[number]["value"];
+
+/**
+ * Supplement validation schema.
+ * Validates supplement data for the admin supplements database.
+ */
+export const supplementSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be 100 characters or less" }),
+  category: z.enum(
+    ["vitamin", "mineral", "protein", "amino_acid", "fatty_acid", "herbal", "probiotic", "other"],
+    { message: "Please select a category" }
+  ),
+  default_dosage: z
+    .number({
+      message: "Dosage is required and must be a number",
+    })
+    .positive({ message: "Dosage must be positive" })
+    .max(10000, { message: "Dosage must be 10000 or less" }),
+  dosage_unit: z
+    .string()
+    .min(1, { message: "Dosage unit is required" })
+    .max(20, { message: "Dosage unit must be 20 characters or less" }),
+  instructions: z
+    .string()
+    .max(500, { message: "Instructions must be 500 characters or less" })
+    .optional()
+    .nullable(),
+  notes: z
+    .string()
+    .max(500, { message: "Notes must be 500 characters or less" })
+    .optional()
+    .nullable(),
+  is_active: z.boolean(),
+});
+
+export type SupplementFormData = z.infer<typeof supplementSchema>;

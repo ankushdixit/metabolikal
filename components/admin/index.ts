@@ -8,6 +8,7 @@ export { ProgressCharts } from "./progress-charts";
 export { PhotosGallery } from "./photos-gallery";
 export { PlansSummary } from "./plans-summary";
 export { FoodItemForm } from "./food-item-form";
+export { SupplementForm } from "./supplement-form";
 export { ConditionSelector } from "./condition-selector";
 export { FoodAlternativesSelector } from "./food-alternatives-selector";
 export { MealTypeForm } from "./meal-type-form";
