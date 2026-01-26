@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Exercises Library Management**: Full CRUD interface for managing the exercises master library:
+  - Exercises list page at `/admin/config/exercises` with data table, search by name, filter by category, filter by muscle group, and pagination
+  - Create exercise page at `/admin/config/exercises/create` with form validation
+  - Edit exercise page at `/admin/config/exercises/edit/[id]` with pre-populated data
+  - Reusable `ExerciseForm` component with category selection (8 types), muscle group selection (13 groups), equipment, default sets/reps/duration, rest seconds, difficulty rating (1-5 stars), instructions, video URL, and thumbnail URL
+  - Soft delete functionality (deactivates exercises) with confirmation dialog and usage warning
+  - Zod validation schema for exercise data with EXERCISE_CATEGORIES and MUSCLE_GROUPS constants
+  - Navigation link added under Configuration section in admin sidebar and mobile nav
+
 - **Admin Supplements Database Management**: Full CRUD interface for managing the supplements master library:
   - Supplements list page at `/admin/supplements` with data table, search by name, filter by category, and pagination
   - Create supplement page at `/admin/supplements/create` with form validation
