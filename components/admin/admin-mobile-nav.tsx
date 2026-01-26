@@ -17,6 +17,7 @@ import {
   Clock,
   HeartPulse,
   Trophy,
+  Pill,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -58,6 +59,11 @@ const navItems: NavItem[] = [
     label: "Food Database",
     icon: UtensilsCrossed,
     href: "/admin/food-database",
+  },
+  {
+    label: "Supplements",
+    icon: Pill,
+    href: "/admin/supplements",
   },
   {
     label: "Configuration",
