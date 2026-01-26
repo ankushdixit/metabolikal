@@ -495,3 +495,80 @@ export const exerciseSchema = z.object({
 });
 
 export type ExerciseFormData = z.infer<typeof exerciseSchema>;
+
+/**
+ * Lifestyle activity categories for the lifestyle activities library.
+ */
+export const LIFESTYLE_ACTIVITY_CATEGORIES = [
+  { value: "movement", label: "Movement" },
+  { value: "mindfulness", label: "Mindfulness" },
+  { value: "sleep", label: "Sleep" },
+  { value: "hydration", label: "Hydration" },
+  { value: "sunlight", label: "Sunlight" },
+  { value: "social", label: "Social" },
+  { value: "recovery", label: "Recovery" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type LifestyleActivityCategoryValue =
+  (typeof LIFESTYLE_ACTIVITY_CATEGORIES)[number]["value"];
+
+/**
+ * Available icons for lifestyle activity types.
+ */
+export const LIFESTYLE_ACTIVITY_ICONS = [
+  { value: "footprints", label: "Footprints" },
+  { value: "sun", label: "Sun" },
+  { value: "book-open", label: "Book" },
+  { value: "droplet", label: "Water Drop" },
+  { value: "moon", label: "Moon" },
+  { value: "users", label: "Users" },
+  { value: "heart", label: "Heart" },
+  { value: "zap", label: "Energy" },
+  { value: "dumbbell", label: "Dumbbell" },
+  { value: "leaf", label: "Leaf" },
+  { value: "brain", label: "Brain" },
+  { value: "clock", label: "Clock" },
+] as const;
+
+export type LifestyleActivityIconValue = (typeof LIFESTYLE_ACTIVITY_ICONS)[number]["value"];
+
+/**
+ * Lifestyle activity type validation schema.
+ * Validates activity type data for the admin lifestyle activities library.
+ */
+export const lifestyleActivityTypeSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be 100 characters or less" }),
+  category: z.enum(
+    ["movement", "mindfulness", "sleep", "hydration", "sunlight", "social", "recovery", "other"],
+    { message: "Please select a category" }
+  ),
+  default_target_value: z
+    .number()
+    .positive({ message: "Target must be positive" })
+    .max(100000, { message: "Target must be 100000 or less" })
+    .optional()
+    .nullable(),
+  target_unit: z
+    .string()
+    .max(30, { message: "Unit must be 30 characters or less" })
+    .optional()
+    .nullable(),
+  description: z
+    .string()
+    .max(500, { message: "Description must be 500 characters or less" })
+    .optional()
+    .nullable(),
+  rationale: z
+    .string()
+    .max(1000, { message: "Rationale must be 1000 characters or less" })
+    .optional()
+    .nullable(),
+  icon: z.string().optional().nullable(),
+  is_active: z.boolean().optional().nullable(),
+});
+
+export type LifestyleActivityTypeFormData = z.infer<typeof lifestyleActivityTypeSchema>;

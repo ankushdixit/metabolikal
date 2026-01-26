@@ -16,6 +16,7 @@ import {
   HeartPulse,
   Pill,
   Dumbbell,
+  Activity,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -85,6 +86,12 @@ const navItems: NavItem[] = [
     label: "Exercises",
     icon: Dumbbell,
     href: "/admin/config/exercises",
+    indent: true,
+  },
+  {
+    label: "Lifestyle Activities",
+    icon: Activity,
+    href: "/admin/config/lifestyle-activities",
     indent: true,
   },
 ];
