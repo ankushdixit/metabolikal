@@ -19,6 +19,14 @@ export { AddClientModal } from "./add-client-modal";
 export { LifestyleActivityTypeForm } from "./lifestyle-activity-type-form";
 export { IconSelector, RenderIcon, getIconComponent } from "./icon-selector";
 
+// Daily Plan View
+export { DailyPlanView } from "./daily-plan-view";
+export { PlanDayNavigator } from "./plan-day-navigator";
+export { DailyDietSection } from "./daily-diet-section";
+export { DailySupplementsSection } from "./daily-supplements-section";
+export { DailyWorkoutSection } from "./daily-workout-section";
+export { DailyLifestyleSection } from "./daily-lifestyle-section";
+
 // Timeline Editor
 export {
   DaySelectorTabs,
