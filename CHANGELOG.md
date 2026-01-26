@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Edit Client Profile Modal**: New modal for editing existing client profiles from the admin client detail page:
+  - Edit all personal info fields: name, email, phone, date of birth, gender, address
+  - Edit plan settings: plan start date, plan duration (with preset buttons and custom input)
+  - Manage medical conditions: add/remove conditions with gender restriction indicators
+  - Pre-populates all fields with existing client data
+  - Uses Refine hooks (`useUpdate`, `useCreate`, `useDeleteMany`) for data mutations
+  - Syncs conditions by detecting added/removed conditions
+  - "Edit Profile" button added to client detail page header
+  - Zod validation schema (`updateClientSchema`) for form validation
+  - Comprehensive test coverage (26 tests)
+
 - **Add Client Modal Enhancement**: Enhanced the Add Client modal to collect additional information at client creation:
   - Phone number field with E.164 validation (e.g., +919876543210)
   - Plan Start Date picker to set when Day 1 begins

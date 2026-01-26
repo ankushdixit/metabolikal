@@ -336,6 +336,76 @@ export const createClientSchema = z.object({
 export type CreateClientFormData = z.infer<typeof createClientSchema>;
 
 /**
+ * Client update validation schema.
+ * Used by admin to update existing client profiles.
+ * Similar to createClientSchema but all fields optional except required identifiers.
+ */
+export const updateClientSchema = z.object({
+  full_name: z
+    .string()
+    .min(1, { message: "Full name is required" })
+    .max(100, { message: "Full name must be 100 characters or less" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, {
+      message: "Invalid phone number format (use E.164: +1234567890)",
+    })
+    .optional()
+    .or(z.literal(""))
+    .nullable(),
+  date_of_birth: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: "Please enter a valid date" }
+    )
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        const today = new Date();
+        return date < today;
+      },
+      { message: "Date of birth must be in the past" }
+    ),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional().nullable(),
+  address: z
+    .string()
+    .max(500, { message: "Address must be 500 characters or less" })
+    .optional()
+    .nullable(),
+  plan_start_date: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: "Please enter a valid date" }
+    ),
+  plan_duration_days: z
+    .number()
+    .int({ message: "Duration must be a whole number" })
+    .min(1, { message: "Duration must be at least 1 day" })
+    .max(365, { message: "Duration must be 365 days or less" })
+    .optional()
+    .nullable(),
+  condition_ids: z.array(z.string().uuid()).optional().nullable(),
+});
+
+export type UpdateClientFormData = z.infer<typeof updateClientSchema>;
+
+/**
  * Supplement categories for the supplements database.
  */
 export const SUPPLEMENT_CATEGORIES = [

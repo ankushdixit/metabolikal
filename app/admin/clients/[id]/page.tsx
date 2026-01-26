@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useOne, useList } from "@refinedev/core";
+import { useOne, useList, useInvalidate } from "@refinedev/core";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,14 +14,22 @@ import {
   Image as ImageIcon,
   FileText,
   Flag,
+  Pencil,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { CheckInReview } from "@/components/admin/checkin-review";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
 import { PlansSummary } from "@/components/admin/plans-summary";
+import { EditClientModal } from "@/components/admin/edit-client-modal";
 import { cn } from "@/lib/utils";
-import type { Profile, CheckIn, DietPlan, WorkoutPlan } from "@/lib/database.types";
+import type {
+  Profile,
+  CheckIn,
+  DietPlan,
+  WorkoutPlan,
+  ClientCondition,
+} from "@/lib/database.types";
 
 type Tab = "checkins" | "progress" | "photos" | "plans";
 
@@ -35,6 +43,9 @@ export default function ClientReviewPage() {
 
   const [adminId, setAdminId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("checkins");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const invalidate = useInvalidate();
 
   // Get current admin user ID
   useEffect(() => {
@@ -92,10 +103,20 @@ export default function ClientReviewPage() {
     },
   });
 
+  // Fetch client's conditions
+  const clientConditionsQuery = useList<ClientCondition>({
+    resource: "client_conditions",
+    filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    queryOptions: {
+      enabled: !!clientId,
+    },
+  });
+
   const profile = profileQuery.query.data?.data;
   const checkIns = checkInsQuery.query.data?.data || [];
   const dietPlans = dietPlansQuery.query.data?.data || [];
   const workoutPlans = workoutPlansQuery.query.data?.data || [];
+  const clientConditions = clientConditionsQuery.query.data?.data || [];
 
   // Calculate stats
   const latestCheckIn = checkIns[0];
@@ -111,6 +132,22 @@ export default function ClientReviewPage() {
   // Refetch check-ins when updated
   const handleCheckInUpdate = () => {
     checkInsQuery.query.refetch();
+  };
+
+  // Handle profile edit success
+  const handleEditSuccess = () => {
+    // Refetch profile and conditions data
+    invalidate({
+      resource: "profiles",
+      id: clientId,
+      invalidates: ["detail"],
+    });
+    invalidate({
+      resource: "client_conditions",
+      invalidates: ["list"],
+    });
+    profileQuery.query.refetch();
+    clientConditionsQuery.query.refetch();
   };
 
   const tabs: { label: string; value: Tab; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -195,6 +232,16 @@ export default function ClientReviewPage() {
                 </div>
                 <p className="text-muted-foreground font-bold">{profile.email}</p>
               </div>
+              {/* Edit Button */}
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground hover:bg-secondary/80 transition-colors shrink-0"
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="hidden sm:inline font-bold text-sm uppercase tracking-wider">
+                  Edit Profile
+                </span>
+              </button>
             </div>
 
             {/* Quick Stats */}
@@ -290,6 +337,17 @@ export default function ClientReviewPage() {
 
       {activeTab === "plans" && (
         <PlansSummary clientId={clientId} dietPlans={dietPlans} workoutPlans={workoutPlans} />
+      )}
+
+      {/* Edit Client Modal */}
+      {profile && (
+        <EditClientModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={handleEditSuccess}
+          client={profile}
+          clientConditions={clientConditions}
+        />
       )}
     </div>
   );
