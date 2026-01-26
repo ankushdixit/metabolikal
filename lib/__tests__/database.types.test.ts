@@ -30,6 +30,12 @@ import type {
   ChallengeProgressInsert,
   AssessmentResult,
   AssessmentResultInsert,
+  ClientCondition,
+  ClientConditionInsert,
+  ClientConditionUpdate,
+  ClientPlanLimit,
+  ClientPlanLimitInsert,
+  ClientPlanLimitUpdate,
   UserRole,
   MealCategory,
   WorkoutSection,
@@ -447,6 +453,136 @@ describe("Database Types", () => {
     });
   });
 
+  describe("ClientCondition Types", () => {
+    it("should correctly type ClientCondition row", () => {
+      const clientCondition: ClientCondition = {
+        id: "condition-123",
+        client_id: "user-123",
+        condition_id: "medical-condition-456",
+        diagnosed_at: "2024-01-15",
+        notes: "Diagnosed by Dr. Smith",
+        created_at: "2026-01-26T00:00:00Z",
+        created_by: "admin-789",
+      };
+      expect(clientCondition.client_id).toBe("user-123");
+      expect(clientCondition.condition_id).toBe("medical-condition-456");
+    });
+
+    it("should correctly type ClientConditionInsert with required fields", () => {
+      const insert: ClientConditionInsert = {
+        client_id: "user-123",
+        condition_id: "medical-condition-456",
+      };
+      expect(insert.client_id).toBeDefined();
+      expect(insert.condition_id).toBeDefined();
+    });
+
+    it("should allow optional fields in ClientConditionInsert", () => {
+      const insert: ClientConditionInsert = {
+        client_id: "user-123",
+        condition_id: "medical-condition-456",
+        diagnosed_at: "2024-01-15",
+        notes: "Patient reported symptoms since 2023",
+        created_by: "admin-789",
+      };
+      expect(insert.diagnosed_at).toBe("2024-01-15");
+      expect(insert.notes).toBeDefined();
+    });
+
+    it("should correctly type ClientConditionUpdate with optional fields", () => {
+      const update: ClientConditionUpdate = {
+        notes: "Updated medical history",
+        diagnosed_at: "2024-02-01",
+      };
+      expect(update.notes).toBe("Updated medical history");
+    });
+  });
+
+  describe("ClientPlanLimit Types", () => {
+    it("should correctly type ClientPlanLimit row", () => {
+      const planLimit: ClientPlanLimit = {
+        id: "limit-123",
+        client_id: "user-123",
+        start_date: "2026-01-01",
+        end_date: "2026-03-31",
+        max_calories_per_day: 2000,
+        min_protein_per_day: 150,
+        max_protein_per_day: 200,
+        min_carbs_per_day: 150,
+        max_carbs_per_day: 250,
+        min_fats_per_day: 50,
+        max_fats_per_day: 80,
+        notes: "Cutting phase - Q1 2026",
+        created_at: "2026-01-26T00:00:00Z",
+        created_by: "admin-789",
+      };
+      expect(planLimit.max_calories_per_day).toBe(2000);
+      expect(planLimit.min_protein_per_day).toBe(150);
+    });
+
+    it("should correctly type ClientPlanLimitInsert with required fields only", () => {
+      const insert: ClientPlanLimitInsert = {
+        client_id: "user-123",
+        start_date: "2026-01-01",
+        end_date: "2026-03-31",
+        max_calories_per_day: 2000,
+        min_protein_per_day: 150,
+      };
+      expect(insert.client_id).toBeDefined();
+      expect(insert.start_date).toBeDefined();
+      expect(insert.end_date).toBeDefined();
+      expect(insert.max_calories_per_day).toBeDefined();
+      expect(insert.min_protein_per_day).toBeDefined();
+    });
+
+    it("should allow optional macro fields in ClientPlanLimitInsert", () => {
+      const insert: ClientPlanLimitInsert = {
+        client_id: "user-123",
+        start_date: "2026-01-01",
+        end_date: "2026-03-31",
+        max_calories_per_day: 2500,
+        min_protein_per_day: 180,
+        max_protein_per_day: 220,
+        min_carbs_per_day: 200,
+        max_carbs_per_day: 300,
+        min_fats_per_day: 60,
+        max_fats_per_day: 90,
+        notes: "Bulking phase with increased calories",
+      };
+      expect(insert.max_protein_per_day).toBe(220);
+      expect(insert.notes).toBeDefined();
+    });
+
+    it("should correctly type ClientPlanLimitUpdate with optional fields", () => {
+      const update: ClientPlanLimitUpdate = {
+        max_calories_per_day: 2200,
+        notes: "Adjusted based on progress",
+      };
+      expect(update.max_calories_per_day).toBe(2200);
+    });
+
+    it("should allow null values for optional macro fields", () => {
+      const planLimit: ClientPlanLimit = {
+        id: "limit-456",
+        client_id: "user-456",
+        start_date: "2026-04-01",
+        end_date: "2026-06-30",
+        max_calories_per_day: 1800,
+        min_protein_per_day: 140,
+        max_protein_per_day: null,
+        min_carbs_per_day: null,
+        max_carbs_per_day: null,
+        min_fats_per_day: null,
+        max_fats_per_day: null,
+        notes: null,
+        created_at: "2026-01-26T00:00:00Z",
+        created_by: null,
+      };
+      expect(planLimit.max_protein_per_day).toBeNull();
+      expect(planLimit.min_carbs_per_day).toBeNull();
+    });
+  });
+
   describe("Database Interface", () => {
     it("should have public schema with Tables", () => {
       // Type-level test - verifies Database interface structure
@@ -462,10 +598,12 @@ describe("Database Types", () => {
         "check_ins",
         "challenge_progress",
         "assessment_results",
+        "client_conditions",
+        "client_plan_limits",
       ];
 
       // This test verifies the type structure at compile time
-      expect(expectedTables.length).toBe(10);
+      expect(expectedTables.length).toBe(12);
     });
   });
 });
