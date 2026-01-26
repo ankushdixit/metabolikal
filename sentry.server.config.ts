@@ -17,8 +17,8 @@ Sentry.init({
   // Only enable in production
   enabled: process.env.NODE_ENV === "production",
 
-  // Debug mode for development
-  debug: process.env.NODE_ENV === "development",
+  // Debug mode disabled
+  debug: false,
 
   // Filter out certain errors
   beforeSend(event) {

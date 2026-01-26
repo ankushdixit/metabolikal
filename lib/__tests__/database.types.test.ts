@@ -56,6 +56,8 @@ describe("Database Types", () => {
         is_deactivated: false,
         deactivated_at: null,
         deactivation_reason: null,
+        plan_start_date: null,
+        plan_duration_days: 7,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -98,6 +100,8 @@ describe("Database Types", () => {
         is_deactivated: false,
         deactivated_at: null,
         deactivation_reason: null,
+        plan_start_date: null,
+        plan_duration_days: 7,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
@@ -179,6 +183,7 @@ describe("Database Types", () => {
         time_period: "morning",
         relative_anchor: null,
         relative_offset_minutes: 0,
+        display_order: 0,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };

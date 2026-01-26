@@ -34,6 +34,8 @@ describe("ProfileDetailsCard", () => {
     is_deactivated: false,
     deactivated_at: null,
     deactivation_reason: null,
+    plan_start_date: null,
+    plan_duration_days: 7,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   };
