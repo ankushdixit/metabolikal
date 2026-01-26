@@ -123,6 +123,7 @@ export default function UnifiedTimelinePlanEditorPage() {
     rawWorkoutPlans,
     rawLifestyleActivityPlans,
     planConfig,
+    clientConditions,
   } = useTimelineData({
     clientId,
     dayNumber: selectedDay,
@@ -613,80 +614,79 @@ export default function UnifiedTimelinePlanEditorPage() {
 
       {/* Day Selector */}
       <div className="athletic-card p-4 pl-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <DaySelectorTabs
-            selectedDay={selectedDay}
-            onSelectDay={setSelectedDay}
-            daysWithContent={daysWithContent}
-            totalDays={planConfig.durationDays}
-            planStartDate={planConfig.startDate}
-          />
+        <DaySelectorTabs
+          selectedDay={selectedDay}
+          onSelectDay={setSelectedDay}
+          daysWithContent={daysWithContent}
+          totalDays={planConfig.durationDays}
+          planStartDate={planConfig.startDate}
+        />
 
-          {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={openAddItemModal}
-              className="btn-athletic flex items-center gap-2 px-4 py-2 gradient-electric text-black text-sm font-bold"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Item</span>
-            </button>
+        {/* Actions - separate row */}
+        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
+          <button
+            onClick={openAddItemModal}
+            className="btn-athletic flex items-center gap-2 px-4 py-2 gradient-electric text-black text-sm font-bold"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Item</span>
+          </button>
 
-            <button
-              onClick={openCopyDayModal}
-              disabled={filteredItems.length === 0}
-              className={cn(
-                "btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold",
-                filteredItems.length === 0 && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <Copy className="h-4 w-4" />
-              <span>Copy Day</span>
-            </button>
+          <button
+            onClick={openCopyDayModal}
+            disabled={filteredItems.length === 0}
+            className={cn(
+              "btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold",
+              filteredItems.length === 0 && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <Copy className="h-4 w-4" />
+            <span>Copy Day</span>
+          </button>
 
-            <button
-              onClick={openClearDayDialog}
-              disabled={filteredItems.length === 0}
-              className={cn(
-                "btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold",
-                filteredItems.length === 0 && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Clear Day</span>
-            </button>
+          <button
+            onClick={openClearDayDialog}
+            disabled={filteredItems.length === 0}
+            className={cn(
+              "btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold",
+              filteredItems.length === 0 && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Clear Day</span>
+          </button>
 
-            <button
-              onClick={refetchAll}
-              className="btn-athletic p-2 bg-secondary text-foreground"
-              title="Refresh"
-            >
-              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-            </button>
-          </div>
+          <button
+            onClick={refetchAll}
+            className="btn-athletic p-2 bg-secondary text-foreground"
+            title="Refresh"
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </button>
+
+          {/* Selection actions (when items are selected) */}
+          {selectedItemIds.size > 0 && (
+            <>
+              <div className="w-px h-6 bg-border mx-2" />
+              <span className="text-sm font-bold text-primary">
+                {selectedItemIds.size} selected
+              </span>
+              <button
+                onClick={handleCopySelected}
+                className="btn-athletic flex items-center gap-1 px-3 py-2 bg-primary text-black text-xs font-bold"
+              >
+                <Copy className="h-3 w-3" />
+                <span>Copy Selected</span>
+              </button>
+              <button
+                onClick={clearSelection}
+                className="btn-athletic px-3 py-2 bg-secondary text-foreground text-xs font-bold"
+              >
+                Clear
+              </button>
+            </>
+          )}
         </div>
-
-        {/* Selection actions (when items are selected) */}
-        {selectedItemIds.size > 0 && (
-          <div className="mt-4 flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded">
-            <span className="text-sm font-bold text-primary">
-              {selectedItemIds.size} item{selectedItemIds.size !== 1 ? "s" : ""} selected
-            </span>
-            <button
-              onClick={handleCopySelected}
-              className="btn-athletic flex items-center gap-1 px-3 py-1 bg-primary text-black text-xs font-bold"
-            >
-              <Copy className="h-3 w-3" />
-              <span>Copy Selected</span>
-            </button>
-            <button
-              onClick={clearSelection}
-              className="btn-athletic px-3 py-1 bg-secondary text-foreground text-xs font-bold"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Type Filters */}
@@ -770,6 +770,7 @@ export default function UnifiedTimelinePlanEditorPage() {
         clientId={clientId}
         dayNumber={selectedDay}
         editItem={editDietPlan}
+        clientConditions={clientConditions}
       />
 
       <SupplementItemForm
