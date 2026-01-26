@@ -15,6 +15,8 @@ import {
   FileText,
   Flag,
   Pencil,
+  Cake,
+  AlertCircle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { CheckInReview } from "@/components/admin/checkin-review";
@@ -29,9 +31,43 @@ import type {
   DietPlan,
   WorkoutPlan,
   ClientCondition,
+  MedicalConditionRow,
 } from "@/lib/database.types";
 
 type Tab = "checkins" | "progress" | "photos" | "plans";
+
+// Extended type for client conditions with joined medical condition data
+type ClientConditionWithDetails = ClientCondition & {
+  medical_conditions?: MedicalConditionRow;
+};
+
+/**
+ * Calculate age from date of birth string
+ */
+function calculateAge(dateOfBirth: string | null): number | null {
+  if (!dateOfBirth) return null;
+
+  const today = new Date();
+  const birth = new Date(dateOfBirth);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
+}
+
+/**
+ * Gender display mapping with icons
+ */
+const GENDER_DISPLAY: Record<string, { label: string; icon: string }> = {
+  male: { label: "Male", icon: "♂" },
+  female: { label: "Female", icon: "♀" },
+  other: { label: "Other", icon: "⚧" },
+  prefer_not_to_say: { label: "—", icon: "👤" },
+};
 
 /**
  * Client Review Page
@@ -103,10 +139,13 @@ export default function ClientReviewPage() {
     },
   });
 
-  // Fetch client's conditions
-  const clientConditionsQuery = useList<ClientCondition>({
+  // Fetch client's conditions with medical condition details for display
+  const clientConditionsQuery = useList<ClientConditionWithDetails>({
     resource: "client_conditions",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    meta: {
+      select: "*, medical_conditions(id, name, slug)",
+    },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -126,6 +165,12 @@ export default function ClientReviewPage() {
     (new Date().getTime() - programStartDate.getTime()) / (1000 * 60 * 60 * 24)
   );
   const isFlagged = checkIns.some((c) => c.flagged_for_followup);
+
+  // Calculate client age from DOB
+  const clientAge = calculateAge(profile?.date_of_birth ?? null);
+
+  // Get gender display info
+  const genderInfo = profile?.gender ? GENDER_DISPLAY[profile.gender] : null;
 
   const isLoading = profileQuery.query.isLoading || checkInsQuery.query.isLoading;
 
@@ -257,6 +302,18 @@ export default function ClientReviewPage() {
                   })}
                 </span>
               </div>
+              {genderInfo && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-secondary">
+                  <span className="text-primary text-lg leading-none">{genderInfo.icon}</span>
+                  <span className="font-bold text-sm">{genderInfo.label}</span>
+                </div>
+              )}
+              {clientAge !== null && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-secondary">
+                  <Cake className="h-4 w-4 text-primary" />
+                  <span className="font-bold text-sm">Age {clientAge}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 px-3 py-1 bg-secondary">
                 <User className="h-4 w-4 text-primary" />
                 <span className="font-bold text-sm">{daysInProgram} days in program</span>
@@ -280,6 +337,24 @@ export default function ClientReviewPage() {
                 </div>
               )}
             </div>
+
+            {/* Medical Conditions */}
+            {clientConditions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Conditions:</span>
+                </div>
+                {clientConditions.map((cc) => (
+                  <span
+                    key={cc.id}
+                    className="px-2 py-1 bg-primary/20 text-primary text-xs font-bold"
+                  >
+                    {cc.medical_conditions?.name ?? cc.condition_id}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

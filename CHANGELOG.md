@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Detail Header Enhancement**: Enhanced the admin client detail page header with more useful information at a glance:
+  - Gender displayed with icon (♂/♀/⚧) when set
+  - Age calculated and displayed from date of birth (e.g., "Age 32")
+  - Medical conditions displayed as styled chips/tags below quick stats
+  - Graceful handling when DOB, gender, or conditions not set (hidden)
+  - Fetches condition names via joined query with medical_conditions table
+  - Comprehensive test coverage (19 tests for new display elements)
+
 - **Food-Condition Compatibility Warnings**: Warns admins when adding food items that may be incompatible with a client's medical conditions:
   - `useFoodCompatibility` hook that cross-references food_item_conditions with client conditions
   - `FoodWarningDialog` component showing incompatible conditions with Cancel/Add Anyway options
