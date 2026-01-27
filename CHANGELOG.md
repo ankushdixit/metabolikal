@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced Client Profile Page**: Added plan information, health conditions, and macro targets sections to the client profile page:
+  - `ProfilePlanCard` component showing plan start date, duration, progress bar, days remaining, and end date
+  - `ProfileConditionsCard` component displaying medical conditions with expandable descriptions
+  - `ProfileTargetsCard` component showing current macro limits (calories, protein, carbs, fats) with date ranges
+  - `useClientProfileData` hook for fetching conditions and plan limits with plan progress calculation
+  - Badges for "STARTING SOON" and "COMPLETED" plan states
+  - Upcoming targets preview when future limits are scheduled
+  - Empty states for each section when data not configured
+  - Loading skeletons for async data
+  - Collapsible sections on mobile
+  - Comprehensive test coverage (66 new tests)
+
 - **Daily Plan View for Plans Tab**: Complete redesign of the Plans tab to show a daily view of all 4 plan types:
   - `useDailyPlanData` hook for fetching all plan data (Diet, Supplements, Workout, Lifestyle) for a specific day
   - `PlanDayNavigator` component with day navigation arrows, "Today" badge, and "Go to day" input

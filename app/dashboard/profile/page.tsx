@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useOne } from "@refinedev/core";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ProfilePhotoUpload } from "@/components/dashboard/profile-photo-upload";
 import { ProfileDetailsCard } from "@/components/dashboard/profile-details-card";
+import { ProfilePlanCard } from "@/components/dashboard/profile-plan-card";
+import { ProfileConditionsCard } from "@/components/dashboard/profile-conditions-card";
+import { ProfileTargetsCard } from "@/components/dashboard/profile-targets-card";
+import { useClientProfileData, calculatePlanInfo } from "@/hooks/use-client-profile-data";
 import type { Profile } from "@/lib/database.types";
 
 /**
@@ -37,6 +41,17 @@ export default function ProfilePage() {
 
   const profile = profileQuery.query.data?.data;
   const isLoading = profileQuery.query.isLoading;
+
+  // Fetch additional profile data (conditions, limits)
+  const {
+    conditions,
+    currentLimits,
+    futureLimits,
+    isLoading: isProfileDataLoading,
+  } = useClientProfileData({ userId });
+
+  // Calculate plan progress info from profile
+  const planInfo = useMemo(() => calculatePlanInfo(profile), [profile]);
 
   // Wrap refetch to ensure it's always callable
   const handlePhotoUpdated = () => {
@@ -100,6 +115,22 @@ export default function ProfilePage() {
           />
         </div>
       </div>
+
+      {/* Plan, Conditions, and Targets Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* My Plan Card */}
+        <ProfilePlanCard planInfo={planInfo} isLoading={isLoading} />
+
+        {/* Health Conditions Card */}
+        <ProfileConditionsCard conditions={conditions} isLoading={isProfileDataLoading} />
+      </div>
+
+      {/* Current Targets Card - Full Width */}
+      <ProfileTargetsCard
+        currentLimits={currentLimits}
+        futureLimits={futureLimits}
+        isLoading={isProfileDataLoading}
+      />
     </div>
   );
 }

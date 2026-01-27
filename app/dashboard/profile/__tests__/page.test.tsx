@@ -15,6 +15,14 @@ jest.mock("@/lib/auth", () => ({
 const mockUseOne = jest.fn();
 jest.mock("@refinedev/core", () => ({
   useOne: () => mockUseOne(),
+  useList: () => ({
+    query: {
+      data: { data: [] },
+      isLoading: false,
+      isError: false,
+      refetch: jest.fn(),
+    },
+  }),
 }));
 
 // Mock child components
@@ -36,6 +44,33 @@ jest.mock("@/components/dashboard/profile-details-card", () => ({
       Details Card - {profile?.full_name || "No profile"} - {userEmail}
     </div>
   ),
+}));
+
+// Mock new profile cards
+jest.mock("@/components/dashboard/profile-plan-card", () => ({
+  ProfilePlanCard: () => <div data-testid="profile-plan-card">Plan Card</div>,
+}));
+
+jest.mock("@/components/dashboard/profile-conditions-card", () => ({
+  ProfileConditionsCard: () => <div data-testid="profile-conditions-card">Conditions Card</div>,
+}));
+
+jest.mock("@/components/dashboard/profile-targets-card", () => ({
+  ProfileTargetsCard: () => <div data-testid="profile-targets-card">Targets Card</div>,
+}));
+
+// Mock the profile data hook
+jest.mock("@/hooks/use-client-profile-data", () => ({
+  useClientProfileData: () => ({
+    conditions: [],
+    limits: [],
+    currentLimits: null,
+    futureLimits: [],
+    isLoading: false,
+    isError: false,
+    refetch: jest.fn(),
+  }),
+  calculatePlanInfo: () => ({ isConfigured: false }),
 }));
 
 describe("ProfilePage", () => {
@@ -125,5 +160,29 @@ describe("ProfilePage", () => {
     // Should show loading skeleton when no user
     const skeletons = container.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it("renders profile plan card component", async () => {
+    render(<ProfilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-plan-card")).toBeInTheDocument();
+    });
+  });
+
+  it("renders profile conditions card component", async () => {
+    render(<ProfilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-conditions-card")).toBeInTheDocument();
+    });
+  });
+
+  it("renders profile targets card component", async () => {
+    render(<ProfilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-targets-card")).toBeInTheDocument();
+    });
   });
 });
