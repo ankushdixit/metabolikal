@@ -79,9 +79,7 @@ describe("MobileNav Component", () => {
     render(<MobileNav />);
     fireEvent.click(screen.getByLabelText("Open menu"));
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Diet Plan")).toBeInTheDocument();
-    expect(screen.getByText("Workout Plan")).toBeInTheDocument();
+    expect(screen.getByText("Today's Plan")).toBeInTheDocument();
     expect(screen.getByText("Check-In")).toBeInTheDocument();
     expect(screen.getByText("Progress")).toBeInTheDocument();
     // Profile is accessed via mini card at top, not main nav
@@ -94,8 +92,8 @@ describe("MobileNav Component", () => {
     fireEvent.click(screen.getByLabelText("Open menu"));
 
     // Click a navigation link
-    const dietLink = screen.getByText("Diet Plan");
-    fireEvent.click(dietLink);
+    const checkInLink = screen.getByText("Check-In");
+    fireEvent.click(checkInLink);
 
     // Menu should be closed
     const drawer = screen.queryByLabelText("Mobile navigation");
@@ -116,7 +114,7 @@ describe("MobileNav Component", () => {
     render(<MobileNav />);
     fireEvent.click(screen.getByLabelText("Open menu"));
 
-    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    const dashboardLink = screen.getByText("Today's Plan").closest("a");
     expect(dashboardLink).toHaveAttribute("aria-current", "page");
   });
 
