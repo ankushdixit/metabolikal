@@ -13,3 +13,6 @@ export { PhotoUpload } from "./photo-upload";
 export { CheckInHistoryItem } from "./checkin-history-item";
 export { ProfilePhotoUpload } from "./profile-photo-upload";
 export { ProfileDetailsCard } from "./profile-details-card";
+export { ClientTimelineView } from "./client-timeline-view";
+export { TimelineTargetsCard } from "./timeline-targets-card";
+export { TimelineItemExpanded } from "./timeline-item-expanded";

@@ -1625,6 +1625,45 @@ export type LifestyleActivityPlanInsert = InsertTables<"lifestyle_activity_plans
 export type LifestyleActivityPlanUpdate = UpdateTables<"lifestyle_activity_plans">;
 
 // =============================================================================
+// PLAN COMPLETION TYPE EXPORTS
+// =============================================================================
+
+export type PlanCompletionType = "diet" | "supplement" | "workout" | "lifestyle";
+
+export interface PlanCompletion {
+  id: string;
+  client_id: string;
+  plan_type: PlanCompletionType;
+  plan_item_id: string;
+  completed_date: string;
+  completed_at: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface PlanCompletionInsert {
+  id?: string;
+  client_id: string;
+  plan_type: PlanCompletionType;
+  plan_item_id: string;
+  completed_date?: string;
+  completed_at?: string;
+  notes?: string | null;
+  created_at?: string;
+}
+
+export interface PlanCompletionUpdate {
+  id?: string;
+  client_id?: string;
+  plan_type?: PlanCompletionType;
+  plan_item_id?: string;
+  completed_date?: string;
+  completed_at?: string;
+  notes?: string | null;
+  created_at?: string;
+}
+
+// =============================================================================
 // TIMELINE CONVENIENCE TYPES
 // =============================================================================
 
