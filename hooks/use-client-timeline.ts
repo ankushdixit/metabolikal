@@ -529,8 +529,11 @@ export function useClientTimeline({
     return timelineData.timelineItems.filter((item) => isItemCompleted(item.id)).length;
   }, [timelineData.timelineItems, isItemCompleted]);
 
-  // Loading state
+  // Loading state - includes initial states before queries can start
+  // This prevents flashing "Plan Not Configured" before data loads
   const isLoading =
+    !userId || // Still fetching user ID from auth
+    !profileQuery.query.isFetched || // Profile hasn't been fetched yet
     profileQuery.query.isLoading ||
     timelineData.isLoading ||
     limitsQuery.query.isLoading ||

@@ -10,6 +10,7 @@
  * - Activity type filters with URL persistence
  * - Completion statistics and streak tracking
  * - Historical view styling (read-only past days)
+ * - Mobile-optimized view with swipe navigation
  */
 
 "use client";
@@ -22,22 +23,45 @@ import { Button } from "@/components/ui/button";
 import { useClientTimeline } from "@/hooks/use-client-timeline";
 import { TimelineTargetsCard } from "./timeline-targets-card";
 import { TimelineItemExpanded } from "./timeline-item-expanded";
-import { TimelineDateNav } from "./timeline-date-nav";
-import {
-  TimelineFilters,
-  type TypeFilters,
-  parseFiltersFromParam,
-  filtersToParam,
-} from "./timeline-filters";
+import { PlanDayNavigator } from "@/components/admin/plan-day-navigator";
+import { TimelineFilters, type TypeFilters, parseFiltersFromParam } from "./timeline-filters";
 import { TimelineStats } from "./timeline-stats";
 import { TimelineGrid } from "@/components/admin/timeline-editor/timeline-grid";
+import { MobileTimelineView } from "./mobile-timeline-view";
 import {
   calculateStats,
   calculateStatsByType,
   type TimelineItemWithCompletion,
 } from "@/lib/utils/completion-stats";
-import { getDayNumber, formatPlanDateForStorage, getDayDate } from "@/lib/utils/plan-dates";
 import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
+
+// =============================================================================
+// MOBILE DETECTION HOOK
+// =============================================================================
+
+/**
+ * SSR-safe mobile detection hook
+ * Returns undefined during SSR/hydration to avoid flash, then actual value once mounted
+ */
+function useIsMobile(breakpoint: number = 768): boolean | undefined {
+  // Start with undefined to indicate "not yet determined" during SSR
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    // Check on mount
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < breakpoint);
+    };
+
+    checkMobile();
+
+    // Listen for resize
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, [breakpoint]);
+
+  return isMobile;
+}
 
 // =============================================================================
 // INNER COMPONENT (uses useSearchParams)
@@ -45,31 +69,27 @@ import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 
 function ClientTimelineViewInner() {
   const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
 
-  // Parse URL params
-  const dateParam = searchParams.get("date");
+  // Parse filter from URL (keep filter in URL for shareability)
   const filterParam = searchParams.get("filter");
-
-  // Parse date from URL
-  const urlDate = useMemo(() => {
-    if (!dateParam) return null;
-    const parsed = new Date(dateParam + "T00:00:00");
-    return isNaN(parsed.getTime()) ? null : parsed;
-  }, [dateParam]);
-
-  // Parse filters from URL
   const urlFilters = useMemo(() => {
     return parseFiltersFromParam(filterParam);
   }, [filterParam]);
 
-  // UI State
-  const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(urlDate);
+  // Simple state management (following admin pattern)
+  const [currentDay, setCurrentDay] = useState<number>(1);
+  const [initialDaySet, setInitialDaySet] = useState(false);
   const [typeFilters, setTypeFilters] = useState<TypeFilters>(urlFilters);
   const [expandedItem, setExpandedItem] = useState<ExtendedTimelineItem | null>(null);
   const [isMarking, setIsMarking] = useState(false);
 
-  // Fetch timeline data
+  // Fetch timeline data using day number override
+  const timeline = useClientTimeline({
+    dayNumberOverride: currentDay,
+  });
+
+  // Destructure for easier access (desktop view still uses these)
   const {
     timelineItems,
     packingItems,
@@ -97,39 +117,23 @@ function ClientTimelineViewInner() {
     isError,
     refetch,
     formattedDate,
-    dayNumber,
-  } = useClientTimeline({
-    dayNumberOverride: selectedDayNumber ?? undefined,
-    selectedDate: selectedDate ?? undefined,
-  });
+  } = timeline;
 
-  // Today's date
-  const today = useMemo(() => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }, []);
-
-  // Initialize selected day from URL or plan progress
+  // Set initial day to "today" once plan progress loads (following admin pattern)
   useEffect(() => {
-    if (urlDate && planStartDate) {
-      // URL has date - calculate day number
-      const urlDayNumber = getDayNumber(planStartDate, urlDate);
-      setSelectedDayNumber(urlDayNumber > 0 ? urlDayNumber : 1);
-      setSelectedDate(urlDate);
-    } else if (planProgress && selectedDayNumber === null) {
-      // No URL date - use today
-      setSelectedDayNumber(planProgress.dayNumber);
+    if (!initialDaySet && planProgress && planProgress.dayNumber > 0) {
+      setCurrentDay(planProgress.dayNumber);
+      setInitialDaySet(true);
     }
-  }, [urlDate, planProgress, selectedDayNumber, planStartDate]);
+  }, [planProgress, initialDaySet]);
 
   // Sync filters with URL changes
   useEffect(() => {
     setTypeFilters(urlFilters);
   }, [urlFilters]);
 
-  // Use the fetched day number for display
-  const currentDayNumber = selectedDayNumber ?? dayNumber;
+  // Use currentDay for display
+  const currentDayNumber = currentDay;
 
   // Calculate if viewing today
   const isViewingToday = useMemo(() => {
@@ -197,72 +201,33 @@ function ClientTimelineViewInner() {
       : null;
 
   // =============================================================================
-  // URL UPDATE HELPER
+  // HANDLERS (following simple admin pattern)
   // =============================================================================
 
-  const updateUrl = useCallback(
-    (newDate: Date | null, newFilters: TypeFilters) => {
-      const params = new URLSearchParams();
+  // Total days for bounds checking
+  const totalDays = planProgress?.totalDays ?? 7;
 
-      // Add date param if not today
-      if (newDate) {
-        const dateStr = formatPlanDateForStorage(newDate);
-        const todayStr = formatPlanDateForStorage(today);
-        if (dateStr !== todayStr) {
-          params.set("date", dateStr);
-        }
+  // Handle day change (allow viewing all days like admin - future days are read-only)
+  const handleDayChange = useCallback(
+    (day: number) => {
+      if (day >= 1 && day <= totalDays) {
+        setCurrentDay(day);
       }
-
-      // Add filter param if not all enabled
-      const filterParam = filtersToParam(newFilters);
-      if (filterParam) {
-        params.set("filter", filterParam);
-      }
-
-      // Build URL
-      const queryString = params.toString();
-      const newUrl = queryString ? `/dashboard?${queryString}` : "/dashboard";
-
-      // Use history API to avoid full page reload
-      window.history.replaceState(null, "", newUrl);
     },
-    [today]
-  );
-
-  // =============================================================================
-  // HANDLERS
-  // =============================================================================
-
-  // Handle filter change
-  const handleFiltersChange = useCallback(
-    (newFilters: TypeFilters) => {
-      setTypeFilters(newFilters);
-      updateUrl(selectedDate, newFilters);
-    },
-    [selectedDate, updateUrl]
-  );
-
-  // Handle date navigation
-  const handleDateChange = useCallback(
-    (date: Date) => {
-      if (!planStartDate) return;
-
-      const newDayNumber = getDayNumber(planStartDate, date);
-      setSelectedDayNumber(newDayNumber > 0 ? newDayNumber : 1);
-      setSelectedDate(date);
-      updateUrl(date, typeFilters);
-    },
-    [planStartDate, typeFilters, updateUrl]
+    [totalDays]
   );
 
   // Handle go to today
   const handleGoToToday = useCallback(() => {
     if (planProgress) {
-      setSelectedDayNumber(planProgress.dayNumber);
-      setSelectedDate(null);
-      updateUrl(null, typeFilters);
+      setCurrentDay(planProgress.dayNumber);
     }
-  }, [planProgress, typeFilters, updateUrl]);
+  }, [planProgress]);
+
+  // Handle filter change
+  const handleFiltersChange = useCallback((newFilters: TypeFilters) => {
+    setTypeFilters(newFilters);
+  }, []);
 
   // Handle item click - open expanded view
   const handleItemClick = useCallback((item: ExtendedTimelineItem) => {
@@ -321,7 +286,26 @@ function ClientTimelineViewInner() {
   // RENDER STATES
   // =============================================================================
 
-  // Loading state
+  // SSR/Hydration loading state - show skeleton until we know if mobile or desktop
+  // This prevents the flash of "Plan Not Configured" during hydration
+  if (isMobile === undefined) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="athletic-card p-6 pl-8 animate-pulse">
+          <div className="h-8 w-64 bg-secondary mb-4" />
+          <div className="h-4 w-48 bg-secondary" />
+        </div>
+        <div className="athletic-card p-4 pl-8 animate-pulse">
+          <div className="h-12 w-full bg-secondary" />
+        </div>
+        <div className="athletic-card p-4 animate-pulse" style={{ height: 400 }}>
+          <div className="h-full bg-secondary/50" />
+        </div>
+      </div>
+    );
+  }
+
+  // Data loading state
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
@@ -359,8 +343,8 @@ function ClientTimelineViewInner() {
     );
   }
 
-  // Plan not configured state
-  if (!isPlanConfigured) {
+  // Plan not configured state - handled by MobileTimelineView if mobile
+  if (!isPlanConfigured && !isMobile) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="athletic-card p-8 pl-10 border-yellow-500/50">
@@ -378,9 +362,23 @@ function ClientTimelineViewInner() {
     );
   }
 
-  // Calculate the current view date for display
-  const viewDate =
-    selectedDate || (planStartDate ? getDayDate(planStartDate, currentDayNumber) : new Date());
+  // =============================================================================
+  // MOBILE VIEW
+  // =============================================================================
+
+  if (isMobile) {
+    return (
+      <MobileTimelineView
+        timeline={timeline}
+        initialFilters={urlFilters}
+        onDayChange={handleDayChange}
+      />
+    );
+  }
+
+  // =============================================================================
+  // DESKTOP VIEW
+  // =============================================================================
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -507,14 +505,14 @@ function ClientTimelineViewInner() {
             </div>
           </div>
 
-          {/* Date navigation - hidden on mobile for faster timeline access */}
+          {/* Date navigation - using admin's PlanDayNavigator which works correctly */}
           {planStartDate && planProgress && (
             <div className="hidden md:block">
-              <TimelineDateNav
-                selectedDate={viewDate}
-                planStartDate={planStartDate}
+              <PlanDayNavigator
+                currentDay={currentDayNumber}
                 totalDays={planProgress.totalDays}
-                onDateChange={handleDateChange}
+                planStartDate={planStartDate}
+                onDayChange={handleDayChange}
               />
             </div>
           )}
@@ -529,6 +527,7 @@ function ClientTimelineViewInner() {
             statsByType={viewStatsByType}
             periodLabel={isViewingToday ? "Today's Progress" : `Day ${currentDayNumber} Summary`}
             compact={false}
+            typeLayout="horizontal"
           />
         </div>
       )}

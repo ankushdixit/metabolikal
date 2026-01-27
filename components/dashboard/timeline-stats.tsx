@@ -51,6 +51,8 @@ interface TimelineStatsProps {
   periodLabel?: string;
   /** Whether to show compact view */
   compact?: boolean;
+  /** Layout for type breakdown: 'vertical' (default) or 'horizontal' (all in one row) */
+  typeLayout?: "vertical" | "horizontal";
   /** Additional CSS classes */
   className?: string;
 }
@@ -84,7 +86,7 @@ function ProgressBar({
 }
 
 /**
- * Type stat row component
+ * Type stat row component (vertical layout)
  */
 function TypeStatRow({
   icon: Icon,
@@ -130,6 +132,52 @@ function TypeStatRow({
 }
 
 /**
+ * Type stat compact component (horizontal layout - for single row display)
+ */
+function TypeStatCompact({
+  icon: Icon,
+  label,
+  stats,
+  colorClass,
+  bgColorClass,
+}: {
+  icon: typeof Utensils;
+  label: string;
+  stats: CompletionStats;
+  colorClass: string;
+  bgColorClass: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className={cn("p-1.5 rounded shrink-0", bgColorClass)}>
+        <Icon className={cn("h-4 w-4", colorClass)} />
+      </div>
+      <div className="min-w-0">
+        <span className="text-xs font-medium text-muted-foreground block truncate">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "text-sm font-bold tabular-nums",
+              getCompletionColorClass(stats.percentage)
+            )}
+          >
+            {stats.completed}/{stats.total}
+          </span>
+          <span
+            className={cn(
+              "text-xs font-bold tabular-nums",
+              getCompletionColorClass(stats.percentage)
+            )}
+          >
+            {formatPercentage(stats.percentage)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Trend icon based on direction
  */
 function TrendIcon({ direction }: { direction: TrendInfo["direction"] }) {
@@ -157,6 +205,7 @@ export function TimelineStats({
   trend,
   periodLabel = "Today",
   compact = false,
+  typeLayout = "vertical",
   className,
 }: TimelineStatsProps) {
   const progressColorClass =
@@ -241,7 +290,7 @@ export function TimelineStats({
       <ProgressBar percentage={stats.percentage} colorClass={progressColorClass} />
 
       {/* Breakdown by type */}
-      {statsByType && (
+      {statsByType && typeLayout === "vertical" && (
         <div className="space-y-3 pt-3 border-t border-border">
           <TypeStatRow
             icon={Utensils}
@@ -265,6 +314,40 @@ export function TimelineStats({
             bgColorClass="bg-blue-500/20"
           />
           <TypeStatRow
+            icon={Heart}
+            label="Lifestyle"
+            stats={statsByType.lifestyle}
+            colorClass="text-purple-400"
+            bgColorClass="bg-purple-500/20"
+          />
+        </div>
+      )}
+
+      {/* Horizontal breakdown by type (all in one row) */}
+      {statsByType && typeLayout === "horizontal" && (
+        <div className="flex items-stretch gap-4 pt-3 border-t border-border">
+          <TypeStatCompact
+            icon={Utensils}
+            label="Meals"
+            stats={statsByType.meal}
+            colorClass="text-orange-400"
+            bgColorClass="bg-orange-500/20"
+          />
+          <TypeStatCompact
+            icon={Pill}
+            label="Supplements"
+            stats={statsByType.supplement}
+            colorClass="text-green-400"
+            bgColorClass="bg-green-500/20"
+          />
+          <TypeStatCompact
+            icon={Dumbbell}
+            label="Workouts"
+            stats={statsByType.workout}
+            colorClass="text-blue-400"
+            bgColorClass="bg-blue-500/20"
+          />
+          <TypeStatCompact
             icon={Heart}
             label="Lifestyle"
             stats={statsByType.lifestyle}
