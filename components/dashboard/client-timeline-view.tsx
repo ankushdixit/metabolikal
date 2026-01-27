@@ -4,50 +4,68 @@
  * Client dashboard timeline that matches admin Plan Editor layout exactly.
  * Reuses admin's TimelineGrid component for consistent UI.
  * Adds client-specific features: completion tracking, targets display.
+ *
+ * Enhanced with:
+ * - Date navigation for viewing past days
+ * - Activity type filters with URL persistence
+ * - Completion statistics and streak tracking
+ * - Historical view styling (read-only past days)
  */
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { Suspense, useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Calendar,
-  CalendarDays,
-  Check,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Clock,
-  RefreshCw,
-} from "lucide-react";
+import { Calendar, Check, AlertCircle, Clock, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useClientTimeline } from "@/hooks/use-client-timeline";
 import { TimelineTargetsCard } from "./timeline-targets-card";
 import { TimelineItemExpanded } from "./timeline-item-expanded";
-import { DaySelectorTabs } from "@/components/admin/timeline-editor/day-selector-tabs";
+import { TimelineDateNav } from "./timeline-date-nav";
+import {
+  TimelineFilters,
+  type TypeFilters,
+  parseFiltersFromParam,
+  filtersToParam,
+} from "./timeline-filters";
+import { TimelineStats } from "./timeline-stats";
 import { TimelineGrid } from "@/components/admin/timeline-editor/timeline-grid";
+import {
+  calculateStats,
+  calculateStatsByType,
+  type TimelineItemWithCompletion,
+} from "@/lib/utils/completion-stats";
+import { getDayNumber, formatPlanDateForStorage, getDayDate } from "@/lib/utils/plan-dates";
 import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 
-// Filter state (same as admin)
-interface TypeFilters {
-  meal: boolean;
-  supplement: boolean;
-  workout: boolean;
-  lifestyle: boolean;
-}
+// =============================================================================
+// INNER COMPONENT (uses useSearchParams)
+// =============================================================================
 
-/**
- * Client Timeline View - matches admin Plan Editor layout
- */
-export function ClientTimelineView() {
+function ClientTimelineViewInner() {
+  const searchParams = useSearchParams();
+
+  // Parse URL params
+  const dateParam = searchParams.get("date");
+  const filterParam = searchParams.get("filter");
+
+  // Parse date from URL
+  const urlDate = useMemo(() => {
+    if (!dateParam) return null;
+    const parsed = new Date(dateParam + "T00:00:00");
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }, [dateParam]);
+
+  // Parse filters from URL
+  const urlFilters = useMemo(() => {
+    return parseFiltersFromParam(filterParam);
+  }, [filterParam]);
+
   // UI State
   const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null);
-  const [typeFilters, setTypeFilters] = useState<TypeFilters>({
-    meal: true,
-    supplement: true,
-    workout: true,
-    lifestyle: true,
-  });
+  const [selectedDate, setSelectedDate] = useState<Date | null>(urlDate);
+  const [typeFilters, setTypeFilters] = useState<TypeFilters>(urlFilters);
   const [expandedItem, setExpandedItem] = useState<ExtendedTimelineItem | null>(null);
   const [isMarking, setIsMarking] = useState(false);
 
@@ -67,6 +85,7 @@ export function ClientTimelineView() {
     consumed,
     completedCount,
     totalCount,
+    completions,
     isItemCompleted,
     isSourceItemCompleted,
     getItemCompletionStatus,
@@ -81,19 +100,58 @@ export function ClientTimelineView() {
     dayNumber,
   } = useClientTimeline({
     dayNumberOverride: selectedDayNumber ?? undefined,
+    selectedDate: selectedDate ?? undefined,
   });
 
-  // Initialize selected day from plan progress
+  // Today's date
+  const today = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
+
+  // Initialize selected day from URL or plan progress
   useEffect(() => {
-    if (planProgress && selectedDayNumber === null) {
+    if (urlDate && planStartDate) {
+      // URL has date - calculate day number
+      const urlDayNumber = getDayNumber(planStartDate, urlDate);
+      setSelectedDayNumber(urlDayNumber > 0 ? urlDayNumber : 1);
+      setSelectedDate(urlDate);
+    } else if (planProgress && selectedDayNumber === null) {
+      // No URL date - use today
       setSelectedDayNumber(planProgress.dayNumber);
     }
-  }, [planProgress, selectedDayNumber]);
+  }, [urlDate, planProgress, selectedDayNumber, planStartDate]);
+
+  // Sync filters with URL changes
+  useEffect(() => {
+    setTypeFilters(urlFilters);
+  }, [urlFilters]);
 
   // Use the fetched day number for display
   const currentDayNumber = selectedDayNumber ?? dayNumber;
 
-  // Filter items based on type filters (same as admin)
+  // Calculate if viewing today
+  const isViewingToday = useMemo(() => {
+    if (!planProgress) return false;
+    return currentDayNumber === planProgress.dayNumber;
+  }, [currentDayNumber, planProgress]);
+
+  // Calculate if viewing past (historical view)
+  const isViewingPast = useMemo(() => {
+    if (!planProgress || !planStartDate) return false;
+    if (isBeforePlanStart) return false;
+    return currentDayNumber < planProgress.dayNumber;
+  }, [currentDayNumber, planProgress, planStartDate, isBeforePlanStart]);
+
+  // Determine if viewing a future day (can't complete items on future days)
+  const isViewingFutureDay = useMemo(() => {
+    if (!planProgress || !planStartDate) return false;
+    if (isBeforePlanStart) return true;
+    return currentDayNumber > planProgress.dayNumber;
+  }, [planProgress, planStartDate, isBeforePlanStart, currentDayNumber]);
+
+  // Filter items based on type filters
   const filteredItems = useMemo(() => {
     return timelineItems.filter((item) => typeFilters[item.type as keyof TypeFilters]);
   }, [timelineItems, typeFilters]);
@@ -102,58 +160,114 @@ export function ClientTimelineView() {
     return packingItems.filter((item) => typeFilters[item.type as keyof TypeFilters]);
   }, [packingItems, typeFilters]);
 
-  // Item counts by type (same as admin)
+  // Item counts by type
   const itemCounts = useMemo(
     () => ({
       meal: dietItems.length,
       supplement: supplementItems.length,
       workout: workoutItems.length,
       lifestyle: lifestyleItems.length,
+      total: timelineItems.length,
     }),
-    [dietItems, supplementItems, workoutItems, lifestyleItems]
+    [dietItems, supplementItems, workoutItems, lifestyleItems, timelineItems]
   );
 
-  // Days with content (for day selector indicators)
-  const daysWithContent = useMemo(() => {
-    // TODO: Fetch from API for performance
-    return [];
-  }, []);
-
-  // Toggle type filter (same as admin)
-  const toggleTypeFilter = useCallback((type: keyof TypeFilters) => {
-    setTypeFilters((prev) => ({
-      ...prev,
-      [type]: !prev[type],
+  // Calculate completion statistics for current view
+  const itemsForStats: TimelineItemWithCompletion[] = useMemo(() => {
+    return timelineItems.map((item) => ({
+      id: item.id,
+      type: item.type,
+      sourceId: item.sourceId,
+      groupedSourceIds: item.groupedSourceIds,
     }));
-  }, []);
+  }, [timelineItems]);
 
-  // Toggle all filters (same as admin)
-  const toggleAllFilters = useCallback(() => {
-    const allEnabled = Object.values(typeFilters).every(Boolean);
-    setTypeFilters({
-      meal: !allEnabled,
-      supplement: !allEnabled,
-      workout: !allEnabled,
-      lifestyle: !allEnabled,
-    });
-  }, [typeFilters]);
+  const viewStats = useMemo(() => {
+    return calculateStats(itemsForStats, completions);
+  }, [itemsForStats, completions]);
 
-  // Handle item click - open expanded view
-  const handleItemClick = useCallback((item: ExtendedTimelineItem) => {
-    setExpandedItem(item);
-  }, []);
+  const viewStatsByType = useMemo(() => {
+    return calculateStatsByType(itemsForStats, completions);
+  }, [itemsForStats, completions]);
 
-  // Handle day change
-  const handleDayChange = useCallback((day: number) => {
-    setSelectedDayNumber(day);
-  }, []);
+  // Calculate days until start for banner (if before plan start)
+  const daysUntilStart =
+    isBeforePlanStart && planStartDate
+      ? Math.ceil((planStartDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+  // =============================================================================
+  // URL UPDATE HELPER
+  // =============================================================================
+
+  const updateUrl = useCallback(
+    (newDate: Date | null, newFilters: TypeFilters) => {
+      const params = new URLSearchParams();
+
+      // Add date param if not today
+      if (newDate) {
+        const dateStr = formatPlanDateForStorage(newDate);
+        const todayStr = formatPlanDateForStorage(today);
+        if (dateStr !== todayStr) {
+          params.set("date", dateStr);
+        }
+      }
+
+      // Add filter param if not all enabled
+      const filterParam = filtersToParam(newFilters);
+      if (filterParam) {
+        params.set("filter", filterParam);
+      }
+
+      // Build URL
+      const queryString = params.toString();
+      const newUrl = queryString ? `/dashboard?${queryString}` : "/dashboard";
+
+      // Use history API to avoid full page reload
+      window.history.replaceState(null, "", newUrl);
+    },
+    [today]
+  );
+
+  // =============================================================================
+  // HANDLERS
+  // =============================================================================
+
+  // Handle filter change
+  const handleFiltersChange = useCallback(
+    (newFilters: TypeFilters) => {
+      setTypeFilters(newFilters);
+      updateUrl(selectedDate, newFilters);
+    },
+    [selectedDate, updateUrl]
+  );
+
+  // Handle date navigation
+  const handleDateChange = useCallback(
+    (date: Date) => {
+      if (!planStartDate) return;
+
+      const newDayNumber = getDayNumber(planStartDate, date);
+      setSelectedDayNumber(newDayNumber > 0 ? newDayNumber : 1);
+      setSelectedDate(date);
+      updateUrl(date, typeFilters);
+    },
+    [planStartDate, typeFilters, updateUrl]
+  );
 
   // Handle go to today
   const handleGoToToday = useCallback(() => {
     if (planProgress) {
       setSelectedDayNumber(planProgress.dayNumber);
+      setSelectedDate(null);
+      updateUrl(null, typeFilters);
     }
-  }, [planProgress]);
+  }, [planProgress, typeFilters, updateUrl]);
+
+  // Handle item click - open expanded view
+  const handleItemClick = useCallback((item: ExtendedTimelineItem) => {
+    setExpandedItem(item);
+  }, []);
 
   // Handle mark complete
   const handleMarkComplete = useCallback(async () => {
@@ -181,7 +295,6 @@ export function ClientTimelineView() {
   const handleMarkSourceItemComplete = useCallback(
     async (sourceId: string) => {
       if (!expandedItem) return;
-      // Map timeline item type to plan type
       const planTypeMap: Record<string, "diet" | "supplement" | "workout" | "lifestyle"> = {
         meal: "diet",
         supplement: "supplement",
@@ -204,25 +317,9 @@ export function ClientTimelineView() {
     [markSourceItemUncomplete]
   );
 
-  // Is viewing today?
-  const isViewingToday = planProgress && currentDayNumber === planProgress.dayNumber;
-
-  // Calculate days until start for banner (if before plan start)
-  // Must be before early returns to comply with React hooks rules
-  const daysUntilStart =
-    isBeforePlanStart && planStartDate
-      ? Math.ceil((planStartDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-      : null;
-
-  // Determine if viewing a future day (can't complete items on future days)
-  // Must be before early returns to comply with React hooks rules
-  const isViewingFutureDay = useMemo(() => {
-    if (!planProgress || !planStartDate) return false;
-    // If plan hasn't started yet, all days are future
-    if (isBeforePlanStart) return true;
-    // Compare current day number with today's day number
-    return currentDayNumber > planProgress.dayNumber;
-  }, [planProgress, planStartDate, isBeforePlanStart, currentDayNumber]);
+  // =============================================================================
+  // RENDER STATES
+  // =============================================================================
 
   // Loading state
   if (isLoading) {
@@ -281,6 +378,10 @@ export function ClientTimelineView() {
     );
   }
 
+  // Calculate the current view date for display
+  const viewDate =
+    selectedDate || (planStartDate ? getDayDate(planStartDate, currentDayNumber) : new Date());
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Banner: Plan starts in the future */}
@@ -320,49 +421,114 @@ export function ClientTimelineView() {
         </div>
       )}
 
-      {/* Header - same structure as admin */}
-      <div className="athletic-card p-6 pl-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-              {isViewingToday ? "Today's" : `Day ${currentDayNumber}`}{" "}
-              <span className="gradient-athletic">Plan</span>
-            </h1>
-            <div className="flex items-center gap-2 text-muted-foreground font-bold mt-1">
-              <Calendar className="h-4 w-4 text-primary" />
-              <span>{formattedDate}</span>
+      {/* Banner: Viewing historical day */}
+      {isViewingPast && (
+        <div className="athletic-card p-4 pl-8 border-purple-500/50 bg-purple-500/10">
+          <div className="flex items-center gap-3 text-purple-400">
+            <History className="h-5 w-5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-bold">Viewing History - Day {currentDayNumber}</p>
+              <p className="text-sm text-muted-foreground">
+                This is a read-only view of your past plan. Uncompleted items are shown as missed.
+              </p>
             </div>
+            <button
+              onClick={handleGoToToday}
+              className="px-3 py-1.5 text-sm font-bold bg-purple-500/20 border border-purple-500/50 rounded hover:bg-purple-500/30 transition-colors"
+            >
+              Back to Today
+            </button>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Today button - shows when viewing a different day */}
-            {!isViewingToday && (
-              <button
-                onClick={handleGoToToday}
-                className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded text-sm font-bold text-primary hover:bg-primary/30 transition-colors"
+        </div>
+      )}
+
+      {/* Header with date navigation */}
+      <div className="athletic-card p-4 md:p-6 pl-6 md:pl-8">
+        <div className="flex flex-col gap-3 md:gap-4">
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="text-xl md:text-3xl font-black uppercase tracking-tight truncate">
+                {isViewingToday ? "Today's" : `Day ${currentDayNumber}`}{" "}
+                <span className="gradient-athletic">Plan</span>
+                {isViewingPast && (
+                  <span className="ml-2 text-xs md:text-sm font-bold text-purple-400 normal-case">
+                    (History)
+                  </span>
+                )}
+              </h1>
+              <div className="flex items-center gap-2 text-muted-foreground font-bold mt-0.5 text-sm">
+                <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate">{formattedDate}</span>
+              </div>
+            </div>
+
+            {/* Completion counter */}
+            <div
+              className={cn(
+                "flex items-center gap-2 px-2.5 py-1.5 rounded border shrink-0",
+                isViewingPast
+                  ? viewStats.percentage >= 80
+                    ? "bg-green-500/20 border-green-500/50"
+                    : viewStats.percentage >= 50
+                      ? "bg-yellow-500/20 border-yellow-500/50"
+                      : "bg-red-500/20 border-red-500/50"
+                  : "bg-green-500/20 border-green-500/50"
+              )}
+            >
+              {isViewingPast && viewStats.percentage < 100 ? (
+                <AlertTriangle
+                  className={cn(
+                    "h-4 w-4",
+                    viewStats.percentage >= 80
+                      ? "text-green-500"
+                      : viewStats.percentage >= 50
+                        ? "text-yellow-500"
+                        : "text-red-500"
+                  )}
+                />
+              ) : (
+                <Check className="h-4 w-4 text-green-500" />
+              )}
+              <span
+                className={cn(
+                  "font-bold text-sm",
+                  isViewingPast
+                    ? viewStats.percentage >= 80
+                      ? "text-green-500"
+                      : viewStats.percentage >= 50
+                        ? "text-yellow-500"
+                        : "text-red-500"
+                    : "text-green-500"
+                )}
               >
-                <CalendarDays className="h-4 w-4" />
-                <span>Today</span>
-              </button>
-            )}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/50 rounded">
-              <Check className="h-4 w-4 text-green-500" />
-              <span className="font-bold text-green-500">
                 {completedCount}/{totalCount}
               </span>
             </div>
           </div>
+
+          {/* Date navigation - hidden on mobile for faster timeline access */}
+          {planStartDate && planProgress && (
+            <div className="hidden md:block">
+              <TimelineDateNav
+                selectedDate={viewDate}
+                planStartDate={planStartDate}
+                totalDays={planProgress.totalDays}
+                onDateChange={handleDateChange}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Day Selector - same as admin */}
-      {planProgress && (
-        <div className="athletic-card p-4 pl-8">
-          <DaySelectorTabs
-            selectedDay={currentDayNumber}
-            onSelectDay={handleDayChange}
-            daysWithContent={daysWithContent}
-            totalDays={planProgress.totalDays}
-            planStartDate={planStartDate}
+      {/* Statistics Card - hidden on mobile for faster access to timeline */}
+      {(isViewingPast || isViewingToday) && (
+        <div className="athletic-card p-6 pl-8 hidden md:block">
+          <TimelineStats
+            stats={viewStats}
+            statsByType={viewStatsByType}
+            periodLabel={isViewingToday ? "Today's Progress" : `Day ${currentDayNumber} Summary`}
+            compact={false}
           />
         </div>
       )}
@@ -375,77 +541,35 @@ export function ClientTimelineView() {
         className="athletic-card"
       />
 
-      {/* Type Filters - same as admin */}
-      <div className="athletic-card p-4 pl-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            Show:
-          </span>
-
-          {(["meal", "supplement", "workout", "lifestyle"] as const).map((type) => {
-            const isActive = typeFilters[type];
-            const count = itemCounts[type];
-            const labels = {
-              meal: "Meals",
-              supplement: "Supplements",
-              workout: "Workouts",
-              lifestyle: "Lifestyle",
-            };
-            const colors = {
-              meal: "bg-orange-500/20 border-orange-500/50 text-orange-400",
-              supplement: "bg-green-500/20 border-green-500/50 text-green-400",
-              workout: "bg-blue-500/20 border-blue-500/50 text-blue-400",
-              lifestyle: "bg-purple-500/20 border-purple-500/50 text-purple-400",
-            };
-
-            return (
-              <button
-                key={type}
-                onClick={() => toggleTypeFilter(type)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded border text-sm font-bold transition-all",
-                  isActive ? colors[type] : "bg-secondary/50 border-border text-muted-foreground"
-                )}
-              >
-                {isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                <span>{labels[type]}</span>
-                <span
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-xs",
-                    isActive ? "bg-black/20" : "bg-secondary"
-                  )}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-
-          <button
-            onClick={toggleAllFilters}
-            className="text-xs font-bold text-muted-foreground hover:text-foreground uppercase tracking-wider ml-2"
-          >
-            {Object.values(typeFilters).every(Boolean) ? "Hide All" : "Show All"}
-          </button>
-
-          {/* Refresh button */}
-          <button
-            onClick={refetch}
-            className="btn-athletic p-2 bg-secondary text-foreground ml-auto"
-            title="Refresh"
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </button>
+      {/* Type Filters - icon-only on mobile, full on desktop */}
+      <div className="athletic-card p-3 md:p-4 pl-4 md:pl-8">
+        {/* Mobile: compact icon filters */}
+        <div className="md:hidden">
+          <TimelineFilters
+            filters={typeFilters}
+            onFiltersChange={handleFiltersChange}
+            counts={itemCounts}
+            compact
+          />
+        </div>
+        {/* Desktop: full filters */}
+        <div className="hidden md:block">
+          <TimelineFilters
+            filters={typeFilters}
+            onFiltersChange={handleFiltersChange}
+            counts={itemCounts}
+          />
         </div>
       </div>
 
       {/* Timeline Grid - reusing admin component exactly */}
-      <div className="athletic-card p-4 overflow-x-auto">
+      <div className="athletic-card p-4 overflow-auto max-h-[60vh] md:max-h-none">
         <TimelineGrid
           items={filteredItems}
           packingItems={filteredPackingItems}
           onItemClick={handleItemClick}
           isLoading={isLoading}
+          autoScrollToFirstItem
         />
       </div>
 
@@ -462,9 +586,34 @@ export function ClientTimelineView() {
           onMarkSourceItemUncomplete={handleMarkSourceItemUncomplete}
           onClose={() => setExpandedItem(null)}
           isMarking={isMarking}
-          readOnly={isViewingFutureDay}
+          readOnly={isViewingFutureDay || isViewingPast}
         />
       )}
     </div>
+  );
+}
+
+// =============================================================================
+// MAIN COMPONENT (with Suspense boundary)
+// =============================================================================
+
+/**
+ * Client Timeline View - matches admin Plan Editor layout
+ * Wrapped in Suspense for useSearchParams
+ */
+export function ClientTimelineView() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="athletic-card p-6 pl-8 animate-pulse">
+            <div className="h-8 w-64 bg-secondary mb-4" />
+            <div className="h-4 w-48 bg-secondary" />
+          </div>
+        </div>
+      }
+    >
+      <ClientTimelineViewInner />
+    </Suspense>
   );
 }

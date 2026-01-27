@@ -16,3 +16,6 @@ export { ProfileDetailsCard } from "./profile-details-card";
 export { ClientTimelineView } from "./client-timeline-view";
 export { TimelineTargetsCard } from "./timeline-targets-card";
 export { TimelineItemExpanded } from "./timeline-item-expanded";
+export { TimelineDateNav } from "./timeline-date-nav";
+export { TimelineFilters } from "./timeline-filters";
+export { TimelineStats } from "./timeline-stats";

@@ -5,17 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Utensils,
-  Dumbbell,
-  ClipboardList,
-  LineChart,
-  User,
-  LogOut,
-} from "lucide-react";
+import { Menu, X, LayoutDashboard, ClipboardList, LineChart, User, LogOut } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { NotificationsDropdown } from "./notifications-dropdown";
 
@@ -26,19 +16,9 @@ import { NotificationsDropdown } from "./notifications-dropdown";
 
 const navItems = [
   {
-    label: "Dashboard",
+    label: "Today's Plan",
     icon: LayoutDashboard,
     href: "/dashboard",
-  },
-  {
-    label: "Diet Plan",
-    icon: Utensils,
-    href: "/dashboard/diet",
-  },
-  {
-    label: "Workout Plan",
-    icon: Dumbbell,
-    href: "/dashboard/workout",
   },
   {
     label: "Check-In",

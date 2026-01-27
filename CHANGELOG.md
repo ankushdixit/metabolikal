@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Timeline History View & Activity Filters**: Enhanced client timeline with historical navigation and filtering capabilities:
+  - `TimelineDateNav` component with calendar picker, prev/next navigation, and "Today" button
+  - `TimelineFilters` component with activity type toggles (Meals, Supplements, Workouts, Lifestyle)
+  - `TimelineStats` component showing completion percentages, streaks, and trends by type
+  - `useTimelineHistory` hook for managing historical data with caching
+  - URL-based state persistence for date and filter selections
+  - Historical day styling (read-only mode for past days)
+  - `completion-stats.ts` utility library for calculating completion metrics
+  - Comprehensive test coverage for all new components
+
 - **Client Timeline Dashboard - Today's Plan View**: Complete client-facing timeline dashboard replacing separate diet/workout pages:
   - `ClientTimelineView` component reusing admin's `TimelineGrid` and `DaySelectorTabs` for consistent UI
   - `useClientTimeline` hook with plan completion tracking, macro limits, and day navigation

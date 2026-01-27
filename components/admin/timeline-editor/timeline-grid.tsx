@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { packItemsIntoLanes, getLaneCount } from "@/lib/utils/lane-packing";
 import type { LanePackingItem, PackedItem } from "@/lib/utils/lane-packing";
@@ -18,7 +18,7 @@ import { TimelineItem } from "./timeline-item";
 const TIMELINE_START_HOUR = 5; // 5 AM
 const TIMELINE_END_HOUR = 23; // 11 PM
 const HOUR_HEIGHT_PX = 100; // Height per hour in pixels
-const MIN_LANES = 3; // Minimum lanes to show
+const MIN_LANES = 1; // Minimum lanes - items span full width when only 1 lane needed
 
 /**
  * Convert minutes from midnight to pixel position
@@ -46,6 +46,8 @@ interface TimelineGridProps {
   selectedItemIds?: Set<string>;
   onItemSelect?: (itemId: string, selected: boolean) => void;
   isLoading?: boolean;
+  /** Scroll to the first item when items load */
+  autoScrollToFirstItem?: boolean;
   className?: string;
 }
 
@@ -59,8 +61,10 @@ export function TimelineGrid({
   selectedItemIds = new Set(),
   onItemSelect,
   isLoading = false,
+  autoScrollToFirstItem = false,
   className,
 }: TimelineGridProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   // Generate hour labels
   const hours = useMemo(() => {
     const result: number[] = [];
@@ -120,8 +124,28 @@ export function TimelineGrid({
     });
   }, [items, packedItemsMap]);
 
+  // Find earliest item position for auto-scroll
+  const earliestItemTop = useMemo(() => {
+    if (positionedItems.length === 0) return 0;
+    return Math.max(0, Math.min(...positionedItems.map((p) => p.top)) - 20); // 20px padding above
+  }, [positionedItems]);
+
+  // Auto-scroll to first item
+  useEffect(() => {
+    if (autoScrollToFirstItem && containerRef.current && positionedItems.length > 0 && !isLoading) {
+      // Find the scrollable parent
+      const scrollParent = containerRef.current.closest(".overflow-y-auto, .overflow-auto");
+      if (scrollParent) {
+        scrollParent.scrollTop = earliestItemTop;
+      } else {
+        // If no scroll parent, try scrolling the container itself
+        containerRef.current.scrollTop = earliestItemTop;
+      }
+    }
+  }, [autoScrollToFirstItem, earliestItemTop, positionedItems.length, isLoading]);
+
   return (
-    <div className={cn("relative", className)}>
+    <div ref={containerRef} className={cn("relative", className)}>
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 z-50 flex items-center justify-center">
