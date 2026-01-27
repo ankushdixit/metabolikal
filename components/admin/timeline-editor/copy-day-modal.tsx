@@ -92,7 +92,12 @@ export function CopyDayModal({
 
   const totalItems =
     dietPlans.length + supplementPlans.length + workoutPlans.length + lifestylePlans.length;
-  const days = Array.from({ length: totalDays }, (_, i) => i + 1);
+
+  // Show only 14 days starting from the source day (or fewer if near the end)
+  const VISIBLE_DAYS_COUNT = 14;
+  const startDay = sourceDay;
+  const endDay = Math.min(sourceDay + VISIBLE_DAYS_COUNT - 1, totalDays);
+  const days = Array.from({ length: endDay - startDay + 1 }, (_, i) => startDay + i);
 
   const toggleDay = (day: number) => {
     setSelectedDays((prev) => {
@@ -365,6 +370,11 @@ export function CopyDayModal({
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             Select target days to copy {totalItems} items.
+            {endDay < totalDays && (
+              <span className="block mt-1 text-xs">
+                Showing Days {startDay}-{endDay} of {totalDays}
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -394,16 +404,7 @@ export function CopyDayModal({
               </div>
             </div>
 
-            <div
-              className={cn(
-                "grid gap-2",
-                totalDays <= 7
-                  ? "grid-cols-7"
-                  : totalDays <= 14
-                    ? "grid-cols-7"
-                    : "grid-cols-5 sm:grid-cols-7"
-              )}
-            >
+            <div className="grid grid-cols-7 gap-2">
               {days.map((day) => {
                 const isSource = day === sourceDay;
                 const isSelected = selectedDays.has(day);

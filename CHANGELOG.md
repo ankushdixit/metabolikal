@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Daily Plan View for Plans Tab**: Complete redesign of the Plans tab to show a daily view of all 4 plan types:
+  - `useDailyPlanData` hook for fetching all plan data (Diet, Supplements, Workout, Lifestyle) for a specific day
+  - `PlanDayNavigator` component with day navigation arrows, "Today" badge, and "Go to day" input
+  - `DailyDietSection` showing meals grouped by category with calorie/protein totals
+  - `DailySupplementsSection` showing supplements grouped by time of day (morning/afternoon/evening)
+  - `DailyWorkoutSection` showing exercises grouped by section (warmup/main/cooldown) with duration
+  - `DailyLifestyleSection` showing lifestyle activities with target values
+  - `DailyPlanView` container with 2x2 grid layout (responsive to single column on mobile)
+  - Requires plan_start_date to be set (shows CTA when not set)
+  - Warning banner when no macro limits exist for the selected day
+  - Edit button disabled when limits are missing for the day
+  - Defaults to "today" based on plan_start_date calculation
+  - Single "Edit Plan in Timeline" button links to timeline editor
+  - Comprehensive test coverage (34 new tests)
+
+### Fixed
+
+- **Copy Day Modal UI**: Limited day selection to 14 days starting from source day instead of showing all days (fixes unwieldy UI for long plans)
+- **Day Selector Gap**: Removed flex-1 from day buttons container to eliminate large gap between days and navigation arrows
+
 - **Client Detail Header Enhancement**: Enhanced the admin client detail page header with more useful information at a glance:
   - Gender displayed with icon (♂/♀/⚧) when set
   - Age calculated and displayed from date of birth (e.g., "Age 32")
