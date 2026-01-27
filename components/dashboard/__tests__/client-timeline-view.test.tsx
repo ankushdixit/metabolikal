@@ -9,9 +9,18 @@ import { ClientTimelineView } from "../client-timeline-view";
 Element.prototype.scrollTo = jest.fn();
 
 // Mock next/navigation
+const mockRouterReplace = jest.fn();
 jest.mock("next/navigation", () => ({
   useSearchParams: () => ({
     get: jest.fn().mockReturnValue(null),
+  }),
+  useRouter: () => ({
+    replace: mockRouterReplace,
+    push: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
   }),
 }));
 

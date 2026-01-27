@@ -45,6 +45,8 @@ interface TimelineFiltersProps {
   disabled?: boolean;
   /** Compact mode - single row horizontal scroll */
   compact?: boolean;
+  /** Mobile mode - larger icons, evenly distributed across width */
+  mobile?: boolean;
   /** Additional CSS classes */
   className?: string;
 }
@@ -164,6 +166,7 @@ export function TimelineFilters({
   counts,
   disabled = false,
   compact = false,
+  mobile = false,
   className,
 }: TimelineFiltersProps) {
   const allEnabled = areAllFiltersEnabled(filters);
@@ -227,8 +230,12 @@ export function TimelineFilters({
       {/* Filter chips */}
       <div
         className={cn(
-          "flex items-center overflow-x-auto scrollbar-hide",
-          compact ? "gap-1" : "flex-wrap gap-2 pb-1 -mb-1"
+          "flex items-center",
+          mobile
+            ? "flex-1 justify-between gap-2"
+            : compact
+              ? "gap-1 overflow-x-auto scrollbar-hide"
+              : "flex-wrap gap-2 pb-1 -mb-1 overflow-x-auto scrollbar-hide"
         )}
       >
         {FILTER_CONFIGS.map((config) => {
@@ -244,13 +251,17 @@ export function TimelineFilters({
               onDoubleClick={() => selectOnly(config.key)}
               disabled={disabled}
               title={
-                compact
+                compact || mobile
                   ? config.label
                   : `Click to toggle, double-click to show only ${config.label}`
               }
               className={cn(
-                "flex items-center rounded border font-bold transition-all flex-shrink-0",
-                compact ? "p-2" : "gap-1.5 px-2.5 py-1.5 text-sm",
+                "flex items-center justify-center rounded border font-bold transition-all",
+                mobile
+                  ? "flex-1 p-3 gap-2"
+                  : compact
+                    ? "p-2 flex-shrink-0"
+                    : "gap-1.5 px-2.5 py-1.5 text-sm flex-shrink-0",
                 isActive
                   ? config.activeColors
                   : "bg-secondary/50 border-border text-muted-foreground",
@@ -259,7 +270,13 @@ export function TimelineFilters({
                 disabled && "cursor-not-allowed"
               )}
             >
-              {compact ? (
+              {mobile ? (
+                /* Mobile: larger icon with optional count */
+                <>
+                  <Icon className="h-5 w-5" />
+                  {count !== undefined && count > 0 && <span className="text-xs">{count}</span>}
+                </>
+              ) : compact ? (
                 /* Compact: only show type icon */
                 <Icon className="h-4 w-4" />
               ) : (

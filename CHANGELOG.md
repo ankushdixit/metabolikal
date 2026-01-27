@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mobile Timeline Optimization**: Mobile-first client timeline experience with touch-friendly navigation:
+  - `MobileTimelineView` component with collapsible time periods and scroll-to-now button
+  - `TimelineMobileHeader` sticky header with day navigation, completion stats, and filters
+  - `TimelineSwipeContainer` for swipe gesture navigation between days (left/right)
+  - `TimelineItemSheet` bottom sheet using vaul for native-feeling item details
+  - `ScrollToNowButton` floating button to jump to current time period
+  - `useSwipeNavigation` hook with threshold detection and haptic feedback support
+  - `useOfflineCompletions` hook for offline completion queue with localStorage persistence
+  - Touch-friendly 44x44px tap targets following Apple HIG guidelines
+  - Mobile viewport detection with SSR-safe hydration handling
+  - Horizontal stats layout option for compact progress display
+  - Full day navigation allowing preview of all plan days (future days read-only)
+  - Shared `PlanDayNavigator` component between admin and client views
+  - Comprehensive test coverage for all new components
+
+### Fixed
+
+- **Hydration errors**: Fixed nested button elements causing React hydration errors in mobile view
+- **Flash of empty state**: Fixed "Plan Not Configured" flash during SSR/hydration with proper loading states
+- **Day navigation**: Fixed day switcher not working due to URL state management issues - simplified to React state
+
 - **Timeline History View & Activity Filters**: Enhanced client timeline with historical navigation and filtering capabilities:
   - `TimelineDateNav` component with calendar picker, prev/next navigation, and "Today" button
   - `TimelineFilters` component with activity type toggles (Meals, Supplements, Workouts, Lifestyle)
