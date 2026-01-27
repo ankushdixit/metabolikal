@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Client Timeline Dashboard - Today's Plan View**: Complete client-facing timeline dashboard replacing separate diet/workout pages:
+  - `ClientTimelineView` component reusing admin's `TimelineGrid` and `DaySelectorTabs` for consistent UI
+  - `useClientTimeline` hook with plan completion tracking, macro limits, and day navigation
+  - `TimelineTargetsCard` compact component showing calories, protein, carbs, fats with progress bars
+  - `TimelineItemExpanded` modal for viewing item details and marking completions
+  - Individual item completion - mark each food/supplement/exercise separately within grouped items
+  - Partial completion status display ("2/5 done") with Complete All / Clear All buttons
+  - "Today" button to quickly return when viewing different days
+  - Future day preview with read-only mode (can't mark completions for future days)
+  - Plan preview before start date with countdown banner
+  - `plan_completions` database table with RLS policies for tracking item completions
+  - Simplified client sidebar: removed old Diet/Workout pages, renamed to "Today's Plan"
+  - Comprehensive test coverage (33 new tests)
+
 - **Enhanced Client Profile Page**: Added plan information, health conditions, and macro targets sections to the client profile page:
   - `ProfilePlanCard` component showing plan start date, duration, progress bar, days remaining, and end date
   - `ProfileConditionsCard` component displaying medical conditions with expandable descriptions

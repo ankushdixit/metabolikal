@@ -42,9 +42,7 @@ describe("Sidebar Component", () => {
 
   it("renders all navigation items", () => {
     render(<Sidebar />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Diet Plan")).toBeInTheDocument();
-    expect(screen.getByText("Workout Plan")).toBeInTheDocument();
+    expect(screen.getByText("Today's Plan")).toBeInTheDocument();
     expect(screen.getByText("Check-In")).toBeInTheDocument();
     expect(screen.getByText("Progress")).toBeInTheDocument();
     // Profile is accessed via mini card at top, not main nav
@@ -57,14 +55,14 @@ describe("Sidebar Component", () => {
 
   it("renders links with correct href attributes", () => {
     render(<Sidebar />);
-    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    const dashboardLink = screen.getByText("Today's Plan").closest("a");
     expect(dashboardLink).toHaveAttribute("href", "/dashboard");
 
-    const dietLink = screen.getByText("Diet Plan").closest("a");
-    expect(dietLink).toHaveAttribute("href", "/dashboard/diet");
+    const checkinLink = screen.getByText("Check-In").closest("a");
+    expect(checkinLink).toHaveAttribute("href", "/dashboard/checkin");
 
-    const workoutLink = screen.getByText("Workout Plan").closest("a");
-    expect(workoutLink).toHaveAttribute("href", "/dashboard/workout");
+    const progressLink = screen.getByText("Progress").closest("a");
+    expect(progressLink).toHaveAttribute("href", "/dashboard/progress");
   });
 
   it("marks dashboard as active on dashboard path", () => {
@@ -73,7 +71,7 @@ describe("Sidebar Component", () => {
 
     render(<Sidebar />);
 
-    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    const dashboardLink = screen.getByText("Today's Plan").closest("a");
     expect(dashboardLink).toHaveAttribute("aria-current", "page");
   });
 
