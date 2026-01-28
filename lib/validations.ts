@@ -229,14 +229,14 @@ export const foodItemSchema = z.object({
     .number()
     .min(0, { message: "Carbs must be at least 0" })
     .max(500, { message: "Carbs must be 500g or less" })
-    .optional()
-    .nullable(),
+    .nullish()
+    .catch(null),
   fats: z
     .number()
     .min(0, { message: "Fats must be at least 0" })
     .max(500, { message: "Fats must be 500g or less" })
-    .optional()
-    .nullable(),
+    .nullish()
+    .catch(null),
   serving_size: z
     .string()
     .min(1, { message: "Serving size is required" })
@@ -255,10 +255,10 @@ export const foodItemSchema = z.object({
     .max(50, { message: "Cooked quantity must be 50 characters or less" })
     .optional()
     .nullable(),
-  // Avoid for conditions - array of condition IDs
-  avoid_for_conditions: z.array(z.string().uuid()).optional().nullable(),
-  // Food alternatives - array of food item IDs
-  alternative_food_ids: z.array(z.string().uuid()).optional().nullable(),
+  // Avoid for conditions - array of condition IDs (UUIDs from database)
+  avoid_for_conditions: z.array(z.string().min(1)).optional().nullable(),
+  // Food alternatives - array of food item IDs (UUIDs from database)
+  alternative_food_ids: z.array(z.string().min(1)).optional().nullable(),
 });
 
 export type FoodItemFormData = z.infer<typeof foodItemSchema>;

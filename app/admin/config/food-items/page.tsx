@@ -63,10 +63,11 @@ export default function FoodItemsPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Fetch all food items
+  // Fetch all food items (disable server pagination to get all records)
   const foodItemsQuery = useList<FoodItem>({
     resource: "food_items",
     sorters: [{ field: "name", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -244,18 +245,30 @@ export default function FoodItemsPage() {
                       Name
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Calories
+                      Serving
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
+                      Raw Qty
+                    </TableHead>
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
+                      Cooked Qty
+                    </TableHead>
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right">
+                      Cal
+                    </TableHead>
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right">
                       Protein
                     </TableHead>
-                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Serving Size
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right">
+                      Carbs
+                    </TableHead>
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right">
+                      Fat
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-center">
                       Veg
                     </TableHead>
-                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right">
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right w-24">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -271,9 +284,27 @@ export default function FoodItemsPage() {
                           <span className="font-bold">{item.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.calories} kcal</TableCell>
-                      <TableCell className="text-muted-foreground">{item.protein}g</TableCell>
-                      <TableCell className="text-muted-foreground">{item.serving_size}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {item.serving_size || "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {item.raw_quantity || "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {item.cooked_quantity || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-orange-400">{item.calories}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-blue-400">{item.protein}g</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-yellow-400">{item.carbs ?? 0}g</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-bold text-pink-400">{item.fats ?? 0}g</span>
+                      </TableCell>
                       <TableCell className="text-center">
                         {item.is_vegetarian && (
                           <div className="inline-flex items-center justify-center p-1 bg-neon-green/20">
@@ -282,20 +313,20 @@ export default function FoodItemsPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/config/food-items/edit/${item.id}`}
-                            className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-secondary text-foreground text-sm"
+                            className="p-2 rounded hover:bg-secondary transition-colors"
+                            title="Edit"
                           >
-                            <Pencil className="h-4 w-4" />
-                            <span className="hidden sm:inline">Edit</span>
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                           </Link>
                           <button
                             onClick={() => handleDeleteClick(item)}
-                            className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-destructive/20 text-red-500 text-sm hover:bg-destructive/30"
+                            className="p-2 rounded hover:bg-destructive/20 transition-colors"
+                            title="Delete"
                           >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="hidden sm:inline">Delete</span>
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                           </button>
                         </div>
                       </TableCell>

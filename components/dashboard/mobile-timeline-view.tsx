@@ -13,7 +13,8 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useList, useUpdate } from "@refinedev/core";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -29,17 +30,19 @@ import {
   Heart,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { TimelineMobileHeader } from "./timeline-mobile-header";
 import { TimelineSwipeContainer } from "./timeline-swipe-container";
 import { TimelineItemSheet } from "./timeline-item-sheet";
+import { FoodAlternativesDrawer } from "./food-alternatives-drawer";
 import { ScrollToNowButton } from "./scroll-to-now-button";
 import { type TypeFilters, type FilterCounts } from "./timeline-filters";
 import { useOfflineCompletions } from "@/hooks/use-offline-completions";
 import { calculateStats, type TimelineItemWithCompletion } from "@/lib/utils/completion-stats";
 import { getEffectiveSortTime, minutesToTime, formatTimeDisplay } from "@/lib/utils/timeline";
-import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
+import type { ExtendedTimelineItem, DietPlanWithFood } from "@/hooks/use-timeline-data";
 import type { UseClientTimelineReturn } from "@/hooks/use-client-timeline";
-import type { PlanCompletionType } from "@/lib/database.types";
+import type { PlanCompletionType, MealCategory } from "@/lib/database.types";
 
 // =============================================================================
 // TYPES
@@ -408,12 +411,65 @@ export function MobileTimelineView({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Food swap state
+  const [selectedDietPlanForSwap, setSelectedDietPlanForSwap] = useState<{
+    dietPlanId: string;
+    foodItemId: string;
+    mealCategory: MealCategory;
+    currentFoodItem: {
+      id: string;
+      name: string;
+      calories: number;
+      protein: number;
+      serving_size: string;
+      is_vegetarian: boolean;
+    } | null;
+  } | null>(null);
+
   // Refs
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Offline support
   const { isOnline, getPendingAction, queueCompletion } = useOfflineCompletions();
+
+  // Query for food alternatives when a diet plan is selected for swap
+  // Uses food_item_alternatives table which links food items to their alternatives
+  const alternativesQuery = useList<{
+    id: string;
+    food_item_id: string;
+    alternative_food_id: string;
+    food_items: {
+      id: string;
+      name: string;
+      calories: number;
+      protein: number;
+      carbs: number | null;
+      fats: number | null;
+      serving_size: string;
+      is_vegetarian: boolean;
+      raw_quantity: string | null;
+      cooked_quantity: string | null;
+    };
+  }>({
+    resource: "food_item_alternatives",
+    filters: selectedDietPlanForSwap
+      ? [{ field: "food_item_id", operator: "eq", value: selectedDietPlanForSwap.foodItemId }]
+      : [],
+    meta: {
+      // Join with food_items using the alternative_food_id to get the alternative food details
+      select:
+        "*, food_items!food_item_alternatives_alternative_food_id_fkey(id, name, calories, protein, carbs, fats, serving_size, is_vegetarian, raw_quantity, cooked_quantity)",
+    },
+    sorters: [{ field: "display_order", order: "asc" }],
+    queryOptions: {
+      enabled: !!selectedDietPlanForSwap?.foodItemId,
+    },
+  });
+
+  // Mutation for updating diet plan food item
+  const updateMutation = useUpdate();
+  const [isUpdatingSwap, setIsUpdatingSwap] = useState(false);
 
   // Calculate view state
   const isViewingToday = useMemo(() => {
@@ -437,6 +493,16 @@ export function MobileTimelineView({
   const filteredItems = useMemo(() => {
     return timelineItems.filter((item) => typeFilters[item.type as keyof TypeFilters]);
   }, [timelineItems, typeFilters]);
+
+  // Sync selectedItem with latest data when timeline items update (e.g., after food swap)
+  useEffect(() => {
+    if (selectedItem && timelineItems.length > 0) {
+      const updatedItem = timelineItems.find((item) => item.id === selectedItem.id);
+      if (updatedItem && updatedItem !== selectedItem) {
+        setSelectedItem(updatedItem);
+      }
+    }
+  }, [timelineItems, selectedItem]);
 
   // Group items by time period
   const periods = useMemo(() => {
@@ -611,6 +677,65 @@ export function MobileTimelineView({
       setTimeout(() => setIsRefreshing(false), 500);
     }
   }, [refetch]);
+
+  // Handle swap food - open alternatives drawer
+  const handleSwapFood = useCallback(
+    (dietPlanId: string) => {
+      if (!selectedItem) return;
+
+      // Find the diet plan entry from the selected item's grouped items
+      const groupedItems = selectedItem.groupedItems as DietPlanWithFood[] | undefined;
+      const dietPlan = groupedItems?.find((p) => p.id === dietPlanId);
+
+      if (!dietPlan || !dietPlan.food_items) return;
+
+      setSelectedDietPlanForSwap({
+        dietPlanId: dietPlanId,
+        foodItemId: dietPlan.food_items.id,
+        mealCategory: dietPlan.meal_category as MealCategory,
+        currentFoodItem: {
+          id: dietPlan.food_items.id,
+          name: dietPlan.food_items.name,
+          calories: dietPlan.food_items.calories,
+          protein: dietPlan.food_items.protein,
+          serving_size: dietPlan.food_items.serving_size,
+          is_vegetarian: dietPlan.food_items.is_vegetarian ?? false,
+        },
+      });
+    },
+    [selectedItem]
+  );
+
+  // Handle select alternative - swap the food item
+  const handleSelectAlternative = useCallback(
+    (newFoodItemId: string) => {
+      if (!selectedDietPlanForSwap) return;
+
+      setIsUpdatingSwap(true);
+      updateMutation.mutate(
+        {
+          resource: "diet_plans",
+          id: selectedDietPlanForSwap.dietPlanId,
+          values: { food_item_id: newFoodItemId },
+        },
+        {
+          onSuccess: () => {
+            toast.success("Food item swapped successfully");
+            setSelectedDietPlanForSwap(null);
+            setIsUpdatingSwap(false);
+            // Refetch timeline to show updated food
+            refetch();
+          },
+          onError: (error) => {
+            console.error("Error swapping food:", error);
+            toast.error("Failed to swap food item. Please try again.");
+            setIsUpdatingSwap(false);
+          },
+        }
+      );
+    },
+    [selectedDietPlanForSwap, updateMutation, refetch]
+  );
 
   // =============================================================================
   // RENDER
@@ -796,6 +921,19 @@ export function MobileTimelineView({
         onMarkSourceItemUncomplete={handleMarkSourceItemUncomplete}
         isMarking={isMarking}
         readOnly={isViewingFutureDay || isViewingPast}
+        onSwapFood={isViewingFutureDay || isViewingPast ? undefined : handleSwapFood}
+      />
+
+      {/* Food alternatives drawer for swapping food items */}
+      <FoodAlternativesDrawer
+        isOpen={!!selectedDietPlanForSwap}
+        onClose={() => setSelectedDietPlanForSwap(null)}
+        mealCategory={selectedDietPlanForSwap?.mealCategory ?? "breakfast"}
+        currentFoodItem={selectedDietPlanForSwap?.currentFoodItem ?? null}
+        alternatives={alternativesQuery.query.data?.data ?? []}
+        targetCalories={targets.calories ?? 0}
+        onSelectAlternative={handleSelectAlternative}
+        isUpdating={isUpdatingSwap}
       />
     </div>
   );

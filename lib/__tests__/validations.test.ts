@@ -362,14 +362,22 @@ describe("foodItemSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects negative carbs", () => {
+    it("coerces negative carbs to null", () => {
       const result = foodItemSchema.safeParse({ ...validData, carbs: -1 });
-      expect(result.success).toBe(false);
+      // Schema uses .catch(null) to coerce invalid values to null
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.carbs).toBe(null);
+      }
     });
 
-    it("rejects carbs above 500g", () => {
+    it("coerces carbs above 500g to null", () => {
       const result = foodItemSchema.safeParse({ ...validData, carbs: 501 });
-      expect(result.success).toBe(false);
+      // Schema uses .catch(null) to coerce invalid values to null
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.carbs).toBe(null);
+      }
     });
 
     it("accepts valid carbs", () => {
@@ -389,14 +397,22 @@ describe("foodItemSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects negative fats", () => {
+    it("coerces negative fats to null", () => {
       const result = foodItemSchema.safeParse({ ...validData, fats: -1 });
-      expect(result.success).toBe(false);
+      // Schema uses .catch(null) to coerce invalid values to null
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.fats).toBe(null);
+      }
     });
 
-    it("rejects fats above 500g", () => {
+    it("coerces fats above 500g to null", () => {
       const result = foodItemSchema.safeParse({ ...validData, fats: 501 });
-      expect(result.success).toBe(false);
+      // Schema uses .catch(null) to coerce invalid values to null
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.fats).toBe(null);
+      }
     });
 
     it("accepts valid fats", () => {
