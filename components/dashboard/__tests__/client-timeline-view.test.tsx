@@ -94,6 +94,20 @@ jest.mock("@/hooks/use-client-timeline", () => ({
   useClientTimeline: jest.fn(() => defaultHookReturn),
 }));
 
+// Mock @refinedev/core hooks used by the component
+jest.mock("@refinedev/core", () => ({
+  useList: jest.fn(() => ({
+    query: {
+      data: { data: [] },
+      isLoading: false,
+    },
+  })),
+  useUpdate: jest.fn(() => ({
+    mutate: jest.fn(),
+    isLoading: false,
+  })),
+}));
+
 describe("ClientTimelineView", () => {
   beforeEach(() => {
     jest.clearAllMocks();

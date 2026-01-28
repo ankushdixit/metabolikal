@@ -257,7 +257,7 @@ describe("TimelineItemSheet", () => {
   });
 
   describe("individual item completion", () => {
-    it("should toggle individual source item when clicked", () => {
+    it("should toggle individual source item when checkbox clicked", () => {
       const isSourceItemCompleted = jest.fn().mockReturnValue(false);
       const onMarkSourceItemComplete = jest.fn();
 
@@ -269,10 +269,11 @@ describe("TimelineItemSheet", () => {
         />
       );
 
-      // Click on the first food item button
-      const eggButton = screen.getByText("Eggs").closest("button");
-      if (eggButton) {
-        fireEvent.click(eggButton);
+      // Find the food item row and click on the checkbox toggle button
+      const foodItemRow = screen.getByText("Eggs").closest("div")?.parentElement;
+      const checkboxButton = foodItemRow?.querySelector("button");
+      if (checkboxButton) {
+        fireEvent.click(checkboxButton);
       }
 
       expect(onMarkSourceItemComplete).toHaveBeenCalledWith("source-1");
@@ -289,10 +290,11 @@ describe("TimelineItemSheet", () => {
         />
       );
 
-      // Click on the first food item button
-      const eggButton = screen.getByText("Eggs").closest("button");
-      if (eggButton) {
-        fireEvent.click(eggButton);
+      // Find the food item row and click on the checkbox toggle button
+      const foodItemRow = screen.getByText("Eggs").closest("div")?.parentElement;
+      const checkboxButton = foodItemRow?.querySelector("button");
+      if (checkboxButton) {
+        fireEvent.click(checkboxButton);
       }
 
       expect(onMarkSourceItemComplete).not.toHaveBeenCalled();

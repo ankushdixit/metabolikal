@@ -65,10 +65,11 @@ export default function LifestyleActivitiesLibraryPage() {
     setCurrentPage(1);
   }, [searchQuery, categoryFilter]);
 
-  // Fetch all lifestyle activity types
+  // Fetch all lifestyle activity types (disable server pagination to get all records)
   const activityTypesQuery = useList<LifestyleActivityType>({
     resource: "lifestyle_activity_types",
     sorters: [{ field: "name", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -327,20 +328,20 @@ export default function LifestyleActivitiesLibraryPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/admin/config/lifestyle-activities/edit/${item.id}`}
-                            className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-secondary text-foreground text-sm"
+                            className="p-2 rounded hover:bg-secondary transition-colors"
+                            title="Edit"
                           >
-                            <Pencil className="h-4 w-4" />
-                            <span className="hidden sm:inline">Edit</span>
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                           </Link>
                           <button
                             onClick={() => handleDeleteClick(item)}
-                            className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-destructive/20 text-red-500 text-sm hover:bg-destructive/30"
+                            className="p-2 rounded hover:bg-destructive/20 transition-colors"
+                            title="Delete"
                           >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="hidden sm:inline">Delete</span>
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                           </button>
                         </div>
                       </TableCell>

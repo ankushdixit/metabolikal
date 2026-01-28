@@ -138,7 +138,7 @@ describe("FoodAlternativesDrawer Component", () => {
       />
     );
     expect(screen.getByText("350")).toBeInTheDocument(); // Salmon calories
-    expect(screen.getByText("40")).toBeInTheDocument(); // Salmon protein
+    expect(screen.getByText("40g")).toBeInTheDocument(); // Salmon protein (with g suffix)
   });
 
   it("displays vegetarian filter toggle", () => {

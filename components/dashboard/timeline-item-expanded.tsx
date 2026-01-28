@@ -9,7 +9,18 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Utensils, Pill, Dumbbell, Activity, Check, X, Clock, Info, RefreshCw } from "lucide-react";
+import {
+  Utensils,
+  Pill,
+  Dumbbell,
+  Activity,
+  Check,
+  X,
+  Clock,
+  Info,
+  RefreshCw,
+  ArrowLeftRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import type {
@@ -36,6 +47,8 @@ interface TimelineItemExpandedProps {
   onClose: () => void;
   isMarking?: boolean;
   readOnly?: boolean;
+  /** Callback to swap a food item - only for meal type */
+  onSwapFood?: (dietPlanId: string) => void;
 }
 
 // Type-specific styling
@@ -74,13 +87,39 @@ interface DetailProps {
   item: ExtendedTimelineItem;
   isSourceItemCompleted: (sourceId: string) => boolean;
   onToggleSourceItem: (sourceId: string, isCompleted: boolean) => void;
+  readOnly?: boolean;
+}
+
+interface MealDetailProps extends DetailProps {
+  onSwapFood?: (dietPlanId: string) => void;
 }
 
 /**
  * Meal item details
  */
-function MealDetails({ item, isSourceItemCompleted, onToggleSourceItem }: DetailProps) {
+function MealDetails({
+  item,
+  isSourceItemCompleted,
+  onToggleSourceItem,
+  readOnly,
+  onSwapFood,
+}: MealDetailProps) {
   const groupedItems = item.groupedItems as DietPlanWithFood[] | undefined;
+
+  // Calculate totals for all macros
+  const totals = groupedItems?.reduce(
+    (acc, plan) => {
+      const food = plan.food_items;
+      const multiplier = plan.serving_multiplier || 1;
+      return {
+        calories: acc.calories + Math.round((food?.calories || 0) * multiplier),
+        protein: acc.protein + Math.round((food?.protein || 0) * multiplier),
+        carbs: acc.carbs + Math.round((food?.carbs || 0) * multiplier),
+        fats: acc.fats + Math.round((food?.fats || 0) * multiplier),
+      };
+    },
+    { calories: 0, protein: 0, carbs: 0, fats: 0 }
+  ) || { calories: 0, protein: 0, carbs: 0, fats: 0 };
 
   return (
     <div className="space-y-3">
@@ -92,52 +131,112 @@ function MealDetails({ item, isSourceItemCompleted, onToggleSourceItem }: Detail
             const multiplier = plan.serving_multiplier || 1;
             const calories = Math.round((food?.calories || 0) * multiplier);
             const protein = Math.round((food?.protein || 0) * multiplier);
+            const carbs = Math.round((food?.carbs || 0) * multiplier);
+            const fats = Math.round((food?.fats || 0) * multiplier);
             const isCompleted = isSourceItemCompleted(plan.id);
 
+            // Build quantity display
+            const quantities: string[] = [];
+            if (food?.cooked_quantity) quantities.push(`Cooked: ${food.cooked_quantity}`);
+            if (food?.raw_quantity) quantities.push(`Raw: ${food.raw_quantity}`);
+
             return (
-              <button
+              <div
                 key={plan.id}
-                onClick={() => onToggleSourceItem(plan.id, isCompleted)}
                 className={cn(
-                  "w-full flex items-center gap-3 p-2 rounded transition-all text-left",
-                  isCompleted
-                    ? "bg-green-500/20 border border-green-500/50"
-                    : "bg-secondary/50 hover:bg-secondary"
+                  "flex flex-col gap-2 p-3 rounded transition-all",
+                  isCompleted ? "bg-green-500/20 border border-green-500/50" : "bg-secondary/50"
                 )}
               >
-                <div
-                  className={cn(
-                    "shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                    isCompleted ? "bg-green-500 border-green-500" : "border-muted-foreground/50"
+                <div className="flex items-start gap-3">
+                  {/* Completion toggle */}
+                  <button
+                    onClick={() => !readOnly && onToggleSourceItem(plan.id, isCompleted)}
+                    disabled={readOnly}
+                    className={cn(
+                      "shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors mt-0.5",
+                      isCompleted ? "bg-green-500 border-green-500" : "border-muted-foreground/50",
+                      !readOnly && "hover:border-primary"
+                    )}
+                  >
+                    {isCompleted && <Check className="h-3 w-3 text-white" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn("font-bold text-sm", isCompleted && "line-through opacity-70")}
+                    >
+                      {food?.name || "Unknown"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {food?.serving_size}
+                      {multiplier !== 1 && ` × ${multiplier}`}
+                    </p>
+                    {quantities.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">{quantities.join(" | ")}</p>
+                    )}
+                  </div>
+                  {/* Swap button */}
+                  {!readOnly && onSwapFood && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSwapFood(plan.id);
+                      }}
+                      className={cn(
+                        "shrink-0 p-2 rounded transition-colors",
+                        "text-muted-foreground hover:text-primary hover:bg-primary/10",
+                        "border border-transparent hover:border-primary/30"
+                      )}
+                      title="Swap food item"
+                    >
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </button>
                   )}
-                >
-                  {isCompleted && <Check className="h-3 w-3 text-white" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn("font-bold text-sm", isCompleted && "line-through opacity-70")}>
-                    {food?.name || "Unknown"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {food?.serving_size}
-                    {multiplier !== 1 && ` × ${multiplier}`}
-                  </p>
+                {/* Macro grid */}
+                <div className="grid grid-cols-4 gap-2 text-xs ml-8">
+                  <div className="text-center p-1.5 bg-background/50 rounded">
+                    <p className="font-bold text-orange-400">{calories}</p>
+                    <p className="text-muted-foreground text-[10px]">cal</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-background/50 rounded">
+                    <p className="font-bold text-blue-400">{protein}g</p>
+                    <p className="text-muted-foreground text-[10px]">protein</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-background/50 rounded">
+                    <p className="font-bold text-yellow-400">{carbs}g</p>
+                    <p className="text-muted-foreground text-[10px]">carbs</p>
+                  </div>
+                  <div className="text-center p-1.5 bg-background/50 rounded">
+                    <p className="font-bold text-pink-400">{fats}g</p>
+                    <p className="text-muted-foreground text-[10px]">fat</p>
+                  </div>
                 </div>
-                <div className="text-right text-xs shrink-0">
-                  <p className="font-bold">{calories} cal</p>
-                  <p className="text-muted-foreground">{protein}g protein</p>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>
       )}
 
       {/* Totals */}
-      <div className="flex items-center justify-between pt-2 border-t border-border">
-        <span className="text-sm font-bold">Total</span>
-        <div className="text-right">
-          <span className="font-bold">{item.metadata?.calories || 0} cal</span>
-          <span className="text-muted-foreground ml-2">{item.metadata?.protein || 0}g protein</span>
+      <div className="pt-3 border-t border-border">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-bold">Total</span>
+          <span className="font-bold">{totals.calories} cal</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="text-center p-2 bg-secondary rounded">
+            <p className="font-bold text-blue-400">{totals.protein}g</p>
+            <p className="text-muted-foreground">protein</p>
+          </div>
+          <div className="text-center p-2 bg-secondary rounded">
+            <p className="font-bold text-yellow-400">{totals.carbs}g</p>
+            <p className="text-muted-foreground">carbs</p>
+          </div>
+          <div className="text-center p-2 bg-secondary rounded">
+            <p className="font-bold text-pink-400">{totals.fats}g</p>
+            <p className="text-muted-foreground">fat</p>
+          </div>
         </div>
       </div>
     </div>
@@ -385,6 +484,7 @@ export function TimelineItemExpanded({
   onClose,
   isMarking = false,
   readOnly = false,
+  onSwapFood,
 }: TimelineItemExpandedProps) {
   const style = TYPE_STYLES[item.type];
   const Icon = style.icon;
@@ -473,6 +573,8 @@ export function TimelineItemExpanded({
               item={item}
               isSourceItemCompleted={isSourceItemCompleted}
               onToggleSourceItem={handleToggleSourceItem}
+              readOnly={readOnly}
+              onSwapFood={onSwapFood}
             />
           )}
           {item.type === "supplement" && (

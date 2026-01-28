@@ -22,6 +22,7 @@ export function useMealTypes(options: UseMealTypesOptions = {}) {
     resource: "meal_types",
     filters: includeInactive ? [] : [{ field: "is_active", operator: "eq", value: true }],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       retry: 1, // Retry once
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes

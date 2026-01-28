@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useList, useUpdate } from "@refinedev/core";
 import { Search, Trophy, UserPlus, Calendar, Target, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
@@ -145,20 +146,29 @@ export default function ChallengersPage() {
 
   // Handle upgrade to client
   const handleUpgradeToClient = async (challengerId: string) => {
+    const challenger = challengersWithStats.find((c) => c.id === challengerId);
+    const challengerName = challenger?.full_name || "Challenger";
+
     setUpgradingId(challengerId);
-    try {
-      await updateProfile({
+    updateProfile(
+      {
         resource: "profiles",
         id: challengerId,
         values: { role: "client" },
-      });
-      // Refresh the list
-      challengersQuery.query.refetch();
-    } catch (error) {
-      console.error("Error upgrading challenger:", error);
-    } finally {
-      setUpgradingId(null);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success(`${challengerName} upgraded to client`);
+          challengersQuery.query.refetch();
+          setUpgradingId(null);
+        },
+        onError: (error) => {
+          console.error("Error upgrading challenger:", error);
+          toast.error(`Failed to upgrade ${challengerName}. Please try again.`);
+          setUpgradingId(null);
+        },
+      }
+    );
   };
 
   // Format date for display

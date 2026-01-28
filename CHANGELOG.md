@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Food Swap in Timeline View**: Clients can now swap food items directly from the timeline view:
+  - Swap button (arrow icon) on each food item in meal details modal/sheet
+  - `FoodAlternativesDrawer` integration querying `food_item_alternatives` table
+  - Vegetarian filter, calorie comparison indicators (optimal/higher/lower)
+  - Toast notifications for successful swaps with immediate UI update
+  - Swap functionality available on both desktop and mobile timeline views
+
 - **Bulk Notifications for Multiple Clients**: Admin can select multiple clients from the client list and send bulk notifications
   - `BulkNotificationModal` component for composing notifications to selected clients
   - `SelectionActionBar` floating action bar during selection mode with selected count
@@ -25,12 +32,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Admin Config Tables Icon-Only Actions**: Changed edit/delete buttons to icon-only style in all admin configuration tables:
+  - Food Items, Supplements, Exercises, Lifestyle Activities, Meal Types, Conditions
+  - Hover effects for better UX (secondary background on edit, red highlight on delete)
+  - More space for content columns
+
+- **Food Items Table Serving Size**: Added serving size column to food items admin table for quick reference
+
 - **Consolidated Seed Files**: Merged 8 separate seed files into unified `seed.sql` and `seed-users.sh`:
   - `seed.sql` contains all library data (food items, supplements, exercises, lifestyle activities, medical conditions, meal types)
   - `seed-users.sh` creates auth users via Supabase Admin API (compatible with hosted Supabase)
   - Removed: `seed-admin-test-data.sql`, `seed-challenger-data.sql`, `seed-challenger-users.sh`, `seed-compatibility-test-data.sql`, `seed-lifestyle-activities.sql`, `seed-nutrition-data.sql`, `seed-test-users.sh`, `seed-workout-data.sql`
 
 ### Fixed
+
+- **Challenger Upgrade Feedback**: Added toast notifications when upgrading a challenger to client:
+  - Success toast confirming upgrade completion
+  - Error toast with message if upgrade fails
+  - Resolves silent upgrade issue with no user feedback
 
 - **Invite Client Flow**: Multiple fixes to client invitation process:
   - Explicitly set `role: 'client'` in profile update (trigger default was 'challenger')
