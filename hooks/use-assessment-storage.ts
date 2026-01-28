@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react";
 import { AssessmentScores } from "./use-assessment";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { saveAssessmentResults, saveCalculatorResults } from "./use-profile-completion";
+import { generateUUID } from "@/lib/utils";
 
 /**
  * LocalStorage keys for assessment and calculator history
@@ -289,7 +290,7 @@ export async function migrateLocalStorageToDatabase(userId: string): Promise<{
   const errors: string[] = [];
 
   // Generate or retrieve visitor ID
-  const visitorId = window.localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
+  const visitorId = window.localStorage.getItem("metabolikal_visitor_id") || generateUUID();
 
   // =====================
   // MIGRATE ASSESSMENT

@@ -41,6 +41,7 @@ import {
   saveCalculatorResults,
 } from "@/hooks/use-profile-completion";
 import { CalculatorFormData } from "@/lib/validations";
+import { generateUUID } from "@/lib/utils";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -235,7 +236,7 @@ export default function LandingPage() {
   const handleAssessmentContinue = async () => {
     // Save assessment results to database for authenticated users
     if (isAuthenticated && profileCompletion.user) {
-      const visitorId = localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
+      const visitorId = localStorage.getItem("metabolikal_visitor_id") || generateUUID();
       // Save in background - don't await or refetch to avoid UI jank
       saveAssessmentResults(profileCompletion.user.id, scores, visitorId);
     }

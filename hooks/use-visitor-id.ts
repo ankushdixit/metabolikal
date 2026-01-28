@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { generateUUID } from "@/lib/utils";
 
 const VISITOR_ID_KEY = "metabolikal_visitor_id";
 
@@ -19,7 +20,7 @@ export function useVisitorId() {
 
     if (!id) {
       // Generate new UUID for first-time visitors
-      id = crypto.randomUUID();
+      id = generateUUID();
       localStorage.setItem(VISITOR_ID_KEY, id);
     }
 

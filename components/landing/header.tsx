@@ -36,7 +36,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md safe-area-top">
       {/* Top accent bar */}
       <div className="h-1 gradient-electric" />
 
