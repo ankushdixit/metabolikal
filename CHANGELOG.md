@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **iPhone Safe Area Handling**: Fixed header appearing to float on iPhone due to content scrolling behind the notch/Dynamic Island
+  - Added `viewportFit: "cover"` to viewport metadata for proper safe area support
+  - Added `safe-area-top` CSS utility class using `env(safe-area-inset-top)`
+  - Updated mobile headers (dashboard, admin, landing) to extend background into safe area
+  - Added `pt-mobile-header` CSS class for content padding that accounts for header + safe area
+
+- **PWA Icons**: Replaced placeholder "M" SVG icons with actual wolf/flame logo
+  - Generated PNG icons at all required sizes (72x72 through 512x512) from logo
+  - Added `apple-touch-icon.png` (180x180) for iOS home screen
+  - Updated `manifest.json` to use PNG icons with proper `maskable` variants
+  - Added icons metadata to `app/layout.tsx` for better browser support
+
+- **UUID Generation Compatibility**: Fixed `crypto.randomUUID is not a function` error on older Safari/iOS
+  - Added `generateUUID()` utility function with fallbacks (crypto.randomUUID → crypto.getRandomValues → Math.random)
+  - Updated `use-visitor-id.ts`, `use-assessment-storage.ts`, and landing page to use the new utility
+
 ### Added
 
 - **Push Notification System**: Complete PWA push notification infrastructure for mobile and desktop:

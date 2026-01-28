@@ -74,7 +74,7 @@ export function MobileNav() {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border safe-area-top">
         <div className="h-1 gradient-electric" />
         <div className="flex h-16 items-center justify-between px-4">
           {/* Hamburger Button */}
@@ -127,7 +127,7 @@ export function MobileNav() {
       {/* Mobile Menu Drawer */}
       <div
         className={cn(
-          "lg:hidden fixed top-0 left-0 bottom-0 z-50 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-in-out",
+          "lg:hidden fixed top-0 left-0 bottom-0 z-50 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-in-out safe-area-top",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

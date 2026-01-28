@@ -22,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminHeader />
 
           {/* Main Content */}
-          <main className="flex-1 p-4 lg:p-6 pt-20 lg:pt-6">{children}</main>
+          <main className="flex-1 p-4 lg:p-6 pt-mobile-header lg:pt-6">{children}</main>
         </div>
       </div>
     </div>
