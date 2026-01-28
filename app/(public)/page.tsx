@@ -29,7 +29,6 @@ import {
   calculateHealthScore,
   calculateBmrMifflinStJeor,
   calculateBmrKatchMcArdle,
-  calculateMetabolicImpact,
   calculateProteinRecommendation,
   ACTIVITY_MULTIPLIERS,
   GOAL_ADJUSTMENTS,
@@ -126,7 +125,8 @@ export default function LandingPage() {
 
   // Assessment storage for localStorage persistence
   const assessmentStorage = useAssessmentStorage();
-  const { getPreviousAssessment, saveAssessmentWithHealthScore } = assessmentStorage;
+  const { getPreviousAssessment, saveAssessmentWithHealthScore, saveCalculator } =
+    assessmentStorage;
 
   // Track previous assessment for comparison (loaded once on mount)
   const [previousAssessment, setPreviousAssessment] = useState<StoredAssessment | null>(null);
@@ -171,7 +171,7 @@ export default function LandingPage() {
           activityLevel: calculatorData.activityLevel,
           goal: calculatorData.goal,
           goalWeightKg: calculatorData.goalWeightKg,
-          medicalConditions: calculatorData.medicalConditions,
+          metabolicImpactPercent: calculatorData.metabolicImpactPercent,
         }
       : null
   );
@@ -247,6 +247,7 @@ export default function LandingPage() {
     setCalculatorData(data);
 
     // Calculate results using exported functions (not calling hook)
+    // metabolicImpactPercent is pre-calculated from database conditions in the calculator modal
     const bmr =
       data.bodyFatPercent !== undefined
         ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
@@ -254,7 +255,7 @@ export default function LandingPage() {
 
     const activityMultiplier = ACTIVITY_MULTIPLIERS[data.activityLevel].multiplier;
     const tdee = bmr * activityMultiplier;
-    const metabolicImpactPercent = calculateMetabolicImpact(data.medicalConditions);
+    const metabolicImpactPercent = data.metabolicImpactPercent;
     const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);
     const goalAdjustment = GOAL_ADJUSTMENTS[data.goal].adjustment;
     const targetCalories = Math.round(adjustedTdee + goalAdjustment);
@@ -267,20 +268,38 @@ export default function LandingPage() {
       targetCalories
     );
 
-    // Save to localStorage for anonymous users (always save so returning visitors see progress)
+    // Save to localStorage for all users (so returning visitors see progress and for migration after signup)
     saveAssessmentWithHealthScore(scores, lifestyleScore, calculatedHealthScore);
+
+    // Calculate macros (needed for both localStorage and database saves)
+    const proteinCalories = proteinGrams * 4;
+    const fatCalories = targetCalories * 0.25;
+    const carbCalories = targetCalories - proteinCalories - fatCalories;
+    const fatsGrams = Math.round(fatCalories / 9);
+    const carbsGrams = Math.round(carbCalories / 4);
+
+    // Save calculator to localStorage (for migration after signup)
+    saveCalculator(
+      {
+        gender: data.gender,
+        age: data.age,
+        weight: data.weightKg,
+        height: data.heightCm,
+        activityLevel: data.activityLevel,
+        goal: data.goal,
+      },
+      {
+        bmr: Math.round(bmr),
+        tdee: Math.round(tdee),
+        targetCalories,
+        protein: proteinGrams,
+        carbs: carbsGrams,
+        fats: fatsGrams,
+      }
+    );
 
     // Save calculator results to database for authenticated users
     if (isAuthenticated && profileCompletion.user) {
-      // Calculate macros from target calories
-      // Fat: 25% of target calories / 9 cal per gram
-      // Carbs: remaining calories / 4 cal per gram
-      const proteinCalories = proteinGrams * 4;
-      const fatCalories = targetCalories * 0.25;
-      const carbCalories = targetCalories - proteinCalories - fatCalories;
-      const fatsGrams = Math.round(fatCalories / 9);
-      const carbsGrams = Math.round(carbCalories / 4);
-
       // Save in background - don't await to avoid UI jank
       saveCalculatorResults(
         profileCompletion.user.id,

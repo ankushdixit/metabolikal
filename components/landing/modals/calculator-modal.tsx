@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -31,9 +30,8 @@ import {
 import {
   useMedicalConditions,
   calculateMetabolicImpactFromConditions,
-  DEFAULT_MEDICAL_CONDITIONS,
 } from "@/hooks/use-medical-conditions";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 interface CalculatorModalProps {
   open: boolean;
@@ -69,21 +67,19 @@ export function CalculatorModal({
       goal: "fat_loss",
       goalWeightKg: undefined,
       medicalConditions: [],
+      metabolicImpactPercent: 0,
     },
   });
 
   const watchedGender = watch("gender");
 
   // Fetch medical conditions from database
-  const {
-    conditions: dbConditions,
-    isLoading: isLoadingConditions,
-    error: conditionsError,
-  } = useMedicalConditions({
+  const { conditions: dbConditions, isLoading: isLoadingConditions } = useMedicalConditions({
     gender: watchedGender,
   });
 
-  // Use database conditions, fallback to defaults if fetch fails
+  // Use database conditions - NO FALLBACK
+  // If conditions fail to load, show an error state
   interface ConditionOption {
     id: string;
     slug: string;
@@ -93,17 +89,6 @@ export function CalculatorModal({
   }
 
   const availableConditions: ConditionOption[] = useMemo(() => {
-    if (conditionsError || dbConditions.length === 0) {
-      return DEFAULT_MEDICAL_CONDITIONS.filter(
-        (c) => c.gender_restriction === null || c.gender_restriction === watchedGender
-      ).map((c) => ({
-        id: c.slug,
-        slug: c.slug,
-        label: c.name,
-        impact: c.impact_percent,
-        genderRestriction: c.gender_restriction,
-      }));
-    }
     return dbConditions.map((c) => ({
       id: c.slug,
       slug: c.slug,
@@ -111,32 +96,17 @@ export function CalculatorModal({
       impact: c.impact_percent,
       genderRestriction: c.gender_restriction,
     }));
-  }, [dbConditions, conditionsError, watchedGender]);
+  }, [dbConditions]);
 
   // Update metabolic impact when conditions change
   useEffect(() => {
-    const conditionsForCalc =
-      conditionsError || dbConditions.length === 0
-        ? DEFAULT_MEDICAL_CONDITIONS.map((c) => ({
-            id: c.slug,
-            slug: c.slug,
-            name: c.name,
-            impact_percent: c.impact_percent,
-            gender_restriction: c.gender_restriction,
-            description: null,
-            is_active: true,
-            display_order: 0,
-            created_at: "",
-            updated_at: "",
-          }))
-        : dbConditions;
-
-    const impact = calculateMetabolicImpactFromConditions(selectedConditions, conditionsForCalc);
+    const impact = calculateMetabolicImpactFromConditions(selectedConditions, dbConditions);
     setMetabolicImpact(impact);
     setValue("medicalConditions", selectedConditions as CalculatorFormData["medicalConditions"]);
-  }, [selectedConditions, setValue, dbConditions, conditionsError]);
+  }, [selectedConditions, dbConditions, setValue]);
 
-  const handleConditionToggle = (conditionId: string) => {
+  // Memoize the toggle handler to prevent unnecessary re-renders
+  const handleConditionToggle = useCallback((conditionId: string) => {
     setSelectedConditions((prev) => {
       // If selecting "none", clear all other selections
       if (conditionId === "none") {
@@ -150,11 +120,15 @@ export function CalculatorModal({
       }
       return [...withoutNone, conditionId];
     });
-  };
+  }, []);
 
   const onSubmit = (data: CalculatorFormData) => {
     onOpenChange(false);
-    onCalculate(data);
+    // Include the pre-calculated metabolic impact from database conditions
+    onCalculate({
+      ...data,
+      metabolicImpactPercent: metabolicImpact,
+    });
   };
 
   const handleViewGuide = () => {
@@ -408,29 +382,55 @@ export function CalculatorModal({
                     Loading conditions...
                   </div>
                 ) : (
-                  availableConditions.map((condition) => (
-                    <div
-                      key={condition.id}
-                      className="athletic-card p-4 pl-6 flex items-center gap-3 cursor-pointer hover:glow-power transition-all"
-                      onClick={() => handleConditionToggle(condition.id)}
-                    >
-                      <Checkbox
-                        id={condition.id}
-                        checked={selectedConditions.includes(condition.id)}
-                        onCheckedChange={() => handleConditionToggle(condition.id)}
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor={condition.id} className="font-bold text-sm cursor-pointer">
-                          {condition.label}
-                        </Label>
-                        {condition.impact > 0 && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            (-{condition.impact}%)
-                          </span>
-                        )}
+                  availableConditions.map((condition) => {
+                    const isChecked = selectedConditions.includes(condition.id);
+                    return (
+                      <div
+                        key={condition.id}
+                        role="button"
+                        tabIndex={0}
+                        className="athletic-card p-4 pl-6 flex items-center gap-3 cursor-pointer hover:glow-power transition-all"
+                        onClick={() => handleConditionToggle(condition.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleConditionToggle(condition.id);
+                          }
+                        }}
+                      >
+                        {/* Checkbox is display-only - parent div handles all interaction */}
+                        <div
+                          className={`h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background ${
+                            isChecked ? "bg-primary text-primary-foreground" : ""
+                          } flex items-center justify-center`}
+                          aria-hidden="true"
+                        >
+                          {isChecked && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-bold text-sm">{condition.label}</span>
+                          {condition.impact > 0 && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              (-{condition.impact}%)
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

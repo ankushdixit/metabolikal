@@ -7,12 +7,8 @@
 
 -- Drop the unique constraint
 -- The constraint was created inline in the table definition, so it has an auto-generated name.
--- We need to find and drop it by looking for unique constraints on these columns.
+-- Dropping the constraint will automatically drop the associated index.
 
--- First, let's drop any indexes that might enforce uniqueness
-DROP INDEX IF EXISTS diet_plans_client_id_day_number_meal_category_key;
-
--- Drop the constraint (PostgreSQL auto-names inline constraints)
 ALTER TABLE diet_plans
   DROP CONSTRAINT IF EXISTS diet_plans_client_id_day_number_meal_category_key;
 

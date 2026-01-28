@@ -47,19 +47,13 @@ export const calculatorFormSchema = z.object({
     })
     .min(30, { message: "Goal weight must be at least 30 kg" })
     .max(300, { message: "Goal weight must be 300 kg or less" }),
-  medicalConditions: z.array(
-    z.enum([
-      "hypothyroidism",
-      "pcos",
-      "type2_diabetes",
-      "insulin_resistance",
-      "sleep_apnea",
-      "metabolic_syndrome",
-      "thyroid_managed",
-      "chronic_fatigue",
-      "none",
-    ])
-  ),
+  medicalConditions: z.array(z.string()),
+  /**
+   * Pre-calculated metabolic impact percentage from selected conditions.
+   * This is calculated from database conditions in the calculator modal
+   * and passed along with the form data.
+   */
+  metabolicImpactPercent: z.number().min(0).max(100),
 });
 
 export type CalculatorFormData = z.infer<typeof calculatorFormSchema>;
@@ -200,20 +194,6 @@ export const checkInStep1Schema = checkInSchema.pick({
   arms_cm: true,
   thighs_cm: true,
 });
-
-/**
- * Meal types for food items.
- */
-export const MEAL_TYPES = [
-  { value: "breakfast", label: "Breakfast" },
-  { value: "lunch", label: "Lunch" },
-  { value: "dinner", label: "Dinner" },
-  { value: "snack", label: "Snack" },
-  { value: "pre-workout", label: "Pre-Workout" },
-  { value: "post-workout", label: "Post-Workout" },
-] as const;
-
-export type MealType = (typeof MEAL_TYPES)[number]["value"];
 
 /**
  * Food item validation schema.

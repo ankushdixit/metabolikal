@@ -67,7 +67,7 @@ export function Footer() {
             {/* Social Icons */}
             <div className="flex items-center gap-3">
               <a
-                href="https://youtube.com"
+                href="https://www.youtube.com/@Metabolikal_1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-secondary hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -76,7 +76,7 @@ export function Footer() {
                 <YoutubeIcon className="h-5 w-5" />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/metabolikal"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-secondary hover:bg-primary hover:text-primary-foreground transition-colors"

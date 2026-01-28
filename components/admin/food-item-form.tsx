@@ -3,7 +3,8 @@
 import { FieldErrors, UseFormRegister, UseFormWatch, UseFormSetValue } from "react-hook-form";
 import { AlertCircle, Leaf, Loader2, Scale, Ban, ArrowLeftRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMealTypes, DEFAULT_MEAL_TYPES } from "@/hooks/use-meal-types";
+import { useMealTypes } from "@/hooks/use-meal-types";
+import { AlertTriangle } from "lucide-react";
 import { ConditionSelector } from "./condition-selector";
 import { FoodAlternativesSelector } from "./food-alternatives-selector";
 import { type FoodItemFormData } from "@/lib/validations";
@@ -39,18 +40,18 @@ export function FoodItemForm({
   const selectedConditionIds = (watch("avoid_for_conditions") || []) as string[];
   const selectedAlternativeIds = (watch("alternative_food_ids") || []) as string[];
 
-  // Fetch meal types from database
+  // Fetch meal types from database - NO FALLBACK
   const {
     mealTypes: dbMealTypes,
     isLoading: isLoadingMealTypes,
     error: mealTypesError,
   } = useMealTypes();
 
-  // Use database meal types, fallback to defaults if fetch fails
-  const mealTypes: { value: string; label: string }[] =
-    mealTypesError || dbMealTypes.length === 0
-      ? DEFAULT_MEAL_TYPES.map((mt) => ({ value: mt.slug, label: mt.name }))
-      : dbMealTypes.map((mt) => ({ value: mt.slug, label: mt.name }));
+  // Use database meal types directly
+  const mealTypes: { value: string; label: string }[] = dbMealTypes.map((mt) => ({
+    value: mt.slug,
+    label: mt.name,
+  }));
 
   const handleMealTypeToggle = (mealType: string) => {
     const currentTypes = selectedMealTypes || [];
@@ -310,6 +311,26 @@ export function FoodItemForm({
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm font-bold">Loading meal types...</span>
+          </div>
+        ) : mealTypesError ? (
+          <div className="p-4 border border-destructive/50 bg-destructive/10 rounded">
+            <div className="flex items-center gap-2 text-destructive text-sm font-bold">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Failed to load meal types</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Please ensure the database is running and seeded.
+            </p>
+          </div>
+        ) : mealTypes.length === 0 ? (
+          <div className="p-4 border border-yellow-500/50 bg-yellow-500/10 rounded">
+            <div className="flex items-center gap-2 text-yellow-500 text-sm font-bold">
+              <AlertTriangle className="h-4 w-4" />
+              <span>No meal types found</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Please seed the database with meal types.
+            </p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">

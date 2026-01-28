@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { AssessmentScores } from "./use-assessment";
 import { createBrowserSupabaseClient } from "@/lib/auth";
-import { saveAssessmentResults } from "./use-profile-completion";
+import { saveAssessmentResults, saveCalculatorResults } from "./use-profile-completion";
 
 /**
  * LocalStorage keys for assessment and calculator history
@@ -266,82 +266,154 @@ export function calculateScoreComparison(
 }
 
 /**
- * Migrate assessment data from localStorage to database after login/signup.
+ * Migrate assessment and calculator data from localStorage to database after login/signup.
  * Called after successful authentication to persist anonymous user data.
  *
  * @param userId - The authenticated user's ID
- * @returns Promise with success status and any errors
+ * @returns Promise with success status and migration details
  */
-export async function migrateLocalStorageToDatabase(
-  userId: string
-): Promise<{ success: boolean; migrated: boolean; error?: string }> {
+export async function migrateLocalStorageToDatabase(userId: string): Promise<{
+  success: boolean;
+  assessmentMigrated: boolean;
+  calculatorMigrated: boolean;
+  error?: string;
+}> {
   // Check if localStorage is available
   if (typeof window === "undefined") {
-    return { success: true, migrated: false };
+    return { success: true, assessmentMigrated: false, calculatorMigrated: false };
   }
 
+  const supabase = createBrowserSupabaseClient();
+  let assessmentMigrated = false;
+  let calculatorMigrated = false;
+  const errors: string[] = [];
+
+  // Generate or retrieve visitor ID
+  const visitorId = window.localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
+
+  // =====================
+  // MIGRATE ASSESSMENT
+  // =====================
   try {
-    // Check for stored assessment data
-    const storedData = window.localStorage.getItem(STORAGE_KEY_ASSESSMENT);
+    const storedAssessment = window.localStorage.getItem(STORAGE_KEY_ASSESSMENT);
 
-    if (!storedData) {
-      // No data to migrate
-      return { success: true, migrated: false };
-    }
-
-    // Parse the stored assessment
-    let assessment: StoredAssessment;
-    try {
-      assessment = JSON.parse(storedData) as StoredAssessment;
-    } catch {
-      // Corrupted data - clear it and return
-      window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
-      return { success: true, migrated: false, error: "Corrupted localStorage data cleared" };
-    }
-
-    // Validate assessment data has required fields
-    if (!assessment.scores || !assessment.date) {
-      window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
-      return { success: true, migrated: false, error: "Invalid localStorage data cleared" };
-    }
-
-    // Check if user already has assessment data in database
-    const supabase = createBrowserSupabaseClient();
-    const { data: existingAssessment } = await supabase
-      .from("assessment_results")
-      .select("id, assessed_at")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    // If user already has database data, compare dates
-    if (existingAssessment) {
-      const localDate = new Date(assessment.date);
-      const dbDate = new Date(existingAssessment.assessed_at);
-
-      // Only migrate if localStorage data is newer
-      if (localDate <= dbDate) {
-        // Database has newer or same data, clear localStorage
+    if (storedAssessment) {
+      let assessment: StoredAssessment;
+      try {
+        assessment = JSON.parse(storedAssessment) as StoredAssessment;
+      } catch {
         window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
-        return { success: true, migrated: false };
+        errors.push("Corrupted assessment data cleared");
+        assessment = null as unknown as StoredAssessment;
+      }
+
+      if (assessment?.scores && assessment?.date) {
+        // Check if user already has assessment in database
+        const { data: existingAssessment } = await supabase
+          .from("assessment_results")
+          .select("id, assessed_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        // Only migrate if no existing data or localStorage is newer
+        let shouldMigrate = !existingAssessment;
+        if (existingAssessment) {
+          const localDate = new Date(assessment.date);
+          const dbDate = new Date(existingAssessment.assessed_at);
+          shouldMigrate = localDate > dbDate;
+        }
+
+        if (shouldMigrate) {
+          const result = await saveAssessmentResults(userId, assessment.scores, visitorId);
+          if (result.success) {
+            assessmentMigrated = true;
+            window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
+          } else {
+            errors.push(`Assessment migration failed: ${result.error}`);
+          }
+        } else {
+          // Database has newer data, clear localStorage
+          window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
+        }
       }
     }
-
-    // Generate or retrieve visitor ID
-    const visitorId = window.localStorage.getItem("metabolikal_visitor_id") || crypto.randomUUID();
-
-    // Migrate assessment to database
-    const result = await saveAssessmentResults(userId, assessment.scores, visitorId);
-
-    if (!result.success) {
-      return { success: false, migrated: false, error: result.error };
-    }
-
-    // Clear localStorage after successful migration
-    window.localStorage.removeItem(STORAGE_KEY_ASSESSMENT);
-
-    return { success: true, migrated: true };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, migrated: false, error: errorMessage };
+    errors.push(`Assessment error: ${error instanceof Error ? error.message : String(error)}`);
   }
+
+  // =====================
+  // MIGRATE CALCULATOR
+  // =====================
+  try {
+    const storedCalculator = window.localStorage.getItem(STORAGE_KEY_CALCULATOR);
+
+    if (storedCalculator) {
+      let calculator: StoredCalculator;
+      try {
+        calculator = JSON.parse(storedCalculator) as StoredCalculator;
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY_CALCULATOR);
+        errors.push("Corrupted calculator data cleared");
+        calculator = null as unknown as StoredCalculator;
+      }
+
+      if (calculator?.inputs && calculator?.results && calculator?.date) {
+        // Check if user already has calculator in database
+        const { data: existingCalculator } = await supabase
+          .from("calculator_results")
+          .select("id, updated_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        // Only migrate if no existing data or localStorage is newer
+        let shouldMigrate = !existingCalculator;
+        if (existingCalculator) {
+          const localDate = new Date(calculator.date);
+          const dbDate = new Date(existingCalculator.updated_at);
+          shouldMigrate = localDate > dbDate;
+        }
+
+        if (shouldMigrate) {
+          const result = await saveCalculatorResults(
+            userId,
+            {
+              gender: calculator.inputs.gender,
+              age: calculator.inputs.age,
+              weightKg: calculator.inputs.weight,
+              heightCm: calculator.inputs.height,
+              activityLevel: calculator.inputs.activityLevel,
+              goal: calculator.inputs.goal,
+            },
+            {
+              bmr: calculator.results.bmr,
+              tdee: calculator.results.tdee,
+              targetCalories: calculator.results.targetCalories,
+              proteinGrams: calculator.results.protein,
+              carbsGrams: calculator.results.carbs,
+              fatsGrams: calculator.results.fats,
+            }
+          );
+
+          if (result.success) {
+            calculatorMigrated = true;
+            window.localStorage.removeItem(STORAGE_KEY_CALCULATOR);
+          } else {
+            errors.push(`Calculator migration failed: ${result.error}`);
+          }
+        } else {
+          // Database has newer data, clear localStorage
+          window.localStorage.removeItem(STORAGE_KEY_CALCULATOR);
+        }
+      }
+    }
+  } catch (error) {
+    errors.push(`Calculator error: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  return {
+    success: errors.length === 0,
+    assessmentMigrated,
+    calculatorMigrated,
+    error: errors.length > 0 ? errors.join("; ") : undefined,
+  };
 }

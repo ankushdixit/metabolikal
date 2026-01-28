@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { User } from "@supabase/supabase-js";
 import { CalculatorResult } from "@/lib/database.types";
+import { migrateLocalStorageToDatabase } from "./use-assessment-storage";
 
 interface ProfileCompletionState {
   isLoading: boolean;
@@ -42,6 +43,9 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
   // Memoize Supabase client to prevent recreation on every render
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
+  // Track if migration has been attempted for current user (avoid repeated calls)
+  const migrationAttempted = useRef<string | null>(null);
+
   const checkProfileCompletion = useCallback(async () => {
     if (!supabase) {
       setState((prev) => ({ ...prev, isLoading: false }));
@@ -67,7 +71,27 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
           calculatorResults: null,
           proteinTarget: null,
         });
+        // Reset migration tracking when logged out
+        migrationAttempted.current = null;
         return;
+      }
+
+      // Migrate localStorage data to database if this is a new login/signup
+      // Only attempt migration once per user session to avoid repeated calls
+      if (migrationAttempted.current !== user.id) {
+        migrationAttempted.current = user.id;
+        try {
+          const migrationResult = await migrateLocalStorageToDatabase(user.id);
+          if (migrationResult.assessmentMigrated || migrationResult.calculatorMigrated) {
+            console.log("Migration completed:", {
+              assessment: migrationResult.assessmentMigrated,
+              calculator: migrationResult.calculatorMigrated,
+            });
+          }
+        } catch (migrationError) {
+          // Log but don't fail - migration is best-effort
+          console.error("Migration error:", migrationError);
+        }
       }
 
       // Check for assessment results
