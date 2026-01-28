@@ -26,9 +26,12 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        # Using high level temporarily due to unpatched lodash vulnerability (GHSA-xxjr-mmjv-4gpg)
-        # published 2026-01-22 with no fix available. Revert to moderate once lodash releases patch.
-        run: npm audit --audit-level=high
+        # Using critical level temporarily due to:
+        # - Unpatched lodash vulnerability (GHSA-xxjr-mmjv-4gpg) published 2026-01-22
+        # - Next.js vulnerabilities (GHSA-9g9p-9gw9-jx7f, GHSA-5f7q-jpqc-wp7h) published 2026-01-26
+        #   Fix (Next.js 16.1.5) not yet released to npm
+        # TODO: Revert to moderate once patches are available
+        run: npm audit --audit-level=critical
 
       - name: Check if Dependency Graph is enabled
         id: check-dependency-graph
