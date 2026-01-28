@@ -15,6 +15,33 @@ import {
 import { cn } from "@/lib/utils";
 import type { CheckIn } from "@/lib/database.types";
 
+/**
+ * Send push notification to client about check-in review
+ */
+async function sendPushNotification(clientId: string, checkInId: string, message: string) {
+  try {
+    await fetch("/api/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userIds: [clientId],
+        notification: {
+          title: "Check-in Reviewed",
+          body: message.length > 100 ? `${message.slice(0, 97)}...` : message,
+          data: {
+            url: "/dashboard/checkin/history",
+            type: "checkin_review",
+            relatedId: checkInId,
+          },
+        },
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to send push notification:", error);
+    // Don't throw - push notification failure shouldn't block the flow
+  }
+}
+
 interface CheckInReviewProps {
   checkIn: CheckIn;
   previousCheckIn?: CheckIn | null;
@@ -69,6 +96,8 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
             },
             {
               onSuccess: () => {
+                // Send push notification to client
+                sendPushNotification(checkIn.client_id, checkIn.id, trimmedNotes);
                 setNotesSaved(true);
                 setTimeout(() => setNotesSaved(false), 2000);
                 onUpdate?.();

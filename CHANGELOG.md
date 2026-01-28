@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Push Notification System**: Complete PWA push notification infrastructure for mobile and desktop:
+  - **PWA Infrastructure**: `manifest.json` with app metadata, service worker (`sw.js`) for push event handling and notification clicks, SVG placeholder icons (72x72 through 512x512)
+  - **Database Tables**: `push_subscriptions` (stores device subscriptions with endpoint, keys, device type) and `notification_preferences` (user preferences for push, quiet hours, notification types) with RLS policies
+  - **API Routes**: `/api/push/subscribe`, `/api/push/unsubscribe`, `/api/push/test`, `/api/push/send` (admin only)
+  - **Push Service Library** (`lib/push-service.ts`): VAPID authentication with web-push, `sendPushToUser()`, `sendPushToUsers()`, `sendPushToAdmins()` functions with preference checking and quiet hours support
+  - **Client-Side Components**: `usePushSubscription` hook for subscription state management, `PushPermissionPrompt` banner for requesting permission, `NotificationSettings` for user preferences UI
+  - **iOS PWA Support**: `IOSInstallPrompt` component with step-by-step installation guide, `appleWebApp` metadata for standalone mode
+  - **Integration Points**: Check-in submission notifies admins, check-in review notifies client, individual and bulk messages trigger push notifications
+  - **Notification Settings**: Added to client profile page with enable/disable toggle, notification type preferences, quiet hours configuration, and test notification button
+  - **Environment Variables**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT_EMAIL`
+  - 39 new tests for push notification components and services
+
 - **Food Swap in Timeline View**: Clients can now swap food items directly from the timeline view:
   - Swap button (arrow icon) on each food item in meal details modal/sheet
   - `FoodAlternativesDrawer` integration querying `food_item_alternatives` table

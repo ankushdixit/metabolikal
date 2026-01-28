@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import ClientRefineWrapper from "@/components/client-refine-wrapper";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://metabolikal.com";
 
 export const metadata: Metadata = {
+  manifest: "/manifest.json",
   title: {
     default: "METABOLI-K-AL - You Don't Need More Hustle, You Need Rhythm",
     template: "%s | METABOLI-K-AL",
@@ -64,6 +66,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Metabolikal",
+  },
 };
 
 export const viewport: Viewport = {
@@ -85,6 +92,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ClientRefineWrapper>{children}</ClientRefineWrapper>
+        <ServiceWorkerRegister />
         <Toaster
           position="top-right"
           toastOptions={{

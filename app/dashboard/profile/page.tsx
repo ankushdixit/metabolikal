@@ -8,6 +8,7 @@ import { ProfileDetailsCard } from "@/components/dashboard/profile-details-card"
 import { ProfilePlanCard } from "@/components/dashboard/profile-plan-card";
 import { ProfileConditionsCard } from "@/components/dashboard/profile-conditions-card";
 import { ProfileTargetsCard } from "@/components/dashboard/profile-targets-card";
+import { NotificationSettings } from "@/components/push/notification-settings";
 import { useClientProfileData, calculatePlanInfo } from "@/hooks/use-client-profile-data";
 import type { Profile } from "@/lib/database.types";
 
@@ -131,6 +132,17 @@ export default function ProfilePage() {
         futureLimits={futureLimits}
         isLoading={isProfileDataLoading}
       />
+
+      {/* Notification Settings Card */}
+      <div className="athletic-card p-6 pl-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-1 gradient-electric" />
+          <h2 className="text-lg font-black uppercase tracking-tight">
+            Notification <span className="gradient-athletic">Settings</span>
+          </h2>
+        </div>
+        <NotificationSettings userId={userId} />
+      </div>
     </div>
   );
 }

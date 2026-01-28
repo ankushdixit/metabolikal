@@ -201,7 +201,31 @@ export default function CheckInPage() {
           },
         },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
+            // Send push notification to admins about the new check-in
+            try {
+              const profile = profileQuery.query.data?.data?.[0];
+              const clientName = profile?.full_name || "A client";
+              await fetch("/api/push/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userIds: [], // Empty = send to all admins
+                  notification: {
+                    title: "New Check-In Submitted",
+                    body: `${clientName} submitted their weekly check-in`,
+                    data: {
+                      url: `/admin/clients/${userId}`,
+                      type: "checkin_submitted",
+                    },
+                  },
+                }),
+              });
+            } catch (error) {
+              console.error("Failed to send push notification:", error);
+              // Don't block success on push notification failure
+            }
+
             setSubmitSuccess(true);
             // Redirect after a short delay to show success message
             setTimeout(() => {
