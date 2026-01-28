@@ -379,7 +379,7 @@ describe("migrateLocalStorageToDatabase", () => {
     const result = await migrateLocalStorageToDatabase("user-123");
 
     expect(result.success).toBe(true);
-    expect(result.migrated).toBe(false);
+    expect(result.assessmentMigrated).toBe(false);
     expect(mockSaveAssessmentResults).not.toHaveBeenCalled();
   });
 
@@ -390,7 +390,7 @@ describe("migrateLocalStorageToDatabase", () => {
     const result = await migrateLocalStorageToDatabase("user-123");
 
     expect(result.success).toBe(true);
-    expect(result.migrated).toBe(true);
+    expect(result.assessmentMigrated).toBe(true);
     expect(mockSaveAssessmentResults).toHaveBeenCalledWith(
       "user-123",
       validAssessment.scores,
@@ -411,7 +411,7 @@ describe("migrateLocalStorageToDatabase", () => {
     const result = await migrateLocalStorageToDatabase("user-123");
 
     expect(result.success).toBe(true);
-    expect(result.migrated).toBe(false);
+    expect(result.assessmentMigrated).toBe(false);
     expect(mockSaveAssessmentResults).not.toHaveBeenCalled();
     // Should still clear localStorage
     expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY_ASSESSMENT);
@@ -435,7 +435,7 @@ describe("migrateLocalStorageToDatabase", () => {
     const result = await migrateLocalStorageToDatabase("user-123");
 
     expect(result.success).toBe(true);
-    expect(result.migrated).toBe(true);
+    expect(result.assessmentMigrated).toBe(true);
     expect(mockSaveAssessmentResults).toHaveBeenCalled();
   });
 
@@ -444,13 +444,13 @@ describe("migrateLocalStorageToDatabase", () => {
 
     const result = await migrateLocalStorageToDatabase("user-123");
 
-    expect(result.success).toBe(true);
-    expect(result.migrated).toBe(false);
-    expect(result.error).toContain("Corrupted");
+    // Corrupted data is cleared but operation succeeds (just nothing to migrate)
+    expect(result.assessmentMigrated).toBe(false);
+    expect(result.error).toContain("Corrupted assessment data");
     expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY_ASSESSMENT);
   });
 
-  it("clears invalid localStorage data (missing required fields)", async () => {
+  it("skips invalid localStorage data (missing required fields)", async () => {
     mockLocalStorage.setItem(
       STORAGE_KEY_ASSESSMENT,
       JSON.stringify({ totalScore: 70 }) // Missing scores and date
@@ -458,10 +458,10 @@ describe("migrateLocalStorageToDatabase", () => {
 
     const result = await migrateLocalStorageToDatabase("user-123");
 
+    // Invalid data is simply not migrated (no error, just nothing to do)
     expect(result.success).toBe(true);
-    expect(result.migrated).toBe(false);
-    expect(result.error).toContain("Invalid");
-    expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY_ASSESSMENT);
+    expect(result.assessmentMigrated).toBe(false);
+    expect(mockSaveAssessmentResults).not.toHaveBeenCalled();
   });
 
   it("returns error when saveAssessmentResults fails", async () => {
@@ -474,8 +474,8 @@ describe("migrateLocalStorageToDatabase", () => {
     const result = await migrateLocalStorageToDatabase("user-123");
 
     expect(result.success).toBe(false);
-    expect(result.migrated).toBe(false);
-    expect(result.error).toBe("Database error");
+    expect(result.assessmentMigrated).toBe(false);
+    expect(result.error).toContain("Database error");
     // Should NOT clear localStorage on failure
     expect(mockLocalStorage.removeItem).not.toHaveBeenCalledWith(STORAGE_KEY_ASSESSMENT);
   });

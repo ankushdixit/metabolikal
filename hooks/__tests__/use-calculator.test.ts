@@ -3,12 +3,10 @@ import {
   useCalculator,
   calculateBmrMifflinStJeor,
   calculateBmrKatchMcArdle,
-  calculateMetabolicImpact,
   calculateProteinRecommendation,
   calculateHealthScore,
   ACTIVITY_MULTIPLIERS,
   GOAL_ADJUSTMENTS,
-  MEDICAL_CONDITIONS,
   CalculatorInputs,
 } from "../use-calculator";
 
@@ -47,34 +45,6 @@ describe("calculateBmrKatchMcArdle", () => {
     const bmr10Percent = calculateBmrKatchMcArdle(80, 10);
     const bmr20Percent = calculateBmrKatchMcArdle(80, 20);
     expect(bmr10Percent).toBeGreaterThan(bmr20Percent);
-  });
-});
-
-describe("calculateMetabolicImpact", () => {
-  it("returns 0 for empty conditions array", () => {
-    expect(calculateMetabolicImpact([])).toBe(0);
-  });
-
-  it("returns 0 when 'none' is selected", () => {
-    expect(calculateMetabolicImpact(["none"])).toBe(0);
-  });
-
-  it("calculates correct impact for single condition", () => {
-    expect(calculateMetabolicImpact(["hypothyroidism"])).toBe(8);
-    expect(calculateMetabolicImpact(["type2_diabetes"])).toBe(12);
-    expect(calculateMetabolicImpact(["pcos"])).toBe(10);
-  });
-
-  it("sums multiple conditions correctly", () => {
-    // hypothyroidism (8) + insulin_resistance (10) = 18
-    expect(calculateMetabolicImpact(["hypothyroidism", "insulin_resistance"])).toBe(18);
-  });
-
-  it("caps total impact at 30%", () => {
-    // hypothyroidism (8) + type2_diabetes (12) + metabolic_syndrome (15) = 35 → capped at 30
-    expect(
-      calculateMetabolicImpact(["hypothyroidism", "type2_diabetes", "metabolic_syndrome"])
-    ).toBe(30);
   });
 });
 
@@ -129,6 +99,8 @@ describe("calculateHealthScore", () => {
 });
 
 describe("useCalculator", () => {
+  // Note: metabolicImpactPercent is now pre-calculated from database conditions
+  // using calculateMetabolicImpactFromConditions() from use-medical-conditions.ts
   const defaultInputs: CalculatorInputs = {
     gender: "male",
     age: 30,
@@ -137,7 +109,7 @@ describe("useCalculator", () => {
     activityLevel: "moderately_active",
     goal: "fat_loss",
     goalWeightKg: 75,
-    medicalConditions: [],
+    metabolicImpactPercent: 0,
   };
 
   it("returns null for null inputs", () => {
@@ -170,7 +142,7 @@ describe("useCalculator", () => {
   it("applies metabolic impact to TDEE", () => {
     const inputs: CalculatorInputs = {
       ...defaultInputs,
-      medicalConditions: ["hypothyroidism"],
+      metabolicImpactPercent: 8, // Pre-calculated, e.g., hypothyroidism = 8%
     };
     const { result } = renderHook(() => useCalculator(inputs));
     // TDEE = 2759 × (1 - 0.08) = 2538.28 → 2538
@@ -233,21 +205,5 @@ describe("GOAL_ADJUSTMENTS", () => {
     expect(GOAL_ADJUSTMENTS.fat_loss.adjustment).toBe(-500);
     expect(GOAL_ADJUSTMENTS.maintain.adjustment).toBe(0);
     expect(GOAL_ADJUSTMENTS.muscle_gain.adjustment).toBe(300);
-  });
-});
-
-describe("MEDICAL_CONDITIONS", () => {
-  it("has all 9 conditions including 'none'", () => {
-    expect(MEDICAL_CONDITIONS).toHaveLength(9);
-  });
-
-  it("has PCOS restricted to female", () => {
-    const pcos = MEDICAL_CONDITIONS.find((c) => c.id === "pcos");
-    expect(pcos?.genderRestriction).toBe("female");
-  });
-
-  it("has 'none' with 0 impact", () => {
-    const none = MEDICAL_CONDITIONS.find((c) => c.id === "none");
-    expect(none?.impact).toBe(0);
   });
 });

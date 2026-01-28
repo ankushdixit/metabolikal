@@ -1,9 +1,8 @@
 "use client";
 
 import { Loader2, AlertTriangle, Check } from "lucide-react";
-import { useMedicalConditions, DEFAULT_MEDICAL_CONDITIONS } from "@/hooks/use-medical-conditions";
+import { useMedicalConditions } from "@/hooks/use-medical-conditions";
 import { cn } from "@/lib/utils";
-import type { MedicalConditionRow } from "@/lib/database.types";
 
 interface ConditionSelectorProps {
   selectedConditionIds: string[];
@@ -14,6 +13,10 @@ interface ConditionSelectorProps {
 /**
  * Condition Selector Component
  * Multi-select for medical conditions that a food should be avoided for
+ *
+ * IMPORTANT: This component requires medical conditions to exist in the database.
+ * Run supabase/seed.sql to populate the medical_conditions table.
+ * There is NO fallback - if the database is unavailable, an error is shown.
  */
 export function ConditionSelector({
   selectedConditionIds,
@@ -22,16 +25,8 @@ export function ConditionSelector({
 }: ConditionSelectorProps) {
   const { conditions: dbConditions, isLoading, error } = useMedicalConditions();
 
-  // Use database conditions or fallback to defaults (excluding "none")
-  const conditions: Pick<MedicalConditionRow, "id" | "name" | "slug" | "impact_percent">[] =
-    error || dbConditions.length === 0
-      ? DEFAULT_MEDICAL_CONDITIONS.filter((c) => c.slug !== "none").map((c, idx) => ({
-          id: `default-${idx}`,
-          name: c.name,
-          slug: c.slug,
-          impact_percent: c.impact_percent,
-        }))
-      : dbConditions.filter((c) => c.slug !== "none");
+  // Use database conditions (excluding "none" which is for the calculator UI only)
+  const conditions = dbConditions.filter((c) => c.slug !== "none");
 
   const handleToggle = (conditionId: string) => {
     const isSelected = selectedConditionIds.includes(conditionId);
@@ -51,14 +46,38 @@ export function ConditionSelector({
     );
   }
 
+  if (error) {
+    return (
+      <div className={cn("p-4 border border-destructive/50 bg-destructive/10 rounded", className)}>
+        <div className="flex items-center gap-2 text-destructive text-sm font-bold">
+          <AlertTriangle className="h-4 w-4" />
+          <span>Failed to load medical conditions</span>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Please ensure the database is running and seeded. Run: psql $DATABASE_URL -f
+          supabase/seed.sql
+        </p>
+      </div>
+    );
+  }
+
+  if (conditions.length === 0) {
+    return (
+      <div className={cn("p-4 border border-yellow-500/50 bg-yellow-500/10 rounded", className)}>
+        <div className="flex items-center gap-2 text-yellow-500 text-sm font-bold">
+          <AlertTriangle className="h-4 w-4" />
+          <span>No medical conditions found</span>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Please seed the database with medical conditions. Run: psql $DATABASE_URL -f
+          supabase/seed.sql
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-3", className)}>
-      {error && (
-        <div className="flex items-center gap-2 text-yellow-500 text-sm font-bold mb-2">
-          <AlertTriangle className="h-4 w-4" />
-          <span>Using default conditions (database unavailable)</span>
-        </div>
-      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {conditions.map((condition) => {
           const isSelected = selectedConditionIds.includes(condition.id);

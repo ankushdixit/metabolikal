@@ -56,7 +56,7 @@ describe("Landing Footer Component", () => {
     renderWithProvider(<Footer />);
     const youtubeLink = screen.getByLabelText("YouTube");
     expect(youtubeLink).toBeInTheDocument();
-    expect(youtubeLink).toHaveAttribute("href", "https://youtube.com");
+    expect(youtubeLink).toHaveAttribute("href", "https://www.youtube.com/@Metabolikal_1");
     expect(youtubeLink).toHaveAttribute("target", "_blank");
     expect(youtubeLink).toHaveAttribute("rel", "noopener noreferrer");
   });
@@ -65,7 +65,7 @@ describe("Landing Footer Component", () => {
     renderWithProvider(<Footer />);
     const instagramLink = screen.getByLabelText("Instagram");
     expect(instagramLink).toBeInTheDocument();
-    expect(instagramLink).toHaveAttribute("href", "https://instagram.com");
+    expect(instagramLink).toHaveAttribute("href", "https://www.instagram.com/metabolikal");
     expect(instagramLink).toHaveAttribute("target", "_blank");
     expect(instagramLink).toHaveAttribute("rel", "noopener noreferrer");
   });

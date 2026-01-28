@@ -10,6 +10,10 @@ interface UseMealTypesOptions {
 /**
  * Hook for fetching meal types from the database.
  * Returns active meal types sorted by display_order by default.
+ *
+ * IMPORTANT: This hook expects meal types to exist in the database.
+ * Run supabase/seed.sql to populate the meal_types table.
+ * There is NO fallback - if the database fetch fails, an error will be returned.
  */
 export function useMealTypes(options: UseMealTypesOptions = {}) {
   const { includeInactive = false } = options;
@@ -19,7 +23,7 @@ export function useMealTypes(options: UseMealTypesOptions = {}) {
     filters: includeInactive ? [] : [{ field: "is_active", operator: "eq", value: true }],
     sorters: [{ field: "display_order", order: "asc" }],
     queryOptions: {
-      retry: false, // Don't retry if table doesn't exist
+      retry: 1, // Retry once
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     },
   });
@@ -31,16 +35,3 @@ export function useMealTypes(options: UseMealTypesOptions = {}) {
     refetch: listResult.query.refetch,
   };
 }
-
-/**
- * Default meal types to use as fallback if database fetch fails.
- * These match the hardcoded values from validations.ts
- */
-export const DEFAULT_MEAL_TYPES: Pick<MealTypeRow, "name" | "slug">[] = [
-  { name: "Breakfast", slug: "breakfast" },
-  { name: "Lunch", slug: "lunch" },
-  { name: "Dinner", slug: "dinner" },
-  { name: "Snack", slug: "snack" },
-  { name: "Pre-Workout", slug: "pre-workout" },
-  { name: "Post-Workout", slug: "post-workout" },
-];

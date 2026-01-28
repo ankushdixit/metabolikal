@@ -15,6 +15,7 @@ describe("calculatorFormSchema", () => {
     goal: "fat_loss",
     goalWeightKg: 75,
     medicalConditions: [],
+    metabolicImpactPercent: 0,
   };
 
   it("validates correct data", () => {
@@ -185,12 +186,12 @@ describe("calculatorFormSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects invalid condition", () => {
+    it("accepts any string condition (conditions come from database)", () => {
       const result = calculatorFormSchema.safeParse({
         ...validData,
-        medicalConditions: ["invalid_condition"],
+        medicalConditions: ["custom_condition", "type2-diabetes"],
       });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
   });
 });

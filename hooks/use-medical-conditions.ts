@@ -13,6 +13,10 @@ interface UseMedicalConditionsOptions {
  * Hook for fetching medical conditions from the database.
  * Returns active conditions sorted by display_order by default.
  * Can filter by gender restriction.
+ *
+ * IMPORTANT: This hook expects medical conditions to exist in the database.
+ * Run supabase/seed.sql to populate the medical_conditions table.
+ * There is NO fallback - if the database fetch fails, an error will be returned.
  */
 export function useMedicalConditions(options: UseMedicalConditionsOptions = {}) {
   const { includeInactive = false, gender = null } = options;
@@ -22,7 +26,7 @@ export function useMedicalConditions(options: UseMedicalConditionsOptions = {}) 
     filters: includeInactive ? [] : [{ field: "is_active", operator: "eq", value: true }],
     sorters: [{ field: "display_order", order: "asc" }],
     queryOptions: {
-      retry: false, // Don't retry if table doesn't exist
+      retry: 1, // Retry once
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     },
   });
@@ -50,13 +54,16 @@ export function useMedicalConditions(options: UseMedicalConditionsOptions = {}) 
 /**
  * Calculate total metabolic impact from selected condition slugs.
  * Returns the sum of impacts, capped at 30% to prevent unrealistic reductions.
+ *
+ * @param selectedSlugs - Array of condition slugs selected by the user
+ * @param conditions - Array of MedicalConditionRow from the database
  */
 export function calculateMetabolicImpactFromConditions(
   selectedSlugs: string[],
   conditions: MedicalConditionRow[]
 ): number {
-  // If "none" is selected, return 0
-  if (selectedSlugs.includes("none")) {
+  // If "none" is selected or no conditions selected, return 0
+  if (selectedSlugs.includes("none") || selectedSlugs.length === 0) {
     return 0;
   }
 
@@ -68,42 +75,3 @@ export function calculateMetabolicImpactFromConditions(
   // Cap at 30% to prevent unrealistic metabolic reductions
   return Math.min(totalImpact, 30);
 }
-
-/**
- * Default medical conditions to use as fallback if database fetch fails.
- * These match the hardcoded values from use-calculator.ts
- */
-export const DEFAULT_MEDICAL_CONDITIONS: Pick<
-  MedicalConditionRow,
-  "name" | "slug" | "impact_percent" | "gender_restriction"
->[] = [
-  { name: "Hypothyroidism", slug: "hypothyroidism", impact_percent: 8, gender_restriction: null },
-  { name: "PCOS", slug: "pcos", impact_percent: 10, gender_restriction: "female" },
-  { name: "Type 2 Diabetes", slug: "type2-diabetes", impact_percent: 12, gender_restriction: null },
-  {
-    name: "Insulin Resistance",
-    slug: "insulin-resistance",
-    impact_percent: 10,
-    gender_restriction: null,
-  },
-  { name: "Sleep Apnea", slug: "sleep-apnea", impact_percent: 7, gender_restriction: null },
-  {
-    name: "Metabolic Syndrome",
-    slug: "metabolic-syndrome",
-    impact_percent: 15,
-    gender_restriction: null,
-  },
-  {
-    name: "Thyroid Medication Managed",
-    slug: "thyroid-managed",
-    impact_percent: 3,
-    gender_restriction: null,
-  },
-  {
-    name: "Chronic Fatigue Syndrome",
-    slug: "chronic-fatigue",
-    impact_percent: 8,
-    gender_restriction: null,
-  },
-  { name: "None of the above", slug: "none", impact_percent: 0, gender_restriction: null },
-];

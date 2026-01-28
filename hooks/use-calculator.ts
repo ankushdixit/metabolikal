@@ -13,6 +13,7 @@ export type Goal = "fat_loss" | "maintain" | "muscle_gain";
 
 /**
  * Activity level multipliers for TDEE calculation.
+ * These are scientific constants, not configuration data.
  */
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, { label: string; multiplier: number }> = {
   sedentary: { label: "Sedentary (little or no exercise)", multiplier: 1.2 },
@@ -30,34 +31,13 @@ export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, { label: string; multip
 
 /**
  * Goal calorie adjustments relative to TDEE.
+ * These are standard adjustments, not configuration data.
  */
 export const GOAL_ADJUSTMENTS: Record<Goal, { label: string; adjustment: number }> = {
   fat_loss: { label: "Fat Loss", adjustment: -500 },
   maintain: { label: "Maintain Weight", adjustment: 0 },
   muscle_gain: { label: "Muscle Gain", adjustment: 300 },
 };
-
-/**
- * Medical conditions and their metabolic impacts (percentage reduction).
- */
-export const MEDICAL_CONDITIONS = [
-  { id: "hypothyroidism", label: "Hypothyroidism", impact: 8, genderRestriction: null },
-  { id: "pcos", label: "PCOS", impact: 10, genderRestriction: "female" as const },
-  { id: "type2_diabetes", label: "Type 2 Diabetes", impact: 12, genderRestriction: null },
-  { id: "insulin_resistance", label: "Insulin Resistance", impact: 10, genderRestriction: null },
-  { id: "sleep_apnea", label: "Sleep Apnea", impact: 7, genderRestriction: null },
-  { id: "metabolic_syndrome", label: "Metabolic Syndrome", impact: 15, genderRestriction: null },
-  {
-    id: "thyroid_managed",
-    label: "Thyroid Medication Managed",
-    impact: 3,
-    genderRestriction: null,
-  },
-  { id: "chronic_fatigue", label: "Chronic Fatigue Syndrome", impact: 8, genderRestriction: null },
-  { id: "none", label: "None of the above", impact: 0, genderRestriction: null },
-] as const;
-
-export type MedicalConditionId = (typeof MEDICAL_CONDITIONS)[number]["id"];
 
 export interface CalculatorInputs {
   gender: Gender;
@@ -68,7 +48,12 @@ export interface CalculatorInputs {
   activityLevel: ActivityLevel;
   goal: Goal;
   goalWeightKg: number;
-  medicalConditions: MedicalConditionId[];
+  /**
+   * Pre-calculated metabolic impact percentage from medical conditions.
+   * Use calculateMetabolicImpactFromConditions() from use-medical-conditions.ts
+   * to calculate this from database conditions.
+   */
+  metabolicImpactPercent: number;
 }
 
 export interface CalculatorResults {
@@ -106,25 +91,6 @@ export function calculateBmrKatchMcArdle(weightKg: number, bodyFatPercent: numbe
 }
 
 /**
- * Calculate total metabolic impact from selected medical conditions.
- * Returns the sum of impacts, capped at 30% to prevent unrealistic reductions.
- */
-export function calculateMetabolicImpact(conditions: MedicalConditionId[]): number {
-  // If "none" is selected, return 0
-  if (conditions.includes("none")) {
-    return 0;
-  }
-
-  const totalImpact = conditions.reduce((sum, conditionId) => {
-    const condition = MEDICAL_CONDITIONS.find((c) => c.id === conditionId);
-    return sum + (condition?.impact ?? 0);
-  }, 0);
-
-  // Cap at 30% to prevent unrealistic metabolic reductions
-  return Math.min(totalImpact, 30);
-}
-
-/**
  * Calculate protein recommendation based on weight and goal.
  * - Fat Loss: 2.0g per kg body weight
  * - Maintain: 1.8g per kg body weight
@@ -142,6 +108,10 @@ export function calculateProteinRecommendation(weightKg: number, goal: Goal): nu
 /**
  * Hook to calculate metabolic metrics from user inputs.
  * Uses Mifflin-St Jeor or Katch-McArdle formula based on body fat availability.
+ *
+ * IMPORTANT: The metabolicImpactPercent must be pre-calculated using
+ * calculateMetabolicImpactFromConditions() from use-medical-conditions.ts
+ * with conditions fetched from the database.
  */
 export function useCalculator(inputs: CalculatorInputs | null): CalculatorResults | null {
   return useMemo(() => {
@@ -155,7 +125,7 @@ export function useCalculator(inputs: CalculatorInputs | null): CalculatorResult
       bodyFatPercent,
       activityLevel,
       goal,
-      medicalConditions,
+      metabolicImpactPercent,
     } = inputs;
 
     // Calculate BMR using appropriate formula
@@ -167,9 +137,6 @@ export function useCalculator(inputs: CalculatorInputs | null): CalculatorResult
     // Calculate TDEE
     const activityMultiplier = ACTIVITY_MULTIPLIERS[activityLevel].multiplier;
     const tdee = bmr * activityMultiplier;
-
-    // Calculate metabolic impact from medical conditions
-    const metabolicImpactPercent = calculateMetabolicImpact(medicalConditions);
 
     // Apply metabolic impact adjustment
     const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);

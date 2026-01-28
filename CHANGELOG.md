@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Remote Supabase Reset Script**: New `supabase/reset-remote.sh` unified script for resetting remote Supabase database with migrations and seed data
+
+### Changed
+
+- **Consolidated Seed Files**: Merged 8 separate seed files into unified `seed.sql` and `seed-users.sh`:
+  - `seed.sql` contains all library data (food items, supplements, exercises, lifestyle activities, medical conditions, meal types)
+  - `seed-users.sh` creates auth users via Supabase Admin API (compatible with hosted Supabase)
+  - Removed: `seed-admin-test-data.sql`, `seed-challenger-data.sql`, `seed-challenger-users.sh`, `seed-compatibility-test-data.sql`, `seed-lifestyle-activities.sql`, `seed-nutrition-data.sql`, `seed-test-users.sh`, `seed-workout-data.sql`
+
+### Fixed
+
+- **Profile Trigger Default Role**: Fixed profile creation trigger to use 'challenger' as default role instead of 'client', and properly respect role from user_metadata
+  - New migration: `20260128000000_fix_profile_trigger_default_role.sql`
+
+- **Calculator Data Persistence**: Fixed visitor calculator data being lost after signup:
+  - Calculator inputs and results now saved to localStorage for all users (not just logged-in users)
+  - `migrateLocalStorageToDatabase` now handles both assessment AND calculator data migration
+  - Migration automatically triggers when user authenticates (via `useProfileCompletion` hook)
+
+- **Calculator Modal Infinite Loop**: Fixed "Maximum update depth exceeded" error in calculator modal:
+  - Replaced Radix Checkbox with visual-only div (parent handles all click interaction)
+  - Added `useCallback` to memoize `handleConditionToggle` function
+  - Prevents double event triggering from checkbox + parent onClick
+
 - **Mobile Timeline Optimization**: Mobile-first client timeline experience with touch-friendly navigation:
   - `MobileTimelineView` component with collapsible time periods and scroll-to-now button
   - `TimelineMobileHeader` sticky header with day navigation, completion stats, and filters

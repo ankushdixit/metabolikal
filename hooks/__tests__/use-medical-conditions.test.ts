@@ -1,10 +1,8 @@
-import {
-  calculateMetabolicImpactFromConditions,
-  DEFAULT_MEDICAL_CONDITIONS,
-} from "../use-medical-conditions";
+import { calculateMetabolicImpactFromConditions } from "../use-medical-conditions";
 import type { MedicalConditionRow } from "@/lib/database.types";
 
 // Mock conditions matching the database structure
+// These represent what would be fetched from the database
 const mockConditions: MedicalConditionRow[] = [
   {
     id: "1",
@@ -118,49 +116,5 @@ describe("calculateMetabolicImpactFromConditions", () => {
         mockConditions
       )
     ).toBe(8);
-  });
-});
-
-describe("DEFAULT_MEDICAL_CONDITIONS", () => {
-  it("has 9 conditions including 'none'", () => {
-    expect(DEFAULT_MEDICAL_CONDITIONS).toHaveLength(9);
-  });
-
-  it("has PCOS restricted to female", () => {
-    const pcos = DEFAULT_MEDICAL_CONDITIONS.find((c) => c.slug === "pcos");
-    expect(pcos?.gender_restriction).toBe("female");
-  });
-
-  it("has 'none' with 0 impact", () => {
-    const none = DEFAULT_MEDICAL_CONDITIONS.find((c) => c.slug === "none");
-    expect(none?.impact_percent).toBe(0);
-  });
-
-  it("has all expected conditions", () => {
-    const slugs = DEFAULT_MEDICAL_CONDITIONS.map((c) => c.slug);
-    expect(slugs).toContain("hypothyroidism");
-    expect(slugs).toContain("pcos");
-    expect(slugs).toContain("type2-diabetes");
-    expect(slugs).toContain("insulin-resistance");
-    expect(slugs).toContain("sleep-apnea");
-    expect(slugs).toContain("metabolic-syndrome");
-    expect(slugs).toContain("thyroid-managed");
-    expect(slugs).toContain("chronic-fatigue");
-    expect(slugs).toContain("none");
-  });
-
-  it("has correct impact percentages", () => {
-    const getImpact = (slug: string) =>
-      DEFAULT_MEDICAL_CONDITIONS.find((c) => c.slug === slug)?.impact_percent;
-
-    expect(getImpact("hypothyroidism")).toBe(8);
-    expect(getImpact("pcos")).toBe(10);
-    expect(getImpact("type2-diabetes")).toBe(12);
-    expect(getImpact("insulin-resistance")).toBe(10);
-    expect(getImpact("sleep-apnea")).toBe(7);
-    expect(getImpact("metabolic-syndrome")).toBe(15);
-    expect(getImpact("thyroid-managed")).toBe(3);
-    expect(getImpact("chronic-fatigue")).toBe(8);
-    expect(getImpact("none")).toBe(0);
   });
 });

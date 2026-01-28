@@ -121,7 +121,7 @@ describe("ConditionSelector", () => {
     expect(screen.getByText("Loading conditions...")).toBeInTheDocument();
   });
 
-  it("shows warning when using fallback conditions", () => {
+  it("shows error when database fetch fails", () => {
     const { useMedicalConditions } = require("@/hooks/use-medical-conditions");
     useMedicalConditions.mockReturnValueOnce({
       conditions: [],
@@ -131,6 +131,6 @@ describe("ConditionSelector", () => {
 
     render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
 
-    expect(screen.getByText("Using default conditions (database unavailable)")).toBeInTheDocument();
+    expect(screen.getByText("Failed to load medical conditions")).toBeInTheDocument();
   });
 });
