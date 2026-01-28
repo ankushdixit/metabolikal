@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bulk Notifications for Multiple Clients**: Admin can select multiple clients from the client list and send bulk notifications
+  - `BulkNotificationModal` component for composing notifications to selected clients
+  - `SelectionActionBar` floating action bar during selection mode with selected count
+  - `ClientTable` selection mode with checkboxes (only active clients can be selected)
+  - Batch insert of notifications to all selected clients in single operation
+
+- **Client-side Auth Callback Handler**: New `/auth/callback/client` page for handling Supabase auth tokens in URL hash fragments
+  - Fixes invited clients being redirected to login instead of password setup
+  - Properly extracts access_token and refresh_token from URL hash (not accessible server-side)
+
+- **Test Users Documentation**: `docs/TEST_USERS.md` with complete reference of all seeded test users, credentials, and roles
+
 - **Remote Supabase Reset Script**: New `supabase/reset-remote.sh` unified script for resetting remote Supabase database with migrations and seed data
 
 ### Changed
@@ -19,6 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed: `seed-admin-test-data.sql`, `seed-challenger-data.sql`, `seed-challenger-users.sh`, `seed-compatibility-test-data.sql`, `seed-lifestyle-activities.sql`, `seed-nutrition-data.sql`, `seed-test-users.sh`, `seed-workout-data.sql`
 
 ### Fixed
+
+- **Invite Client Flow**: Multiple fixes to client invitation process:
+  - Explicitly set `role: 'client'` in profile update (trigger default was 'challenger')
+  - Detect site URL from request origin headers for dynamic port support in dev
+  - Create profile manually if database trigger doesn't fire
+  - Handle case where Supabase puts auth tokens in URL hash fragments (client-side extraction)
+
+- **UUID Validation for Test Users**: Fixed validation errors when using test users with zero-padded UUIDs
+  - Created shared `uuidSchema` in `lib/validations.ts` using regex instead of Zod's strict `.uuid()`
+  - Applied to `reactivate-client`, `deactivate-client`, and `resend-invite` APIs
+  - Accepts any valid UUID format including `00000000-0000-0000-0000-000000000206`
 
 - **Profile Trigger Default Role**: Fixed profile creation trigger to use 'challenger' as default role instead of 'client', and properly respect role from user_metadata
   - New migration: `20260128000000_fix_profile_trigger_default_role.sql`

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, isAdmin } from "@/lib/auth-server";
 import { z } from "zod";
+import { uuidSchema } from "@/lib/validations";
 
 // Validation schema for reactivation request
 const reactivateClientSchema = z.object({
-  userId: z.string().uuid("Invalid user ID"),
+  userId: uuidSchema,
 });
 
 /**

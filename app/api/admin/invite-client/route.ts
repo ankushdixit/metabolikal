@@ -69,7 +69,12 @@ export async function POST(request: Request) {
     // Note: inviteUserByEmail() handles duplicate detection natively and returns
     // an error if the email already exists, so we don't need a separate listUsers() check
     // The user will receive an email with a link to set their password
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    // Detect site URL from request headers (handles dynamic ports in dev)
+    const origin = request.headers.get("origin") || request.headers.get("referer");
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL || origin?.replace(/\/$/, "") || "http://localhost:3000";
+
     const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {
@@ -106,6 +111,7 @@ export async function POST(request: Request) {
     // so we need to update it with the additional fields instead of inserting
     const profileUpdateData: Record<string, unknown> = {
       full_name, // Update in case it differs from what the trigger set
+      role: "client", // Ensure role is set to client (trigger may set different default)
       invited_at: new Date().toISOString(), // Track when admin invited this user
     };
 
@@ -117,10 +123,35 @@ export async function POST(request: Request) {
     if (plan_start_date) profileUpdateData.plan_start_date = plan_start_date;
     if (plan_duration_days !== undefined) profileUpdateData.plan_duration_days = plan_duration_days;
 
-    const { error: profileError } = await supabaseAdmin
+    // First check if the profile was created by the trigger
+    const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
-      .update(profileUpdateData)
-      .eq("id", authData.user.id);
+      .select("id, email, role")
+      .eq("id", authData.user.id)
+      .single();
+
+    let profileError;
+
+    if (!existingProfile) {
+      // Profile wasn't created by trigger - create it manually
+      const insertData = {
+        id: authData.user.id,
+        email: email,
+        role: "client" as const,
+        ...profileUpdateData,
+      };
+      const result = await supabaseAdmin.from("profiles").insert(insertData).select().single();
+      profileError = result.error;
+    } else {
+      // Profile exists - update it
+      const result = await supabaseAdmin
+        .from("profiles")
+        .update(profileUpdateData)
+        .eq("id", authData.user.id)
+        .select()
+        .single();
+      profileError = result.error;
+    }
 
     if (profileError) {
       console.error("Error updating profile:", profileError);

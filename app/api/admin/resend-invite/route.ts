@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/auth-server";
 import { z } from "zod";
+import { uuidSchema } from "@/lib/validations";
 
 const resendInviteSchema = z.object({
-  userId: z.string().uuid({ message: "Invalid user ID" }),
+  userId: uuidSchema,
 });
 
 /**

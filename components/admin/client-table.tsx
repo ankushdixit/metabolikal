@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Flag,
@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Profile, CheckIn } from "@/lib/database.types";
 
 interface ClientWithCheckIn extends Profile {
@@ -37,6 +38,10 @@ interface ClientTableProps {
   onResendInvite?: (client: Profile) => Promise<void>;
   onDeactivateClient?: (client: Profile) => Promise<void>;
   onReactivateClient?: (client: Profile) => Promise<void>;
+  // Selection mode props
+  selectionMode?: boolean;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 /**
@@ -68,10 +73,62 @@ export function ClientTable({
   onResendInvite,
   onDeactivateClient,
   onReactivateClient,
+  selectionMode = false,
+  selectedIds = [],
+  onSelectionChange,
 }: ClientTableProps) {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+
+  // Get selectable clients (active only - not deactivated and not pending invite)
+  const selectableClients = useMemo(() => {
+    return clients.filter((client) => {
+      // Can't select deactivated clients
+      if (client.is_deactivated) return false;
+      // Can't select clients with pending invitations
+      if (client.invited_at && !client.invitation_accepted_at) return false;
+      return true;
+    });
+  }, [clients]);
+
+  const selectableIds = useMemo(() => selectableClients.map((c) => c.id), [selectableClients]);
+
+  // Check if a client can be selected
+  const isSelectable = (client: ClientWithCheckIn) => {
+    if (client.is_deactivated) return false;
+    if (client.invited_at && !client.invitation_accepted_at) return false;
+    return true;
+  };
+
+  // Handle individual checkbox change
+  const handleCheckboxChange = (clientId: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange([...selectedIds, clientId]);
+    } else {
+      onSelectionChange(selectedIds.filter((id) => id !== clientId));
+    }
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      // Add all selectable clients from current page
+      const newIds = new Set([...selectedIds, ...selectableIds]);
+      onSelectionChange(Array.from(newIds));
+    } else {
+      // Remove all clients from current page
+      onSelectionChange(selectedIds.filter((id) => !selectableIds.includes(id)));
+    }
+  };
+
+  // Check if all selectable clients on this page are selected
+  const allSelectableSelected =
+    selectableClients.length > 0 &&
+    selectableClients.every((client) => selectedIds.includes(client.id));
+  const someSelected = selectableClients.some((client) => selectedIds.includes(client.id));
 
   const handleResendInvite = async (client: Profile) => {
     if (!onResendInvite) return;
@@ -137,6 +194,21 @@ export function ClientTable({
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
+              {selectionMode && (
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={allSelectableSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all clients"
+                    data-testid="select-all-checkbox"
+                    className={
+                      someSelected && !allSelectableSelected
+                        ? "data-[state=checked]:bg-primary/50"
+                        : ""
+                    }
+                  />
+                </TableHead>
+              )}
               <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
                 Name
               </TableHead>
@@ -157,6 +229,19 @@ export function ClientTable({
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id} className="border-border">
+                {selectionMode && (
+                  <TableCell className="w-12">
+                    <Checkbox
+                      checked={selectedIds.includes(client.id)}
+                      onCheckedChange={(checked) =>
+                        handleCheckboxChange(client.id, checked as boolean)
+                      }
+                      disabled={!isSelectable(client)}
+                      aria-label={`Select ${client.full_name || client.email}`}
+                      data-testid={`select-checkbox-${client.id}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/20 flex items-center justify-center shrink-0">

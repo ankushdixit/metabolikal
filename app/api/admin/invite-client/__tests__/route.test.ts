@@ -75,7 +75,7 @@ describe("POST /api/admin/invite-client", () => {
     it("proceeds when user is admin", async () => {
       mockIsAdmin.mockResolvedValue(true);
 
-      // Mock admin client
+      // Mock admin client - needs to handle multiple from() calls
       const mockAdminClient = {
         auth: {
           admin: {
@@ -85,18 +85,30 @@ describe("POST /api/admin/invite-client", () => {
             }),
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: { id: "new-user-id", email: "john@example.com" },
-                error: null,
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
               }),
-            }),
-          }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  select: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({
+                      data: { id: "new-user-id", email: "john@example.com" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -184,10 +196,30 @@ describe("POST /api/admin/invite-client", () => {
             }),
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  select: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({
+                      data: { id: "new-user-id", email: "john@example.com" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -225,10 +257,30 @@ describe("POST /api/admin/invite-client", () => {
             }),
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  select: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({
+                      data: { id: "new-user-id" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -329,10 +381,30 @@ describe("POST /api/admin/invite-client", () => {
             inviteUserByEmail: inviteUserMock,
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  select: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({
+                      data: { id: "new-user-id" },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -366,7 +438,15 @@ describe("POST /api/admin/invite-client", () => {
     });
 
     it("updates profile with additional fields", async () => {
-      const eqMock = jest.fn().mockResolvedValue({ error: null });
+      const selectAfterUpdateMock = jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({
+          data: { id: "new-user-id" },
+          error: null,
+        }),
+      });
+      const eqMock = jest.fn().mockReturnValue({
+        select: selectAfterUpdateMock,
+      });
       const updateMock = jest.fn().mockReturnValue({ eq: eqMock });
 
       const mockAdminClient = {
@@ -378,8 +458,21 @@ describe("POST /api/admin/invite-client", () => {
             }),
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: updateMock,
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: updateMock,
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -441,10 +534,30 @@ describe("POST /api/admin/invite-client", () => {
             }),
           },
         },
-        from: jest.fn().mockReturnValue({
-          update: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: "new-user-id", email: "john@example.com", role: "client" },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  select: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({
+                      data: mockProfile,
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
