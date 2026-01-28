@@ -1505,6 +1505,101 @@ export interface Database {
           },
         ];
       };
+      // =========================================================================
+      // PUSH NOTIFICATION TABLES
+      // =========================================================================
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          device_type: "desktop" | "mobile" | "tablet" | null;
+          browser: string | null;
+          created_at: string;
+          last_used_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          device_type?: "desktop" | "mobile" | "tablet" | null;
+          browser?: string | null;
+          created_at?: string;
+          last_used_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          device_type?: "desktop" | "mobile" | "tablet" | null;
+          browser?: string | null;
+          created_at?: string;
+          last_used_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          push_enabled: boolean;
+          email_enabled: boolean;
+          quiet_hours_start: string | null;
+          quiet_hours_end: string | null;
+          notify_checkin_review: boolean;
+          notify_messages: boolean;
+          notify_system: boolean;
+          notify_plan_updates: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          push_enabled?: boolean;
+          email_enabled?: boolean;
+          quiet_hours_start?: string | null;
+          quiet_hours_end?: string | null;
+          notify_checkin_review?: boolean;
+          notify_messages?: boolean;
+          notify_system?: boolean;
+          notify_plan_updates?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          push_enabled?: boolean;
+          email_enabled?: boolean;
+          quiet_hours_start?: string | null;
+          quiet_hours_end?: string | null;
+          notify_checkin_review?: boolean;
+          notify_messages?: boolean;
+          notify_system?: boolean;
+          notify_plan_updates?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -1623,6 +1718,20 @@ export type SupplementPlanUpdate = UpdateTables<"supplement_plans">;
 export type LifestyleActivityPlan = Tables<"lifestyle_activity_plans">;
 export type LifestyleActivityPlanInsert = InsertTables<"lifestyle_activity_plans">;
 export type LifestyleActivityPlanUpdate = UpdateTables<"lifestyle_activity_plans">;
+
+// =============================================================================
+// PUSH NOTIFICATION TYPE EXPORTS
+// =============================================================================
+
+export type PushSubscription = Tables<"push_subscriptions">;
+export type PushSubscriptionInsert = InsertTables<"push_subscriptions">;
+export type PushSubscriptionUpdate = UpdateTables<"push_subscriptions">;
+
+export type NotificationPreferences = Tables<"notification_preferences">;
+export type NotificationPreferencesInsert = InsertTables<"notification_preferences">;
+export type NotificationPreferencesUpdate = UpdateTables<"notification_preferences">;
+
+export type DeviceType = "desktop" | "mobile" | "tablet";
 
 // =============================================================================
 // PLAN COMPLETION TYPE EXPORTS

@@ -1,6 +1,8 @@
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { PushPermissionPrompt } from "@/components/push/push-permission-prompt";
+import { IOSInstallPrompt } from "@/components/pwa/ios-install-prompt";
 
 /**
  * Dashboard layout
@@ -25,6 +27,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <main className="flex-1 p-4 lg:p-6 pt-20 lg:pt-6">{children}</main>
         </div>
       </div>
+
+      {/* Push Notification Permission Prompt */}
+      <PushPermissionPrompt delay={10000} />
+
+      {/* iOS PWA Install Prompt */}
+      <IOSInstallPrompt />
     </div>
   );
 }
