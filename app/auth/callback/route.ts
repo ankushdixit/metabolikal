@@ -94,6 +94,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(next, requestUrl.origin));
   }
 
-  // No code provided, redirect to login
-  return NextResponse.redirect(new URL("/login", requestUrl.origin));
+  // No code in query params - might have tokens in hash fragments
+  // Let the client-side page handle this
+
+  // Return a simple HTML page that loads the client-side handler
+  return new NextResponse(
+    `<!DOCTYPE html>
+    <html>
+      <head>
+        <meta http-equiv="refresh" content="0;url=/auth/callback/client${requestUrl.search}${requestUrl.hash}" />
+        <script>window.location.href = "/auth/callback/client" + window.location.search + window.location.hash;</script>
+      </head>
+      <body>Redirecting...</body>
+    </html>`,
+    { headers: { "Content-Type": "text/html" } }
+  );
 }

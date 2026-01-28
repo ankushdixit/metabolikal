@@ -19,6 +19,7 @@ git diff --name-only main...HEAD | grep -q CHANGELOG.md && echo "CHANGELOG updat
 ```
 
 **If CHANGELOG needs update:**
+
 1. Review commits made this session with `git log --oneline -10`
 2. Update CHANGELOG.md under the `## [Unreleased]` section with:
    - Features added under `### Added`
@@ -35,6 +36,7 @@ git status --porcelain
 ```
 
 **If there are uncommitted changes:**
+
 1. Review the changes
 2. Stage all changes: `git add -A`
 3. Create a commit with this format:
@@ -69,6 +71,7 @@ EOF
 ```
 
 **What makes a good learning:**
+
 - Technical insights discovered during implementation
 - Gotchas or edge cases encountered
 - Best practices or patterns that worked well
@@ -80,6 +83,7 @@ EOF
 Ask the user about the work item completion status using `AskUserQuestion`:
 
 **Question: Work Item Completion Status**
+
 - Question: "Is this work item complete? [Include work item title]"
 - Header: "Completion"
 - Multi-select: false
@@ -93,16 +97,19 @@ Ask the user about the work item completion status using `AskUserQuestion`:
 Based on the user's selection:
 
 **If "Yes - Mark as completed" selected:**
+
 ```bash
 sk end --complete --learnings-file .session/temp_learnings.txt
 ```
 
 **If "No - Keep as in-progress" selected:**
+
 ```bash
 sk end --incomplete --learnings-file .session/temp_learnings.txt
 ```
 
 **If "Cancel" selected:**
+
 - Show message: "Session end cancelled. You can continue working."
 - Exit without calling command
 
@@ -111,11 +118,13 @@ sk end --incomplete --learnings-file .session/temp_learnings.txt
 **Only if the work item was marked as completed** and the session completed successfully:
 
 Check if a PR already exists for this branch:
+
 ```bash
 gh pr list --head $(git branch --show-current) --json number --jq '.[0].number'
 ```
 
 **If no PR exists**, create one:
+
 ```bash
 gh pr create --title "<work_item_type>: <work_item_title>" --body "$(cat <<'EOF'
 ## Summary

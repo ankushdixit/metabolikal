@@ -125,15 +125,18 @@ The `--yes` flag skips the confirmation prompt since we already confirmed via As
 Tell the user what Solokit adds to their project:
 
 **New directories:**
+
 - `.session/` - Session tracking, work items, learnings
 - `.claude/commands/` - Slash commands for Claude Code
 
 **Updated files:**
+
 - `README.md` - Appended with Session-Driven Development section
 - `CLAUDE.md` - Appended with Solokit guidance (or created if missing)
 - `.gitignore` - Appended with Solokit entries
 
 **NOT modified:**
+
 - Your existing source code
 - Your existing configuration files (linters, formatters, etc.)
 - Your existing documentation content
@@ -153,6 +156,7 @@ Show the user the success output from the script, then explain:
 3. Start a session: `/start`
 
 **Available commands:**
+
 - `/start` - Begin a session with comprehensive briefing
 - `/end` - Complete session with quality gates
 - `/work-new` - Create new work items
@@ -166,6 +170,7 @@ Show the user the success output from the script, then explain:
 If the `sk adopt` command fails, show the error message from the CLI output.
 
 Common issues:
+
 - Already has `.session/` directory (Solokit may already be installed)
 - Permission errors
 - Git repository issues

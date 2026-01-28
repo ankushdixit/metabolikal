@@ -1,6 +1,15 @@
 import { z } from "zod";
 
 /**
+ * UUID validation that accepts any valid UUID format.
+ * Unlike Zod's built-in .uuid() which enforces RFC 4122 version/variant bits,
+ * this accepts test UUIDs like 00000000-0000-0000-0000-000000000206.
+ */
+export const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid UUID format");
+
+/**
  * Calculator form validation schema.
  * Validates user inputs for the metabolic calculator.
  */

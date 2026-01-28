@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
-import { Search, Users, UserPlus } from "lucide-react";
+import { Search, Users, UserPlus, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
 import { AddClientModal } from "@/components/admin/add-client-modal";
+import { BulkNotificationModal } from "@/components/admin/bulk-notification-modal";
+import { SelectionActionBar } from "@/components/admin/selection-action-bar";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { Profile, CheckIn } from "@/lib/database.types";
@@ -26,6 +28,10 @@ export default function ClientsPage() {
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [addClientModalOpen, setAddClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
+  // Bulk notification state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [bulkNotificationModalOpen, setBulkNotificationModalOpen] = useState(false);
 
   // Get current admin user ID
   useEffect(() => {
@@ -42,11 +48,12 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [searchQuery, activeTab]);
 
-  // Fetch all clients
+  // Fetch all clients (disable pagination to get all records)
   const clientsQuery = useList<Profile>({
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "client" }],
     sorters: [{ field: "full_name", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -56,6 +63,7 @@ export default function ClientsPage() {
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
     sorters: [{ field: "submitted_at", order: "desc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -217,6 +225,27 @@ export default function ClientsPage() {
     }
   };
 
+  // Bulk notification handlers
+  const handleEnterSelectionMode = () => {
+    setSelectionMode(true);
+    setSelectedClientIds([]);
+  };
+
+  const handleExitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedClientIds([]);
+  };
+
+  const handleOpenBulkNotificationModal = () => {
+    if (selectedClientIds.length > 0) {
+      setBulkNotificationModalOpen(true);
+    }
+  };
+
+  const handleBulkNotificationSuccess = () => {
+    handleExitSelectionMode();
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header Section */}
@@ -231,6 +260,16 @@ export default function ClientsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {!selectionMode && (
+              <button
+                onClick={handleEnterSelectionMode}
+                className="btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold uppercase tracking-wider"
+                data-testid="bulk-notify-button"
+              >
+                <Bell className="h-4 w-4" />
+                Bulk Notify
+              </button>
+            )}
             <button
               onClick={() => setAddClientModalOpen(true)}
               className="btn-athletic flex items-center gap-2 px-4 py-2 gradient-electric text-black glow-power text-sm font-bold uppercase tracking-wider"
@@ -292,7 +331,19 @@ export default function ClientsPage() {
         onResendInvite={handleResendInvite}
         onDeactivateClient={handleDeactivateClient}
         onReactivateClient={handleReactivateClient}
+        selectionMode={selectionMode}
+        selectedIds={selectedClientIds}
+        onSelectionChange={setSelectedClientIds}
       />
+
+      {/* Selection Action Bar */}
+      {selectionMode && (
+        <SelectionActionBar
+          selectedCount={selectedClientIds.length}
+          onCancel={handleExitSelectionMode}
+          onSendNotification={handleOpenBulkNotificationModal}
+        />
+      )}
 
       {/* Send Message Modal */}
       {adminId && (
@@ -316,6 +367,17 @@ export default function ClientsPage() {
           clientsQuery.query.refetch();
         }}
       />
+
+      {/* Bulk Notification Modal */}
+      {adminId && (
+        <BulkNotificationModal
+          selectedClientIds={selectedClientIds}
+          adminId={adminId}
+          isOpen={bulkNotificationModalOpen}
+          onClose={() => setBulkNotificationModalOpen(false)}
+          onSuccess={handleBulkNotificationSuccess}
+        />
+      )}
     </div>
   );
 }

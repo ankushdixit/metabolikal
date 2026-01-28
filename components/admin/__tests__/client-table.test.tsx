@@ -291,4 +291,204 @@ describe("ClientTable Component", () => {
     const { container } = render(<ClientTable {...defaultProps} />);
     expect(container.querySelector(".athletic-card")).toBeInTheDocument();
   });
+
+  describe("Selection Mode", () => {
+    it("renders checkboxes when in selection mode", () => {
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={jest.fn()}
+        />
+      );
+      // Should have select-all checkbox plus one per client
+      expect(screen.getByTestId("select-all-checkbox")).toBeInTheDocument();
+      expect(screen.getByTestId("select-checkbox-1")).toBeInTheDocument();
+      expect(screen.getByTestId("select-checkbox-2")).toBeInTheDocument();
+      expect(screen.getByTestId("select-checkbox-3")).toBeInTheDocument();
+    });
+
+    it("does not render checkboxes when not in selection mode", () => {
+      render(<ClientTable {...defaultProps} />);
+      expect(screen.queryByTestId("select-all-checkbox")).not.toBeInTheDocument();
+    });
+
+    it("calls onSelectionChange when checkbox is clicked", () => {
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-checkbox-1"));
+
+      expect(onSelectionChange).toHaveBeenCalledWith(["1"]);
+    });
+
+    it("removes id from selection when already selected", () => {
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={["1", "2"]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-checkbox-1"));
+
+      expect(onSelectionChange).toHaveBeenCalledWith(["2"]);
+    });
+
+    it("checkbox is checked when client is selected", () => {
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={["1"]}
+          onSelectionChange={jest.fn()}
+        />
+      );
+
+      const checkbox = screen.getByTestId("select-checkbox-1");
+      expect(checkbox).toHaveAttribute("data-state", "checked");
+    });
+
+    it("select all checkbox selects all selectable clients", () => {
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-all-checkbox"));
+
+      // All clients in mockClients are active, so all 3 should be selected
+      expect(onSelectionChange).toHaveBeenCalledWith(["1", "2", "3"]);
+    });
+
+    it("select all checkbox deselects all when all are selected", () => {
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          selectionMode={true}
+          selectedIds={["1", "2", "3"]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-all-checkbox"));
+
+      expect(onSelectionChange).toHaveBeenCalledWith([]);
+    });
+
+    it("disables checkbox for deactivated clients", () => {
+      const deactivatedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+        ...mockClients.slice(1),
+      ];
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={deactivatedClients}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={jest.fn()}
+        />
+      );
+
+      const checkbox = screen.getByTestId("select-checkbox-1");
+      expect(checkbox).toBeDisabled();
+    });
+
+    it("disables checkbox for clients with pending invitations", () => {
+      const invitedClients = [
+        {
+          ...mockClients[0],
+          invited_at: "2025-01-01T00:00:00Z",
+          invitation_accepted_at: null,
+        },
+        ...mockClients.slice(1),
+      ];
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={invitedClients}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={jest.fn()}
+        />
+      );
+
+      const checkbox = screen.getByTestId("select-checkbox-1");
+      expect(checkbox).toBeDisabled();
+    });
+
+    it("does not include deactivated clients in select all", () => {
+      const mixedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+        mockClients[1],
+        mockClients[2],
+      ];
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={mixedClients}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-all-checkbox"));
+
+      // Only non-deactivated clients (2 and 3) should be selected
+      expect(onSelectionChange).toHaveBeenCalledWith(["2", "3"]);
+    });
+
+    it("does not include invited-only clients in select all", () => {
+      const mixedClients = [
+        {
+          ...mockClients[0],
+          invited_at: "2025-01-01T00:00:00Z",
+          invitation_accepted_at: null,
+        },
+        mockClients[1],
+        mockClients[2],
+      ];
+      const onSelectionChange = jest.fn();
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={mixedClients}
+          selectionMode={true}
+          selectedIds={[]}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId("select-all-checkbox"));
+
+      // Only non-invited clients (2 and 3) should be selected
+      expect(onSelectionChange).toHaveBeenCalledWith(["2", "3"]);
+    });
+  });
 });
