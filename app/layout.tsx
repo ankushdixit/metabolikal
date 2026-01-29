@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import ClientRefineWrapper from "@/components/client-refine-wrapper";
+import { FacebookPixelProvider } from "@/components/providers/facebook-pixel-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "sonner";
@@ -104,18 +105,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <PostHogProvider>
-          <ClientRefineWrapper>{children}</ClientRefineWrapper>
-          <ServiceWorkerRegister />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                color: "#fafafa",
-              },
-            }}
-          />
+          <FacebookPixelProvider>
+            <ClientRefineWrapper>{children}</ClientRefineWrapper>
+            <ServiceWorkerRegister />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: "#1a1a1a",
+                  border: "1px solid #333",
+                  color: "#fafafa",
+                },
+              }}
+            />
+          </FacebookPixelProvider>
         </PostHogProvider>
       </body>
     </html>
