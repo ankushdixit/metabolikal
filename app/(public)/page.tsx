@@ -12,9 +12,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Trophy, HelpCircle, Flame, ChevronRight, Target, Zap, Dumbbell } from "lucide-react";
+import {
+  Trophy,
+  HelpCircle,
+  Flame,
+  ChevronRight,
+  Target,
+  Zap,
+  Dumbbell,
+  Instagram,
+  ExternalLink,
+} from "lucide-react";
 import { HeroController } from "@/components/landing/hero";
 import { YouTubeShortsCarousel } from "@/components/landing/youtube-shorts-carousel";
+import { BeforeAfterCarousel } from "@/components/landing/before-after-carousel";
 import {
   QuickAccessTray,
   PointsTray,
@@ -53,11 +64,6 @@ const CalendlyModal = dynamic(
       default: m.CalendlyModal,
     })),
   { ssr: false }
-);
-const RealResultsModal = dynamic(() =>
-  import("@/components/landing/modals/real-results-modal").then((m) => ({
-    default: m.RealResultsModal,
-  }))
 );
 const MeetExpertModal = dynamic(() =>
   import("@/components/landing/modals/meet-expert-modal").then((m) => ({
@@ -120,6 +126,21 @@ const ProfileIncompleteModal = dynamic(() =>
     default: m.ProfileIncompleteModal,
   }))
 );
+
+const INSTAGRAM_CARDS = [
+  {
+    title: "Before & After Stories",
+    description: "Real clients, real results, real transformations",
+  },
+  {
+    title: "Client Wins",
+    description: "Daily posts of metabolic breakthroughs",
+  },
+  {
+    title: "Learn & Level Up",
+    description: "Metabolic tips & transformation strategies",
+  },
+];
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
@@ -382,6 +403,14 @@ export default function LandingPage() {
     openModal("calculator");
   }, [openModal]);
 
+  // Handler for scrolling to transformations section
+  const handleScrollToTransformations = useCallback(() => {
+    const element = document.getElementById("transformations");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
   // Profile refetch is now handled in handleCalculatorComplete after save completes
 
   return (
@@ -390,7 +419,7 @@ export default function LandingPage() {
       {!gamificationLoading && (
         <>
           <QuickAccessTray
-            onOpenRealResults={() => openModal("real-results")}
+            onOpenRealResults={handleScrollToTransformations}
             onOpenMeetExpert={() => openModal("meet-expert")}
             onOpenMethod={() => openModal("method")}
             onOpenElitePrograms={() => openModal("elite-programs")}
@@ -425,7 +454,7 @@ export default function LandingPage() {
       <HeroController
         onOpenCalendly={() => openModal("calendly")}
         onOpenAssessment={() => openModal("assessment")}
-        onOpenRealResults={() => openModal("real-results")}
+        onOpenRealResults={handleScrollToTransformations}
         onOpenMethod={() => openModal("method")}
         onOpenChallengeHub={handleOpenChallengeHub}
       />
@@ -448,17 +477,72 @@ export default function LandingPage() {
           </p>
 
           {/* YouTube Shorts Carousel */}
-          <div className="mb-10">
+          <div className="mb-12">
             <YouTubeShortsCarousel />
           </div>
 
-          <button
-            onClick={() => openModal("real-results")}
-            className="btn-athletic group flex items-center gap-3 px-8 py-4 bg-secondary text-foreground"
-          >
-            View Before &amp; After Gallery
-            <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </button>
+          {/* Before/After Carousel Section */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-1 gradient-electric" />
+              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                Before &amp; After Results
+              </h3>
+            </div>
+            <p className="text-muted-foreground font-bold text-sm mb-6">
+              Real transformations from high-performing professionals
+            </p>
+
+            <BeforeAfterCarousel />
+          </div>
+
+          {/* Instagram Section */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-1 gradient-electric" />
+              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                Connect With Our Community
+              </h3>
+            </div>
+            <p className="text-muted-foreground font-bold text-sm mb-6">
+              See daily transformation stories, client wins, and metabolic breakthroughs on our
+              social channels
+            </p>
+
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              {INSTAGRAM_CARDS.map((card) => (
+                <div
+                  key={card.title}
+                  className="athletic-card p-4 sm:p-6 pl-6 sm:pl-8 hover:glow-power transition-all"
+                >
+                  <Instagram className="h-5 w-5 sm:h-6 sm:w-6 text-primary mb-3 sm:mb-4" />
+                  <h4 className="font-black uppercase tracking-wide mb-2 text-sm sm:text-base">
+                    {card.title}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground font-bold">
+                    {card.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Instagram CTA */}
+            <div className="mt-8 text-center">
+              <a
+                href="https://www.instagram.com/metabolikal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-athletic group inline-flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 gradient-electric text-black glow-power text-sm sm:text-base"
+              >
+                <Instagram className="h-5 w-5 flex-shrink-0" />
+                <span className="hidden sm:inline">
+                  Follow @metabolikal for Daily Transformations
+                </span>
+                <span className="sm:hidden">Follow @metabolikal</span>
+                <ExternalLink className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -689,10 +773,6 @@ export default function LandingPage() {
       {/* Modals */}
       <CalendlyModal
         open={activeModal === "calendly"}
-        onOpenChange={(open) => !open && closeModal()}
-      />
-      <RealResultsModal
-        open={activeModal === "real-results"}
         onOpenChange={(open) => !open && closeModal()}
       />
       <MeetExpertModal
