@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Plan Templates**: Reusable single-day plan templates for admin to quickly apply standard meal/workout/supplement plans:
+  - **Database Schema**: 5 new tables (`plan_templates`, `template_diet_items`, `template_supplement_items`, `template_workout_items`, `template_lifestyle_items`) with RLS policies
+  - **Template Management**: Full CRUD for templates with name, description, category, and active status
+  - **Template Editor**: Timeline-based editor reusing existing `TimelineGrid` component for visual item placement
+  - **Apply Template Modal**: Select template and apply to any client's plan day with "add" or "replace" modes
+  - **Templates List Page**: Search, category filter, pagination, and delete functionality at `/admin/config/templates`
+  - Added Templates navigation under Configuration in admin sidebar
+
+- **Food Condition Warning Badges**: Visual indicators when food items conflict with client's medical conditions:
+  - `useTimelineFoodCompatibility` hook for batch-checking food compatibility across all diet items
+  - Red border styling on meal items with incompatibilities
+  - Pulsing alert badge with condition names displayed inline (e.g., "⚠ HYPOTHYROIDISM")
+  - Integrated into Plan Editor timeline view
+
 ### Fixed
 
 - **iPhone Safe Area Handling**: Fixed header appearing to float on iPhone due to content scrolling behind the notch/Dynamic Island

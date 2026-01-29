@@ -11,7 +11,16 @@ import { useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useOne, useList } from "@refinedev/core";
-import { ArrowLeft, Plus, Copy, Trash2, RefreshCw, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Copy,
+  Trash2,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  LayoutTemplate,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   Profile,
@@ -33,6 +42,7 @@ import {
   type SupplementPlanWithSupplement,
   type LifestyleActivityPlanWithType,
 } from "@/hooks/use-timeline-data";
+import { useTimelineFoodCompatibility } from "@/hooks/use-timeline-food-compatibility";
 import {
   DaySelectorTabs,
   TimelineGrid,
@@ -48,6 +58,7 @@ import { GroupedMealModal } from "@/components/admin/timeline-editor/grouped-mea
 import { GroupedWorkoutModal } from "@/components/admin/timeline-editor/grouped-workout-modal";
 import { GroupedSupplementModal } from "@/components/admin/timeline-editor/grouped-supplement-modal";
 import { GroupedLifestyleModal } from "@/components/admin/timeline-editor/grouped-lifestyle-modal";
+import { ApplyTemplateModal } from "@/components/admin/templates/apply-template-modal";
 
 // Filter state for showing/hiding item types
 interface TypeFilters {
@@ -75,6 +86,7 @@ type ModalType =
   | "copyDay"
   | "copySelected"
   | "clearDay"
+  | "applyTemplate"
   | null;
 
 /**
@@ -129,6 +141,12 @@ export default function UnifiedTimelinePlanEditorPage() {
     dayNumber: selectedDay,
     enabled: !!clientId,
   });
+
+  // Check food compatibility with client conditions
+  const { incompatibleFoodIds, incompatibleFoodsMap } = useTimelineFoodCompatibility(
+    rawDietPlans,
+    clientConditions
+  );
 
   // Fetch all days to show content indicators
   const allDietPlansQuery = useList<DietPlan>({
@@ -657,6 +675,14 @@ export default function UnifiedTimelinePlanEditorPage() {
           </button>
 
           <button
+            onClick={() => setActiveModal("applyTemplate")}
+            className="btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold"
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            <span>Apply Template</span>
+          </button>
+
+          <button
             onClick={refetchAll}
             className="btn-athletic p-2 bg-secondary text-foreground"
             title="Refresh"
@@ -753,6 +779,8 @@ export default function UnifiedTimelinePlanEditorPage() {
           selectedItemIds={selectedItemIds}
           onItemSelect={handleItemSelect}
           isLoading={isLoading}
+          incompatibleFoodIds={incompatibleFoodIds}
+          incompatibleFoodsMap={incompatibleFoodsMap}
         />
       </div>
 
@@ -867,6 +895,18 @@ export default function UnifiedTimelinePlanEditorPage() {
         onSuccess={handleModalSuccess}
         dayNumber={selectedDay}
         items={filteredItems}
+      />
+
+      <ApplyTemplateModal
+        isOpen={activeModal === "applyTemplate"}
+        onClose={closeModal}
+        onSuccess={handleModalSuccess}
+        clientId={clientId}
+        dayNumber={selectedDay}
+        existingDietPlanIds={rawDietPlans.map((p) => p.id)}
+        existingSupplementPlanIds={rawSupplementPlans.map((p) => p.id)}
+        existingWorkoutPlanIds={rawWorkoutPlans.map((p) => p.id)}
+        existingLifestylePlanIds={rawLifestyleActivityPlans.map((p) => p.id)}
       />
     </div>
   );
