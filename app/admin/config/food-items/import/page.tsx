@@ -8,14 +8,9 @@ import { createBrowserSupabaseClient } from "@/lib/auth";
 import { CSVUpload } from "@/components/admin/csv-upload";
 import { CSVPreviewTable } from "@/components/admin/csv-preview-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  parseCSV,
-  downloadCSVTemplate,
-  getValidFoodItems,
-  type CSVParseResult,
-} from "@/lib/csv-parser";
+import { parseCSV, downloadCSVTemplate, type CSVParseResult } from "@/lib/csv-parser";
 import { cn } from "@/lib/utils";
-import type { FoodItem } from "@/lib/database.types";
+import type { FoodItem, MedicalConditionRow } from "@/lib/database.types";
 
 type ImportStep = "upload" | "preview" | "importing" | "complete";
 
@@ -57,8 +52,21 @@ export default function CSVImportPage() {
     },
   });
 
+  // Fetch medical conditions for mapping slugs to IDs
+  const medicalConditionsQuery = useList<MedicalConditionRow>({
+    resource: "medical_conditions",
+    pagination: { mode: "off" },
+    filters: [{ field: "is_active", operator: "eq", value: true }],
+    queryOptions: {
+      enabled: !!adminId,
+    },
+  });
+
   const existingNames = (existingFoodItemsQuery.query.data?.data || []).map((f) => f.name);
-  const isLoadingExisting = existingFoodItemsQuery.query.isLoading;
+  const medicalConditions = medicalConditionsQuery.query.data?.data || [];
+  const conditionSlugToId = new Map(medicalConditions.map((c) => [c.slug, c.id]));
+  const isLoadingExisting =
+    existingFoodItemsQuery.query.isLoading || medicalConditionsQuery.query.isLoading;
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -99,9 +107,11 @@ export default function CSVImportPage() {
     setImportResult(null);
 
     const supabase = createBrowserSupabaseClient();
-    const validItems = getValidFoodItems(parseResult);
 
-    if (validItems.length === 0) {
+    // Get valid rows with their condition slugs
+    const validRows = parseResult.rows.filter((row) => row.isValid && row.transformedData);
+
+    if (validRows.length === 0) {
       setImportResult({
         success: 0,
         failed: 0,
@@ -115,21 +125,55 @@ export default function CSVImportPage() {
     let failedCount = 0;
     const errors: string[] = [];
 
-    // Import in batches of 10
-    const batchSize = 10;
-    for (let i = 0; i < validItems.length; i += batchSize) {
-      const batch = validItems.slice(i, i + batchSize);
+    // Import items one by one to capture IDs for condition relationships
+    for (let i = 0; i < validRows.length; i++) {
+      const row = validRows[i];
+      const foodItemData = row.transformedData!;
+      const conditionSlugs = row.conditionSlugs || [];
 
-      const { error } = await supabase.from("food_items").insert(batch);
+      // Insert food item
+      const { data: insertedItem, error: insertError } = await supabase
+        .from("food_items")
+        .insert(foodItemData)
+        .select("id")
+        .single();
 
-      if (error) {
-        failedCount += batch.length;
-        errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+      if (insertError || !insertedItem) {
+        failedCount++;
+        errors.push(`Row ${row.rowNumber}: ${insertError?.message || "Failed to insert"}`);
       } else {
-        successCount += batch.length;
+        // Insert condition relationships if any
+        if (conditionSlugs.length > 0) {
+          const conditionInserts = conditionSlugs
+            .map((slug) => {
+              const conditionId = conditionSlugToId.get(slug);
+              if (!conditionId) {
+                errors.push(`Row ${row.rowNumber}: Unknown condition "${slug}" (skipped)`);
+                return null;
+              }
+              return {
+                food_item_id: insertedItem.id,
+                condition_id: conditionId,
+              };
+            })
+            .filter((c): c is NonNullable<typeof c> => c !== null);
+
+          if (conditionInserts.length > 0) {
+            const { error: conditionError } = await supabase
+              .from("food_item_conditions")
+              .insert(conditionInserts);
+
+            if (conditionError) {
+              errors.push(
+                `Row ${row.rowNumber}: Food saved but conditions failed - ${conditionError.message}`
+              );
+            }
+          }
+        }
+        successCount++;
       }
 
-      setImportProgress(Math.round(((i + batch.length) / validItems.length) * 100));
+      setImportProgress(Math.round(((i + 1) / validRows.length) * 100));
     }
 
     setImportResult({
@@ -138,7 +182,7 @@ export default function CSVImportPage() {
       errors,
     });
     setStep("complete");
-  }, [parseResult]);
+  }, [parseResult, conditionSlugToId]);
 
   const handleStartOver = useCallback(() => {
     setSelectedFile(null);

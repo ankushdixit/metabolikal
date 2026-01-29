@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CSV Bulk Upload Conditions Column**: Added `avoid_for_conditions` column to food item CSV import:
+  - New column in CSV template for specifying medical conditions (pipe-separated slugs)
+  - Parses and normalizes condition slugs (e.g., "Type2 Diabetes" → "type2-diabetes")
+  - Creates `food_item_conditions` junction table entries during import
+  - Fetches medical conditions to map slugs to UUIDs
+  - Preview table shows conditions column before import
+  - Template includes examples with real condition slugs from seed data
+
+- **Transformation Gallery Images**: Added before/after transformation photos for the landing page carousel (clients 1-6)
+
+### Changed
+
+- **Hero Variant C**: Replaced placeholder "SS" initials box with actual founder photo (`/images/shivashish.webp`) using Next.js Image component
+
+### Added
+
 - **Plan Templates**: Reusable single-day plan templates for admin to quickly apply standard meal/workout/supplement plans:
   - **Database Schema**: 5 new tables (`plan_templates`, `template_diet_items`, `template_supplement_items`, `template_workout_items`, `template_lifestyle_items`) with RLS policies
   - **Template Management**: Full CRUD for templates with name, description, category, and active status

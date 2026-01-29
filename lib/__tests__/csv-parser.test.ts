@@ -22,6 +22,7 @@ describe("csv-parser", () => {
       expect(CSV_HEADERS).toContain("raw_quantity");
       expect(CSV_HEADERS).toContain("cooked_quantity");
       expect(CSV_HEADERS).toContain("meal_types");
+      expect(CSV_HEADERS).toContain("avoid_for_conditions");
     });
   });
 
@@ -164,6 +165,52 @@ describe("csv-parser", () => {
       const result = validateCSVRow(row, 2);
 
       expect(result.transformedData?.meal_types).toEqual(["breakfast", "lunch", "dinner"]);
+    });
+
+    it("should parse condition slugs correctly", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+        avoid_for_conditions: "type2-diabetes|insulin-resistance|hypothyroidism",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.conditionSlugs).toEqual([
+        "type2-diabetes",
+        "insulin-resistance",
+        "hypothyroidism",
+      ]);
+    });
+
+    it("should normalize condition slugs", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+        avoid_for_conditions: "Type2 Diabetes|Insulin Resistance|PCOS",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.conditionSlugs).toEqual(["type2-diabetes", "insulin-resistance", "pcos"]);
+    });
+
+    it("should return empty array when no conditions specified", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+        avoid_for_conditions: "",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.conditionSlugs).toEqual([]);
     });
 
     it("should handle empty optional fields", () => {
