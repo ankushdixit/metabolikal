@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import ClientRefineWrapper from "@/components/client-refine-wrapper";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -102,18 +103,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ClientRefineWrapper>{children}</ClientRefineWrapper>
-        <ServiceWorkerRegister />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "#1a1a1a",
-              border: "1px solid #333",
-              color: "#fafafa",
-            },
-          }}
-        />
+        <PostHogProvider>
+          <ClientRefineWrapper>{children}</ClientRefineWrapper>
+          <ServiceWorkerRegister />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#1a1a1a",
+                border: "1px solid #333",
+                color: "#fafafa",
+              },
+            }}
+          />
+        </PostHogProvider>
       </body>
     </html>
   );

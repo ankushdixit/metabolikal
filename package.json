@@ -41,6 +41,7 @@
     "lucide-react": "0.553.0",
     "next": "16.1.0",
     "papaparse": "5.5.3",
+    "posthog-js": "1.336.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-hook-form": "7.66.0",
