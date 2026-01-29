@@ -162,7 +162,8 @@ describe("Landing Page", () => {
     it("renders the section title", () => {
       renderWithProvider(<LandingPage />);
       expect(screen.getByText(/Real People/i)).toBeInTheDocument();
-      expect(screen.getByText(/Real Transformations/i)).toBeInTheDocument();
+      // "Real Transformations" appears multiple times on the page (section title and elsewhere)
+      expect(screen.getAllByText(/Real Transformations/i).length).toBeGreaterThan(0);
     });
 
     it("renders YouTube Shorts carousel", () => {
@@ -173,10 +174,10 @@ describe("Landing Page", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders View Before & After Gallery button", () => {
+    it("renders Before & After carousel", () => {
       renderWithProvider(<LandingPage />);
       expect(
-        screen.getByRole("button", { name: /View Before & After Gallery/i })
+        screen.getByRole("region", { name: /before and after transformation gallery/i })
       ).toBeInTheDocument();
     });
   });
