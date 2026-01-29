@@ -242,8 +242,31 @@ export const refineResources: {
   show?: string;
   meta?: Record<string, unknown>;
 }[] = [
-  // Add your resources here
-  // See ARCHITECTURE.md for examples
+  // Plan Templates
+  {
+    name: "plan_templates",
+    list: "/admin/config/templates",
+    create: "/admin/config/templates/create",
+    edit: "/admin/config/templates/:id/edit",
+    meta: { canDelete: true },
+  },
+  // Template item tables (no routes - managed through template editor)
+  {
+    name: "template_diet_items",
+    meta: { canDelete: true },
+  },
+  {
+    name: "template_supplement_items",
+    meta: { canDelete: true },
+  },
+  {
+    name: "template_workout_items",
+    meta: { canDelete: true },
+  },
+  {
+    name: "template_lifestyle_items",
+    meta: { canDelete: true },
+  },
 ];
 
 /**

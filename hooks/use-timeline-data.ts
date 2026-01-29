@@ -78,6 +78,8 @@ export interface ExtendedTimelineItem extends TimelineItem {
     | LifestyleActivityPlanWithType[];
   itemCount?: number;
   itemNames?: string[];
+  // Food item IDs for compatibility checking (only for meal type)
+  foodItemIds?: string[];
 }
 
 // Default duration in minutes for items without explicit end times
@@ -205,6 +207,8 @@ function transformDietPlan(plan: DietPlanWithFood): ExtendedTimelineItem {
     sourceId: plan.id,
     dayNumber: plan.day_number,
     groupKey: `meal:${plan.meal_category || "unknown"}:${getSchedulingKey(scheduling)}`,
+    // Include food item ID for compatibility checking
+    foodItemIds: plan.food_item_id ? [plan.food_item_id] : [],
   };
 }
 
@@ -349,6 +353,8 @@ function groupDietItems(
     const totalProtein = sortedItems.reduce((sum, item) => sum + (item.metadata?.protein || 0), 0);
     const itemNames = sortedItems.map((item) => item.title);
     const groupedSourceIds = sortedItems.map((item) => item.sourceId);
+    // Collect all food item IDs for compatibility checking
+    const allFoodItemIds = sortedItems.flatMap((item) => item.foodItemIds || []);
     // Sort raw plans by display_order too
     const groupedRawPlans = rawPlans
       .filter((p) => groupedSourceIds.includes(p.id))
@@ -370,6 +376,7 @@ function groupDietItems(
       groupedItems: groupedRawPlans,
       itemCount: sortedItems.length,
       itemNames,
+      foodItemIds: allFoodItemIds,
       metadata: {
         calories: totalCalories,
         protein: totalProtein,

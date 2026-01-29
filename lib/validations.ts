@@ -656,3 +656,44 @@ export const lifestyleActivityTypeSchema = z.object({
 });
 
 export type LifestyleActivityTypeFormData = z.infer<typeof lifestyleActivityTypeSchema>;
+
+/**
+ * Template categories for organizing plan templates.
+ */
+export const TEMPLATE_CATEGORIES = [
+  { value: "weight_loss", label: "Weight Loss" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "muscle_gain", label: "Muscle Gain" },
+  { value: "reset", label: "Reset / Detox" },
+  { value: "rest_day", label: "Rest Day" },
+  { value: "training_day", label: "Training Day" },
+  { value: "general", label: "General" },
+] as const;
+
+export type TemplateCategoryValue = (typeof TEMPLATE_CATEGORIES)[number]["value"];
+
+/**
+ * Plan template validation schema.
+ * Validates template metadata for admin plan templates.
+ */
+export const planTemplateSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be 100 characters or less" }),
+  description: z
+    .string()
+    .max(500, { message: "Description must be 500 characters or less" })
+    .optional()
+    .nullable(),
+  category: z
+    .enum(
+      ["weight_loss", "maintenance", "muscle_gain", "reset", "rest_day", "training_day", "general"],
+      { message: "Please select a category" }
+    )
+    .optional()
+    .nullable(),
+  is_active: z.boolean().optional().nullable(),
+});
+
+export type PlanTemplateFormData = z.infer<typeof planTemplateSchema>;

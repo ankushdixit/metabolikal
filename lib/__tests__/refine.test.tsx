@@ -25,12 +25,17 @@ describe("refineDataProvider", () => {
 });
 
 describe("refineResources", () => {
-  it("starts as an empty array", () => {
-    expect(refineResources).toEqual([]);
-  });
-
   it("is an array", () => {
     expect(Array.isArray(refineResources)).toBe(true);
+  });
+
+  it("contains template resources", () => {
+    const resourceNames = refineResources.map((r) => r.name);
+    expect(resourceNames).toContain("plan_templates");
+    expect(resourceNames).toContain("template_diet_items");
+    expect(resourceNames).toContain("template_supplement_items");
+    expect(resourceNames).toContain("template_workout_items");
+    expect(resourceNames).toContain("template_lifestyle_items");
   });
 });
 

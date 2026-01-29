@@ -49,6 +49,10 @@ interface TimelineGridProps {
   /** Scroll to the first item when items load */
   autoScrollToFirstItem?: boolean;
   className?: string;
+  /** Set of food_item_ids with condition incompatibilities */
+  incompatibleFoodIds?: Set<string>;
+  /** Map of food_item_id -> array of incompatible condition names */
+  incompatibleFoodsMap?: Map<string, string[]>;
 }
 
 /**
@@ -63,6 +67,8 @@ export function TimelineGrid({
   isLoading = false,
   autoScrollToFirstItem = false,
   className,
+  incompatibleFoodIds = new Set(),
+  incompatibleFoodsMap = new Map(),
 }: TimelineGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Generate hour labels
@@ -213,6 +219,19 @@ export function TimelineGrid({
               const itemWidth = laneWidth - 1; // -1% for gap between lanes
               const itemLeft = left + 0.5; // 0.5% for gap
 
+              // Check for food incompatibilities (only for meal items)
+              const itemFoodIds = item.foodItemIds || [];
+              const hasIncompatibility =
+                item.type === "meal" &&
+                itemFoodIds.some((foodId) => incompatibleFoodIds.has(foodId));
+
+              // Collect all incompatible conditions for this item
+              const incompatibleConditions = hasIncompatibility
+                ? Array.from(
+                    new Set(itemFoodIds.flatMap((foodId) => incompatibleFoodsMap.get(foodId) || []))
+                  )
+                : [];
+
               return (
                 <div
                   key={item.id}
@@ -232,6 +251,8 @@ export function TimelineGrid({
                     onClick={() => onItemClick?.(item)}
                     onSelect={(selected) => onItemSelect?.(item.id, selected)}
                     showSelect={!!onItemSelect}
+                    hasIncompatibility={hasIncompatibility}
+                    incompatibleConditions={incompatibleConditions}
                   />
                 </div>
               );

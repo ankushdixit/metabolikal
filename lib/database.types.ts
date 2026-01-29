@@ -1831,3 +1831,334 @@ export interface ClientAnchorTimes {
   pre_workout?: string;
   post_workout?: string;
 }
+
+// =============================================================================
+// PLAN TEMPLATE TYPES
+// =============================================================================
+
+/**
+ * Template categories for organization
+ */
+export type TemplateCategory =
+  | "weight_loss"
+  | "maintenance"
+  | "muscle_gain"
+  | "reset"
+  | "rest_day"
+  | "training_day"
+  | "general";
+
+/**
+ * Plan Template - Reusable single-day plan template
+ */
+export interface PlanTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface PlanTemplateInsert {
+  id?: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
+}
+
+export interface PlanTemplateUpdate {
+  id?: string;
+  name?: string;
+  description?: string | null;
+  category?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
+}
+
+/**
+ * Template Diet Item - Diet item within a plan template
+ */
+export interface TemplateDietItem {
+  id: string;
+  template_id: string;
+  food_item_id: string;
+  meal_category: string | null;
+  serving_multiplier: number;
+  time_type: TimeType | null;
+  time_start: string | null;
+  time_end: string | null;
+  time_period: TimePeriod | null;
+  relative_anchor: RelativeAnchor | null;
+  relative_offset_minutes: number | null;
+  notes: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateDietItemInsert {
+  id?: string;
+  template_id: string;
+  food_item_id: string;
+  meal_category?: string | null;
+  serving_multiplier?: number;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TemplateDietItemUpdate {
+  id?: string;
+  template_id?: string;
+  food_item_id?: string;
+  meal_category?: string | null;
+  serving_multiplier?: number;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Template Supplement Item - Supplement item within a plan template
+ */
+export interface TemplateSupplementItem {
+  id: string;
+  template_id: string;
+  supplement_id: string;
+  dosage: number | null;
+  time_type: TimeType | null;
+  time_start: string | null;
+  time_end: string | null;
+  time_period: TimePeriod | null;
+  relative_anchor: RelativeAnchor | null;
+  relative_offset_minutes: number | null;
+  notes: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateSupplementItemInsert {
+  id?: string;
+  template_id: string;
+  supplement_id: string;
+  dosage?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TemplateSupplementItemUpdate {
+  id?: string;
+  template_id?: string;
+  supplement_id?: string;
+  dosage?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Template Workout Item - Workout item within a plan template
+ */
+export interface TemplateWorkoutItem {
+  id: string;
+  template_id: string;
+  exercise_id: string;
+  exercise_name: string | null;
+  section: WorkoutSection | null;
+  sets: number | null;
+  reps: number | null;
+  duration_minutes: number | null;
+  scheduled_duration_minutes: number | null;
+  rest_seconds: number | null;
+  time_type: TimeType | null;
+  time_start: string | null;
+  time_end: string | null;
+  time_period: TimePeriod | null;
+  relative_anchor: RelativeAnchor | null;
+  relative_offset_minutes: number | null;
+  notes: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateWorkoutItemInsert {
+  id?: string;
+  template_id: string;
+  exercise_id: string;
+  exercise_name?: string | null;
+  section?: WorkoutSection | null;
+  sets?: number | null;
+  reps?: number | null;
+  duration_minutes?: number | null;
+  scheduled_duration_minutes?: number | null;
+  rest_seconds?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TemplateWorkoutItemUpdate {
+  id?: string;
+  template_id?: string;
+  exercise_id?: string;
+  exercise_name?: string | null;
+  section?: WorkoutSection | null;
+  sets?: number | null;
+  reps?: number | null;
+  duration_minutes?: number | null;
+  scheduled_duration_minutes?: number | null;
+  rest_seconds?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Template Lifestyle Item - Lifestyle activity item within a plan template
+ */
+export interface TemplateLifestyleItem {
+  id: string;
+  template_id: string;
+  lifestyle_activity_type_id: string;
+  target_value: number | null;
+  time_type: TimeType | null;
+  time_start: string | null;
+  time_end: string | null;
+  time_period: TimePeriod | null;
+  relative_anchor: RelativeAnchor | null;
+  relative_offset_minutes: number | null;
+  notes: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateLifestyleItemInsert {
+  id?: string;
+  template_id: string;
+  lifestyle_activity_type_id: string;
+  target_value?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TemplateLifestyleItemUpdate {
+  id?: string;
+  template_id?: string;
+  lifestyle_activity_type_id?: string;
+  target_value?: number | null;
+  time_type?: TimeType | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  time_period?: TimePeriod | null;
+  relative_anchor?: RelativeAnchor | null;
+  relative_offset_minutes?: number | null;
+  notes?: string | null;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// =============================================================================
+// TEMPLATE ITEMS WITH RELATIONS
+// =============================================================================
+
+/**
+ * Template Diet Item with related food item data
+ */
+export interface TemplateDietItemWithFood extends TemplateDietItem {
+  food_items: FoodItem | null;
+}
+
+/**
+ * Template Supplement Item with related supplement data
+ */
+export interface TemplateSupplementItemWithSupplement extends TemplateSupplementItem {
+  supplements: Supplement | null;
+}
+
+/**
+ * Template Workout Item with related exercise data
+ */
+export interface TemplateWorkoutItemWithExercise extends TemplateWorkoutItem {
+  exercises: Exercise | null;
+}
+
+/**
+ * Template Lifestyle Item with related activity type data
+ */
+export interface TemplateLifestyleItemWithType extends TemplateLifestyleItem {
+  lifestyle_activity_types: LifestyleActivityType | null;
+}
+
+/**
+ * Plan Template with item counts (for list view)
+ */
+export interface PlanTemplateWithCounts extends PlanTemplate {
+  diet_count: number;
+  supplement_count: number;
+  workout_count: number;
+  lifestyle_count: number;
+}

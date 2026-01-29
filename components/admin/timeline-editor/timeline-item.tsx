@@ -9,7 +9,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Utensils, Pill, Dumbbell, Activity, Check, Layers } from "lucide-react";
+import { Utensils, Pill, Dumbbell, Activity, Check, Layers, AlertOctagon } from "lucide-react";
 import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import type { TimelineItemType } from "@/lib/database.types";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
@@ -58,6 +58,10 @@ interface TimelineItemProps {
   onSelect?: (selected: boolean) => void;
   showSelect?: boolean;
   className?: string;
+  /** Whether this item has a food incompatibility with client conditions */
+  hasIncompatibility?: boolean;
+  /** Names of incompatible conditions for tooltip display */
+  incompatibleConditions?: string[];
 }
 
 /**
@@ -130,6 +134,8 @@ export function TimelineItem({
   onSelect,
   showSelect = false,
   className,
+  hasIncompatibility = false,
+  incompatibleConditions = [],
 }: TimelineItemProps) {
   const style = TYPE_STYLES[item.type];
   const Icon = style.icon;
@@ -147,8 +153,9 @@ export function TimelineItem({
       onClick={onClick}
       className={cn(
         "h-full w-full rounded border cursor-pointer transition-all overflow-hidden",
-        style.bgColor,
-        style.borderColor,
+        hasIncompatibility
+          ? "bg-red-500/10 border-red-500/70 border-2"
+          : cn(style.bgColor, style.borderColor),
         isAllDay && "opacity-40 border-dashed",
         isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
         onClick && "hover:brightness-110",
@@ -164,6 +171,12 @@ export function TimelineItem({
             <p className="font-bold text-sm text-foreground truncate leading-tight flex-1">
               {item.title}
             </p>
+            {/* Condition incompatibility warning badge */}
+            {hasIncompatibility && (
+              <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-red-500/30 border-2 border-red-500 animate-pulse">
+                <AlertOctagon className="h-4 w-4 text-red-400" />
+              </div>
+            )}
             {/* Group indicator */}
             {isGrouped && <Layers className={cn("h-3 w-3 shrink-0", style.textColor)} />}
           </div>
@@ -182,10 +195,23 @@ export function TimelineItem({
           )}
         </div>
 
-        {/* Category label or item count for groups */}
-        <span className={cn("text-[10px] font-bold uppercase tracking-wider", style.textColor)}>
-          {item.subtitle || item.type}
-        </span>
+        {/* Category label and condition warning */}
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "text-[10px] font-bold uppercase tracking-wider shrink-0",
+              style.textColor
+            )}
+          >
+            {item.subtitle || item.type}
+          </span>
+          {/* Condition warning text */}
+          {hasIncompatibility && incompatibleConditions.length > 0 && (
+            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider truncate">
+              ⚠ {incompatibleConditions.join(", ")}
+            </span>
+          )}
+        </div>
 
         {/* Item names for grouped items */}
         {isGrouped && item.itemNames && item.itemNames.length > 0 && (

@@ -17,6 +17,7 @@ import {
   Dumbbell,
   Activity,
   Utensils,
+  LayoutTemplate,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -94,6 +95,12 @@ const navItems: NavItem[] = [
     label: "Conditions",
     icon: HeartPulse,
     href: "/admin/config/conditions",
+    indent: true,
+  },
+  {
+    label: "Templates",
+    icon: LayoutTemplate,
+    href: "/admin/config/templates",
     indent: true,
   },
 ];
