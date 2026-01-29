@@ -89,8 +89,8 @@ export function MobileNav() {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="relative h-8 w-8">
-              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-contain" />
+            <div className="relative h-8 w-8 rounded-full overflow-hidden">
+              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-cover" />
             </div>
             <span className="text-lg font-black tracking-tight">
               METABOLI<span className="gradient-athletic">K</span>AL
@@ -136,8 +136,8 @@ export function MobileNav() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <Link href="/dashboard" onClick={closeMenu} className="flex items-center gap-3">
-            <div className="relative h-10 w-10">
-              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-contain" />
+            <div className="relative h-10 w-10 rounded-full overflow-hidden">
+              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-cover" />
             </div>
             <div>
               <span className="text-xl font-black tracking-tight">

@@ -44,8 +44,8 @@ export function Header() {
         <div className="flex h-20 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-4 group">
-            <div className="relative h-12 w-12 transition-transform duration-200 group-hover:scale-110">
-              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-contain" />
+            <div className="relative h-12 w-12 rounded-full overflow-hidden transition-transform duration-200 group-hover:scale-110">
+              <Image src="/images/logo.png" alt="Metabolikal" fill className="object-cover" />
             </div>
             <div>
               <span className="text-2xl font-black tracking-tight text-foreground">

@@ -71,8 +71,8 @@ export function Sidebar() {
       {/* Logo/Brand */}
       <div className="p-6 border-b border-border shrink-0">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="relative h-10 w-10 transition-transform duration-200 group-hover:scale-110">
-            <Image src="/images/logo.png" alt="Metabolikal" fill className="object-contain" />
+          <div className="relative h-10 w-10 rounded-full overflow-hidden transition-transform duration-200 group-hover:scale-110">
+            <Image src="/images/logo.png" alt="Metabolikal" fill className="object-cover" />
           </div>
           <div>
             <span className="text-xl font-black tracking-tight text-foreground">
