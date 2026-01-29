@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Shield, ArrowRight, Check, Star, Award, Briefcase } from "lucide-react";
 import { HeroBackground, HeroCTA, HeroEyebrow } from "./shared";
 
@@ -158,10 +159,17 @@ export function HeroVariantC({ onOpenCalendly, onOpenMethod }: HeroVariantCProps
           {/* Right - Coach Profile Card */}
           <div className="lg:col-span-5 animate-slide-power delay-400">
             <div className="athletic-card p-6 pl-8 sm:p-8 sm:pl-10">
-              {/* Coach Avatar Placeholder */}
+              {/* Coach Photo */}
               <div className="mb-6">
-                <div className="w-24 h-24 bg-secondary border-2 border-primary flex items-center justify-center mb-4">
-                  <span className="text-3xl font-black gradient-athletic">SS</span>
+                <div className="w-24 h-24 border-2 border-primary overflow-hidden mb-4">
+                  <Image
+                    src="/images/shivashish.webp"
+                    alt="Shivashish Sinha - Founder & Head Coach"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    priority
+                  />
                 </div>
               </div>
 

@@ -15,6 +15,7 @@ export const CSV_HEADERS = [
   "raw_quantity",
   "cooked_quantity",
   "meal_types",
+  "avoid_for_conditions",
 ] as const;
 
 export type CSVHeader = (typeof CSV_HEADERS)[number];
@@ -33,6 +34,7 @@ export interface RawCSVRow {
   raw_quantity?: string;
   cooked_quantity?: string;
   meal_types?: string;
+  avoid_for_conditions?: string;
 }
 
 /**
@@ -52,6 +54,8 @@ export interface ValidatedCSVRow {
   errors: CSVValidationError[];
   isValid: boolean;
   transformedData?: Omit<FoodItemInsert, "id" | "created_at" | "updated_at">;
+  /** Condition slugs parsed from avoid_for_conditions column (stored in junction table) */
+  conditionSlugs?: string[];
 }
 
 /**
@@ -67,14 +71,24 @@ export interface CSVParseResult {
 
 /**
  * Generate CSV template content for download
+ *
+ * Available condition slugs (from medical_conditions table):
+ * - hypothyroidism
+ * - pcos (female only)
+ * - type2-diabetes
+ * - insulin-resistance
+ * - sleep-apnea
+ * - metabolic-syndrome
+ * - thyroid-managed
+ * - chronic-fatigue
  */
 export function generateCSVTemplate(): string {
   const headers = CSV_HEADERS.join(",");
   const exampleRows = [
-    '"Grilled Chicken Breast",165,31,0,3.6,"100g",false,"130g raw","100g cooked","lunch|dinner"',
-    '"Brown Rice",216,5,45,1.8,"1 cup cooked",true,"80g dry","240g cooked","lunch|dinner"',
-    '"Greek Yogurt",100,17,6,0.7,"170g",true,,,"breakfast|snack"',
-    '"Banana",105,1.3,27,0.4,"1 medium",true,,,"breakfast|snack|pre-workout"',
+    '"Grilled Chicken Breast",165,31,0,3.6,"100g",false,"130g raw","100g cooked","lunch|dinner",""',
+    '"White Rice",206,4.3,45,0.4,"1 cup cooked",true,"80g dry","240g cooked","lunch|dinner","type2-diabetes|insulin-resistance"',
+    '"Greek Yogurt",100,17,6,0.7,"170g",true,,,"breakfast|snack",""',
+    '"Banana",105,1.3,27,0.4,"1 medium",true,,,"breakfast|snack|pre-workout","type2-diabetes"',
   ];
 
   return [headers, ...exampleRows].join("\n");
@@ -107,6 +121,17 @@ function parseMealTypes(value: string | undefined): string[] | null {
     .split("|")
     .map((t) => t.trim().toLowerCase())
     .filter((t) => t.length > 0);
+}
+
+/**
+ * Parse condition slugs from pipe-separated string
+ */
+function parseConditionSlugs(value: string | undefined): string[] {
+  if (!value || value.trim() === "") return [];
+  return value
+    .split("|")
+    .map((s) => s.trim().toLowerCase().replace(/\s+/g, "-"))
+    .filter((s) => s.length > 0);
 }
 
 /**
@@ -170,6 +195,9 @@ export function validateCSVRow(row: RawCSVRow, rowNumber: number): ValidatedCSVR
 
   const isValid = errors.length === 0;
 
+  // Parse condition slugs (for junction table)
+  const conditionSlugs = parseConditionSlugs(row.avoid_for_conditions);
+
   // Transform data if valid
   let transformedData: Omit<FoodItemInsert, "id" | "created_at" | "updated_at"> | undefined;
   if (isValid) {
@@ -193,6 +221,7 @@ export function validateCSVRow(row: RawCSVRow, rowNumber: number): ValidatedCSVR
     errors,
     isValid,
     transformedData,
+    conditionSlugs,
   };
 }
 

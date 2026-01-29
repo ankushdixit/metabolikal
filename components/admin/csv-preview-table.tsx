@@ -79,6 +79,9 @@ export function CSVPreviewTable({ rows, showOnlyErrors = false, className }: CSV
               <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
                 Veg
               </TableHead>
+              <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground min-w-[150px]">
+                Avoid For
+              </TableHead>
               <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground min-w-[200px]">
                 Errors
               </TableHead>
@@ -136,6 +139,9 @@ export function CSVPreviewTable({ rows, showOnlyErrors = false, className }: CSV
                     row.data.is_vegetarian === "1"
                       ? "Yes"
                       : "No"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {row.data.avoid_for_conditions || "-"}
                   </TableCell>
                   <TableCell>
                     {row.errors.length > 0 ? (
