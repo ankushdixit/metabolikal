@@ -19,7 +19,7 @@ export function Header() {
 
   useEffect(() => {
     // Get user and profile
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setUserId(data.user.id);
 

@@ -79,12 +79,13 @@ export default function ConditionsPage() {
       .not("medical_conditions", "is", null);
 
     // Check if any assessment or calculator result uses this condition slug
-    const assessmentUsage = (assessments || []).filter((item) =>
+    const assessmentUsage = (assessments || []).filter((item: { medical_conditions?: string[] }) =>
       item.medical_conditions?.includes(itemToDelete.slug)
     ).length;
 
-    const calculatorUsage = (calculatorResults || []).filter((item) =>
-      item.medical_conditions?.includes(itemToDelete.slug)
+    const calculatorUsage = (calculatorResults || []).filter(
+      (item: { medical_conditions?: string[] }) =>
+        item.medical_conditions?.includes(itemToDelete.slug)
     ).length;
 
     const totalUsage = assessmentUsage + calculatorUsage;

@@ -85,7 +85,9 @@ export default function EditFoodItemPage() {
           .eq("food_item_id", foodItemId);
 
         if (conditionData) {
-          setExistingConditionIds(conditionData.map((c) => c.condition_id));
+          setExistingConditionIds(
+            conditionData.map((c: { condition_id: string }) => c.condition_id)
+          );
         }
 
         // Fetch existing alternatives
@@ -96,7 +98,9 @@ export default function EditFoodItemPage() {
           .order("display_order", { ascending: true });
 
         if (alternativeData) {
-          setExistingAlternativeIds(alternativeData.map((a) => a.alternative_food_id));
+          setExistingAlternativeIds(
+            alternativeData.map((a: { alternative_food_id: string }) => a.alternative_food_id)
+          );
         }
       } catch (error) {
         console.error("Error fetching relationships:", error);

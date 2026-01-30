@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useList, useDelete } from "@refinedev/core";
+import { useList, useDelete, useUpdate } from "@refinedev/core";
 import Link from "next/link";
 import {
   Search,
@@ -10,8 +10,10 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Pill,
   Filter,
+  ArrowUp,
+  ArrowDown,
+  ExternalLink,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import {
@@ -32,20 +34,21 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
-import { SUPPLEMENT_CATEGORIES } from "@/lib/validations";
-import type { Supplement } from "@/lib/database.types";
+import { TESTIMONIAL_VIDEO_TYPES } from "@/lib/validations";
+import { getYouTubeThumbnail, getYouTubeWatchUrl } from "@/lib/utils/youtube";
+import type { TestimonialVideo } from "@/lib/database.types";
 
 /**
- * Supplements Page
- * Lists all supplements with search, filter, and CRUD operations
+ * Testimonial Videos Page
+ * Lists all YouTube testimonial videos with search, filter, reorder, and CRUD operations
  */
-export default function SupplementsPage() {
+export default function TestimonialVideosPage() {
   const [adminId, setAdminId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Supplement | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<TestimonialVideo | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Get current admin user ID
@@ -61,12 +64,12 @@ export default function SupplementsPage() {
   // Reset to page 1 when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, categoryFilter]);
+  }, [searchQuery, typeFilter]);
 
-  // Fetch all supplements (disable server pagination to get all records)
-  const supplementsQuery = useList<Supplement>({
-    resource: "supplements",
-    sorters: [{ field: "name", order: "asc" }],
+  // Fetch all videos
+  const videosQuery = useList<TestimonialVideo>({
+    resource: "testimonial_videos",
+    sorters: [{ field: "display_order", order: "asc" }],
     pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
@@ -77,38 +80,46 @@ export default function SupplementsPage() {
   const deleteMutation = useDelete();
   const isDeleting = deleteMutation.mutation.isPending;
 
-  // Process data
-  const supplements = supplementsQuery.query.data?.data || [];
+  // Update mutation for reordering
+  const updateMutation = useUpdate();
 
-  // Filter supplements based on search and category
-  const filteredSupplements = useMemo(() => {
-    let result = supplements;
+  // Process data
+  const videos = videosQuery.query.data?.data || [];
+
+  // Filter videos based on search and type
+  const filteredVideos = useMemo(() => {
+    let result = videos;
 
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter((item: Supplement) => item.name.toLowerCase().includes(query));
+      result = result.filter(
+        (item: TestimonialVideo) =>
+          item.title.toLowerCase().includes(query) ||
+          (item.client_name && item.client_name.toLowerCase().includes(query)) ||
+          item.youtube_video_id.toLowerCase().includes(query)
+      );
     }
 
-    // Filter by category
-    if (categoryFilter) {
-      result = result.filter((item: Supplement) => item.category === categoryFilter);
+    // Filter by type
+    if (typeFilter) {
+      result = result.filter((item: TestimonialVideo) => item.video_type === typeFilter);
     }
 
     return result;
-  }, [supplements, searchQuery, categoryFilter]);
+  }, [videos, searchQuery, typeFilter]);
 
   // Paginate
-  const totalPages = Math.ceil(filteredSupplements.length / ADMIN_PAGE_SIZE);
-  const paginatedItems = filteredSupplements.slice(
+  const totalPages = Math.ceil(filteredVideos.length / ADMIN_PAGE_SIZE);
+  const paginatedItems = filteredVideos.slice(
     (currentPage - 1) * ADMIN_PAGE_SIZE,
     currentPage * ADMIN_PAGE_SIZE
   );
 
-  const isLoading = supplementsQuery.query.isLoading;
+  const isLoading = videosQuery.query.isLoading;
 
   // Handle delete confirmation
-  const handleDeleteClick = (item: Supplement) => {
+  const handleDeleteClick = (item: TestimonialVideo) => {
     setItemToDelete(item);
     setDeleteError(null);
     setDeleteDialogOpen(true);
@@ -118,43 +129,70 @@ export default function SupplementsPage() {
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
 
-    // Check if supplement is used in supplement_plans
-    const supabase = createBrowserSupabaseClient();
-
-    const { count: planCount } = await supabase
-      .from("supplement_plans")
-      .select("*", { count: "exact", head: true })
-      .eq("supplement_id", itemToDelete.id);
-
-    if (planCount && planCount > 0) {
-      setDeleteError(
-        `Cannot delete: This supplement is used in ${planCount} client plan${planCount > 1 ? "s" : ""}`
-      );
-      return;
-    }
-
     deleteMutation.mutate(
       {
-        resource: "supplements",
+        resource: "testimonial_videos",
         id: itemToDelete.id,
       },
       {
         onSuccess: () => {
           setDeleteDialogOpen(false);
           setItemToDelete(null);
-          supplementsQuery.query.refetch();
+          videosQuery.query.refetch();
         },
         onError: () => {
-          setDeleteError("Failed to delete supplement. Please try again.");
+          setDeleteError("Failed to delete video. Please try again.");
         },
       }
     );
   };
 
-  // Get category label
-  const getCategoryLabel = (value: string) => {
-    const category = SUPPLEMENT_CATEGORIES.find((c) => c.value === value);
-    return category?.label || value;
+  // Handle reorder (move up/down)
+  const handleReorder = async (item: TestimonialVideo, direction: "up" | "down") => {
+    const currentIndex = filteredVideos.findIndex((v: TestimonialVideo) => v.id === item.id);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= filteredVideos.length) return;
+
+    const targetItem = filteredVideos[targetIndex];
+
+    // Swap display_order values
+    await Promise.all([
+      updateMutation.mutateAsync({
+        resource: "testimonial_videos",
+        id: item.id,
+        values: { display_order: targetItem.display_order },
+      }),
+      updateMutation.mutateAsync({
+        resource: "testimonial_videos",
+        id: targetItem.id,
+        values: { display_order: item.display_order },
+      }),
+    ]);
+
+    videosQuery.query.refetch();
+  };
+
+  // Toggle active status
+  const handleToggleActive = async (item: TestimonialVideo) => {
+    updateMutation.mutate(
+      {
+        resource: "testimonial_videos",
+        id: item.id,
+        values: { is_active: !item.is_active },
+      },
+      {
+        onSuccess: () => {
+          videosQuery.query.refetch();
+        },
+      }
+    );
+  };
+
+  // Get type label
+  const getTypeLabel = (value: string) => {
+    const type = TESTIMONIAL_VIDEO_TYPES.find((t) => t.value === value);
+    return type?.label || value;
   };
 
   return (
@@ -164,18 +202,18 @@ export default function SupplementsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
-              Supplements <span className="gradient-athletic">Library</span>
+              Testimonial <span className="gradient-athletic">Videos</span>
             </h1>
             <p className="text-sm text-muted-foreground font-bold">
-              Manage supplements for client plans
+              Manage YouTube video testimonials for the landing page
             </p>
           </div>
           <Link
-            href="/admin/config/supplements/create"
+            href="/admin/config/testimonial-videos/create"
             className="btn-athletic inline-flex items-center justify-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
           >
             <Plus className="h-5 w-5" />
-            <span>Add Supplement</span>
+            <span>Add Video</span>
           </Link>
         </div>
       </div>
@@ -188,36 +226,36 @@ export default function SupplementsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by supplement name..."
+              placeholder="Search by title, client name, or video ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-secondary border border-border text-foreground placeholder:text-muted-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
-          {/* Category Filter */}
+          {/* Type Filter */}
           <div className="relative">
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
               className="pl-12 pr-8 py-3 bg-secondary border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer min-w-[180px]"
             >
-              <option value="">All Categories</option>
-              {SUPPLEMENT_CATEGORIES.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
+              <option value="">All Types</option>
+              {TESTIMONIAL_VIDEO_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
                 </option>
               ))}
             </select>
           </div>
         </div>
         <div className="mt-3 text-sm text-muted-foreground font-bold">
-          {filteredSupplements.length} supplement{filteredSupplements.length !== 1 ? "s" : ""} found
+          {filteredVideos.length} video{filteredVideos.length !== 1 ? "s" : ""} found
         </div>
       </div>
 
-      {/* Supplements Table */}
+      {/* Videos Table */}
       <div className="athletic-card overflow-hidden">
         {isLoading ? (
           <div className="p-4 animate-pulse">
@@ -236,17 +274,15 @@ export default function SupplementsPage() {
         ) : paginatedItems.length === 0 ? (
           <div className="p-8 pl-10 text-center">
             <p className="text-muted-foreground font-bold">
-              {searchQuery || categoryFilter
-                ? "No supplements match your search"
-                : "No supplements found"}
+              {searchQuery || typeFilter ? "No videos match your search" : "No videos found"}
             </p>
-            {!searchQuery && !categoryFilter && (
+            {!searchQuery && !typeFilter && (
               <Link
-                href="/admin/config/supplements/create"
+                href="/admin/config/testimonial-videos/create"
                 className="btn-athletic inline-flex items-center gap-2 px-4 py-2 mt-4 gradient-electric text-black"
               >
                 <Plus className="h-4 w-4" />
-                <span>Add your first supplement</span>
+                <span>Add your first video</span>
               </Link>
             )}
           </div>
@@ -256,59 +292,110 @@ export default function SupplementsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Name
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground w-12">
+                      #
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Category
+                      Video
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Dosage
-                    </TableHead>
-                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground">
-                      Unit
+                      Type
                     </TableHead>
                     <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-center">
                       Active
                     </TableHead>
-                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right w-24">
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-center">
+                      Order
+                    </TableHead>
+                    <TableHead className="font-black text-xs tracking-wider uppercase text-muted-foreground text-right w-32">
                       Actions
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedItems.map((item: Supplement) => (
+                  {paginatedItems.map((item: TestimonialVideo, index: number) => (
                     <TableRow key={item.id} className="border-border">
+                      <TableCell className="text-muted-foreground">
+                        {(currentPage - 1) * ADMIN_PAGE_SIZE + index + 1}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10">
-                            <Pill className="h-4 w-4 text-primary" />
+                          <div className="relative w-20 h-12 bg-secondary overflow-hidden flex-shrink-0">
+                            <img
+                              src={getYouTubeThumbnail(item.youtube_video_id, "default")}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                          <span className="font-bold">{item.name}</span>
+                          <div className="min-w-0">
+                            <span className="font-bold block truncate">{item.title}</span>
+                            {item.client_name && (
+                              <span className="text-xs text-muted-foreground block">
+                                {item.client_name}
+                              </span>
+                            )}
+                            <a
+                              href={getYouTubeWatchUrl(item.youtube_video_id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {item.youtube_video_id}
+                            </a>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         <span className="px-2 py-1 bg-secondary text-xs font-bold uppercase tracking-wider">
-                          {getCategoryLabel(item.category)}
+                          {getTypeLabel(item.video_type)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.default_dosage}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.dosage_unit}</TableCell>
                       <TableCell className="text-center">
-                        {item.is_active ? (
-                          <span className="inline-flex items-center justify-center px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-bold uppercase">
-                            Yes
+                        <button
+                          onClick={() => handleToggleActive(item)}
+                          className="cursor-pointer"
+                          title={item.is_active ? "Click to deactivate" : "Click to activate"}
+                        >
+                          {item.is_active ? (
+                            <span className="inline-flex items-center justify-center px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-bold uppercase">
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-2 py-1 bg-destructive/20 text-red-500 text-xs font-bold uppercase">
+                              No
+                            </span>
+                          )}
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleReorder(item, "up")}
+                            disabled={index === 0}
+                            className="p-1 rounded hover:bg-secondary transition-colors disabled:opacity-30"
+                            title="Move up"
+                          >
+                            <ArrowUp className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </button>
+                          <span className="text-xs font-bold text-muted-foreground w-8">
+                            {item.display_order}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center px-2 py-1 bg-destructive/20 text-red-500 text-xs font-bold uppercase">
-                            No
-                          </span>
-                        )}
+                          <button
+                            onClick={() => handleReorder(item, "down")}
+                            disabled={index === paginatedItems.length - 1}
+                            className="p-1 rounded hover:bg-secondary transition-colors disabled:opacity-30"
+                            title="Move down"
+                          >
+                            <ArrowDown className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Link
-                            href={`/admin/config/supplements/edit/${item.id}`}
+                            href={`/admin/config/testimonial-videos/edit/${item.id}`}
                             className="p-2 rounded hover:bg-secondary transition-colors"
                             title="Edit"
                           >
@@ -365,7 +452,7 @@ export default function SupplementsPage() {
           <div className="p-6">
             <DialogHeader>
               <DialogTitle className="text-xl font-black uppercase tracking-tight">
-                Delete <span className="gradient-athletic">{itemToDelete?.name}</span>?
+                Delete <span className="gradient-athletic">{itemToDelete?.title}</span>?
               </DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold mt-2">
                 This action cannot be undone.

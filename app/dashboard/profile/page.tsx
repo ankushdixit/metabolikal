@@ -23,12 +23,14 @@ export default function ProfilePage() {
   // Get current user from Supabase auth
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email || null);
-      }
-    });
+    supabase.auth
+      .getUser()
+      .then(({ data }: { data: { user: { id: string; email?: string } | null } }) => {
+        if (data.user) {
+          setUserId(data.user.id);
+          setUserEmail(data.user.email || null);
+        }
+      });
   }, []);
 
   // Fetch user profile

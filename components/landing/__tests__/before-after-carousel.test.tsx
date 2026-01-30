@@ -1,7 +1,87 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BeforeAfterCarousel } from "../before-after-carousel";
-import { TRANSFORMATIONS } from "@/lib/data/transformations";
+
+// Mock transformation data for tests (using the transformed format that the component expects)
+const MOCK_TRANSFORMATIONS = [
+  {
+    id: "transformation-1",
+    clientName: "Shivashish S.",
+    profession: "Metabolikal Founder",
+    duration: "90 days",
+    result: "Went from 25% to 15% body fat. Lost 4kg fat",
+    beforeImage: "/images/transformations/client1-before.jpg",
+    afterImage: "/images/transformations/client1-after.jpg",
+  },
+  {
+    id: "transformation-2",
+    clientName: "Sandeep",
+    profession: "Lead Engineer",
+    duration: "3 months",
+    result: "Gained 7.5kg",
+    beforeImage: "/images/transformations/client2-before.jpg",
+    afterImage: "/images/transformations/client2-after.jpg",
+  },
+  {
+    id: "transformation-3",
+    clientName: "Sumedha",
+    profession: "IT Professional",
+    duration: "16 weeks",
+    result: "Lost 10kg",
+    beforeImage: "/images/transformations/client3-before.jpg",
+    afterImage: "/images/transformations/client3-after.jpg",
+  },
+];
+
+// Database format data for mocking supabase response
+const MOCK_DB_DATA = [
+  {
+    id: "transformation-1",
+    client_name: "Shivashish S.",
+    profession: "Metabolikal Founder",
+    duration: "90 days",
+    result: "Went from 25% to 15% body fat. Lost 4kg fat",
+    before_image_url: "/images/transformations/client1-before.jpg",
+    after_image_url: "/images/transformations/client1-after.jpg",
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    id: "transformation-2",
+    client_name: "Sandeep",
+    profession: "Lead Engineer",
+    duration: "3 months",
+    result: "Gained 7.5kg",
+    before_image_url: "/images/transformations/client2-before.jpg",
+    after_image_url: "/images/transformations/client2-after.jpg",
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    id: "transformation-3",
+    client_name: "Sumedha",
+    profession: "IT Professional",
+    duration: "16 weeks",
+    result: "Lost 10kg",
+    before_image_url: "/images/transformations/client3-before.jpg",
+    after_image_url: "/images/transformations/client3-after.jpg",
+    display_order: 3,
+    is_active: true,
+  },
+];
+
+// Mock Supabase client to return our mock data
+jest.mock("@/lib/auth", () => ({
+  createBrowserSupabaseClient: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          order: jest.fn(() => Promise.resolve({ data: MOCK_DB_DATA, error: null })),
+        })),
+      })),
+    })),
+  })),
+}));
 
 // Mock next/image
 jest.mock("next/image", () => ({
@@ -50,35 +130,46 @@ describe("BeforeAfterCarousel", () => {
     expect(screen.getByLabelText("Next transformation")).toBeInTheDocument();
   });
 
-  it("renders dot indicators for all transformations", () => {
+  it("renders dot indicators for all transformations", async () => {
     render(<BeforeAfterCarousel />);
-    const dots = screen.getAllByRole("tab");
-    expect(dots.length).toBe(TRANSFORMATIONS.length);
+    await waitFor(() => {
+      const dots = screen.getAllByRole("tab");
+      expect(dots.length).toBe(MOCK_TRANSFORMATIONS.length);
+    });
   });
 
-  it("shows first transformation by default", () => {
+  it("shows first transformation by default", async () => {
     render(<BeforeAfterCarousel />);
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    await waitFor(() => {
+      const firstClient = MOCK_TRANSFORMATIONS[0];
+      expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    });
     // Check that the result text is in the document (wrapped in quotes)
     const carouselContent = screen.getByRole("group", { name: /Transformation 1 of/i });
-    expect(carouselContent.textContent).toContain(firstClient.result);
+    expect(carouselContent.textContent).toContain(MOCK_TRANSFORMATIONS[0].result);
   });
 
   it("navigates to next transformation when clicking next button", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
 
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
+
     const nextButton = screen.getByLabelText("Next transformation");
     await user.click(nextButton);
 
-    const secondClient = TRANSFORMATIONS[1];
-    expect(screen.getByText(secondClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[1].clientName)).toBeInTheDocument();
   });
 
   it("navigates to previous transformation when clicking previous button", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
 
     // Go to second slide first
     const nextButton = screen.getByLabelText("Next transformation");
@@ -88,50 +179,66 @@ describe("BeforeAfterCarousel", () => {
     const prevButton = screen.getByLabelText("Previous transformation");
     await user.click(prevButton);
 
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
   });
 
   it("wraps around to last slide when clicking previous on first slide", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
 
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
+
     const prevButton = screen.getByLabelText("Previous transformation");
     await user.click(prevButton);
 
-    const lastClient = TRANSFORMATIONS[TRANSFORMATIONS.length - 1];
-    expect(screen.getByText(lastClient.clientName)).toBeInTheDocument();
+    expect(
+      screen.getByText(MOCK_TRANSFORMATIONS[MOCK_TRANSFORMATIONS.length - 1].clientName)
+    ).toBeInTheDocument();
   });
 
   it("wraps around to first slide when clicking next on last slide", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
 
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
+
     // Navigate to the last slide
     const nextButton = screen.getByLabelText("Next transformation");
-    for (let i = 0; i < TRANSFORMATIONS.length; i++) {
+    for (let i = 0; i < MOCK_TRANSFORMATIONS.length; i++) {
       await user.click(nextButton);
     }
 
     // Should be back at first slide
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
   });
 
   it("navigates to specific slide when clicking dot indicator", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
 
+    await waitFor(() => {
+      const dots = screen.getAllByRole("tab");
+      expect(dots.length).toBe(MOCK_TRANSFORMATIONS.length);
+    });
+
     const dots = screen.getAllByRole("tab");
     await user.click(dots[2]); // Click third dot
 
-    const thirdClient = TRANSFORMATIONS[2];
-    expect(screen.getByText(thirdClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[2].clientName)).toBeInTheDocument();
   });
 
   it("updates dot indicator aria-selected when navigating", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<BeforeAfterCarousel />);
+
+    await waitFor(() => {
+      const dots = screen.getAllByRole("tab");
+      expect(dots.length).toBe(MOCK_TRANSFORMATIONS.length);
+    });
 
     const dots = screen.getAllByRole("tab");
     expect(dots[0]).toHaveAttribute("aria-selected", "true");
@@ -144,43 +251,57 @@ describe("BeforeAfterCarousel", () => {
     expect(dots[1]).toHaveAttribute("aria-selected", "true");
   });
 
-  it("responds to keyboard left arrow navigation", () => {
+  it("responds to keyboard left arrow navigation", async () => {
     render(<BeforeAfterCarousel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
 
     // Press left arrow (should go to last slide)
     fireEvent.keyDown(window, { key: "ArrowLeft" });
 
-    const lastClient = TRANSFORMATIONS[TRANSFORMATIONS.length - 1];
-    expect(screen.getByText(lastClient.clientName)).toBeInTheDocument();
+    expect(
+      screen.getByText(MOCK_TRANSFORMATIONS[MOCK_TRANSFORMATIONS.length - 1].clientName)
+    ).toBeInTheDocument();
   });
 
-  it("responds to keyboard right arrow navigation", () => {
+  it("responds to keyboard right arrow navigation", async () => {
     render(<BeforeAfterCarousel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
 
     // Press right arrow
     fireEvent.keyDown(window, { key: "ArrowRight" });
 
-    const secondClient = TRANSFORMATIONS[1];
-    expect(screen.getByText(secondClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[1].clientName)).toBeInTheDocument();
   });
 
-  it("renders before and after images", () => {
+  it("renders before and after images", async () => {
     render(<BeforeAfterCarousel />);
-    const images = screen.getAllByTestId("mock-image");
-    expect(images.length).toBe(2); // Before and After images
+    await waitFor(() => {
+      const images = screen.getAllByTestId("mock-image");
+      expect(images.length).toBe(2); // Before and After images
+    });
   });
 
-  it("renders before and after labels", () => {
+  it("renders before and after labels", async () => {
     render(<BeforeAfterCarousel />);
-    expect(screen.getByText("Before")).toBeInTheDocument();
-    expect(screen.getByText("After")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Before")).toBeInTheDocument();
+      expect(screen.getByText("After")).toBeInTheDocument();
+    });
   });
 
-  it("displays client profession and duration", () => {
+  it("displays client profession and duration", async () => {
     render(<BeforeAfterCarousel />);
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.duration)).toBeInTheDocument();
-    expect(screen.getByText(firstClient.profession)).toBeInTheDocument();
+    const firstClient = MOCK_TRANSFORMATIONS[0];
+    await waitFor(() => {
+      expect(screen.getByText(firstClient.duration)).toBeInTheDocument();
+      expect(screen.getByText(firstClient.profession)).toBeInTheDocument();
+    });
   });
 
   it("applies custom className when provided", () => {
@@ -188,26 +309,27 @@ describe("BeforeAfterCarousel", () => {
     expect(container.firstChild).toHaveClass("custom-class");
   });
 
-  it("auto-advances when autoAdvanceInterval is set", () => {
+  it("auto-advances when autoAdvanceInterval is set", async () => {
     render(<BeforeAfterCarousel autoAdvanceInterval={5000} />);
 
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
 
     // Advance timer by 5 seconds
     act(() => {
       jest.advanceTimersByTime(5000);
     });
 
-    const secondClient = TRANSFORMATIONS[1];
-    expect(screen.getByText(secondClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[1].clientName)).toBeInTheDocument();
   });
 
-  it("does not auto-advance when autoAdvanceInterval is 0", () => {
+  it("does not auto-advance when autoAdvanceInterval is 0", async () => {
     render(<BeforeAfterCarousel autoAdvanceInterval={0} />);
 
-    const firstClient = TRANSFORMATIONS[0];
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
+    });
 
     // Advance timer
     act(() => {
@@ -215,19 +337,27 @@ describe("BeforeAfterCarousel", () => {
     });
 
     // Should still be on first slide
-    expect(screen.getByText(firstClient.clientName)).toBeInTheDocument();
+    expect(screen.getByText(MOCK_TRANSFORMATIONS[0].clientName)).toBeInTheDocument();
   });
 
-  it("announces slide changes for screen readers", () => {
+  it("announces slide changes for screen readers", async () => {
     render(<BeforeAfterCarousel />);
-    const announcement = screen.getByText(/Showing transformation 1 of/i);
-    expect(announcement).toBeInTheDocument();
-    expect(announcement).toHaveClass("sr-only");
-    expect(announcement).toHaveAttribute("aria-live", "polite");
+    await waitFor(() => {
+      const announcement = screen.getByText(/Showing transformation 1 of/i);
+      expect(announcement).toBeInTheDocument();
+      expect(announcement).toHaveClass("sr-only");
+      expect(announcement).toHaveAttribute("aria-live", "polite");
+    });
   });
 
-  it("handles image error gracefully with fallback", () => {
+  it("handles image error gracefully with fallback", async () => {
     render(<BeforeAfterCarousel />);
+
+    await waitFor(() => {
+      const images = screen.getAllByTestId("mock-image");
+      expect(images.length).toBe(2);
+    });
+
     const images = screen.getAllByTestId("mock-image");
 
     // Trigger error on before image

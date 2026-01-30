@@ -18,6 +18,8 @@ import {
   Activity,
   Utensils,
   LayoutTemplate,
+  Video,
+  ImageIcon,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -101,6 +103,18 @@ const navItems: NavItem[] = [
     label: "Templates",
     icon: LayoutTemplate,
     href: "/admin/config/templates",
+    indent: true,
+  },
+  {
+    label: "Testimonial Videos",
+    icon: Video,
+    href: "/admin/config/testimonial-videos",
+    indent: true,
+  },
+  {
+    label: "Transformation Photos",
+    icon: ImageIcon,
+    href: "/admin/config/testimonial-photos",
     indent: true,
   },
 ];

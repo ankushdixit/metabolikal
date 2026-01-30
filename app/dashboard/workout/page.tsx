@@ -54,7 +54,7 @@ export default function WorkoutPage() {
   // Get current user ID
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setUserId(data.user.id);
       }

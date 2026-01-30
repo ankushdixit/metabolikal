@@ -41,7 +41,7 @@ export function Sidebar() {
 
   useEffect(() => {
     // Get user profile
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         const { data: profile } = await supabase
           .from("profiles")

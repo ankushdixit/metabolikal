@@ -37,7 +37,7 @@ export default function ChallengersPage() {
 
   // Get current admin user ID
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setAdminId(data.user.id);
       }

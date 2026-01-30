@@ -697,3 +697,70 @@ export const planTemplateSchema = z.object({
 });
 
 export type PlanTemplateFormData = z.infer<typeof planTemplateSchema>;
+
+/**
+ * Video types for testimonial videos.
+ */
+export const TESTIMONIAL_VIDEO_TYPES = [
+  { value: "short", label: "Short (9:16)" },
+  { value: "landscape", label: "Landscape (16:9)" },
+] as const;
+
+export type TestimonialVideoType = (typeof TESTIMONIAL_VIDEO_TYPES)[number]["value"];
+
+/**
+ * Testimonial video validation schema.
+ * Validates YouTube video testimonial data for admin management.
+ */
+export const testimonialVideoSchema = z.object({
+  youtube_video_id: z
+    .string()
+    .min(1, { message: "YouTube video ID is required" })
+    .max(50, { message: "Invalid YouTube video ID" }),
+  title: z
+    .string()
+    .min(1, { message: "Title is required" })
+    .max(200, { message: "Title must be 200 characters or less" }),
+  client_name: z
+    .string()
+    .max(100, { message: "Client name must be 100 characters or less" })
+    .optional()
+    .nullable(),
+  video_type: z.enum(["short", "landscape"], {
+    message: "Please select a video type",
+  }),
+  display_order: z.number().int().min(0).optional().nullable(),
+  is_active: z.boolean(),
+});
+
+export type TestimonialVideoFormData = z.infer<typeof testimonialVideoSchema>;
+
+/**
+ * Testimonial photo validation schema.
+ * Validates before/after transformation photo data for admin management.
+ */
+export const testimonialPhotoSchema = z.object({
+  client_name: z
+    .string()
+    .min(1, { message: "Client name is required" })
+    .max(100, { message: "Client name must be 100 characters or less" }),
+  profession: z
+    .string()
+    .max(100, { message: "Profession must be 100 characters or less" })
+    .optional()
+    .nullable(),
+  duration: z
+    .string()
+    .min(1, { message: "Duration is required" })
+    .max(50, { message: "Duration must be 50 characters or less" }),
+  result: z
+    .string()
+    .min(1, { message: "Result is required" })
+    .max(200, { message: "Result must be 200 characters or less" }),
+  before_image_url: z.string().min(1, { message: "Before image is required" }),
+  after_image_url: z.string().min(1, { message: "After image is required" }),
+  display_order: z.number().int().min(0).optional().nullable(),
+  is_active: z.boolean(),
+});
+
+export type TestimonialPhotoFormData = z.infer<typeof testimonialPhotoSchema>;

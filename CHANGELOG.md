@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Testimonials Management**: Admin portal functionality to manage testimonial videos and before/after transformation photos:
+  - **Database Schema**: New `testimonial_videos` and `testimonial_photos` tables with RLS policies, storage bucket for photo uploads
+  - **Video Management**: Full CRUD for YouTube videos (shorts and landscape formats) at `/admin/config/testimonial-videos`
+  - **Photo Management**: Full CRUD for before/after photos with 600x800px dimension validation at `/admin/config/testimonial-photos`
+  - **YouTube URL Parsing**: Utility functions to extract video IDs from various YouTube URL formats
+  - **Reordering & Activation**: Display order management and active/inactive toggle for both videos and photos
+  - **Landing Page Integration**: Carousels now fetch from database with fallback to hardcoded data
+  - **Migration with Seed Data**: Pre-populated with existing video IDs and transformation photos
+  - Added Testimonials navigation links under Configuration in admin sidebar
+
+### Changed
+
+- **Hero Variant C**: Updated coach experience text to "2+ years coaching + 13 years fitness experience"
+
+### Fixed
+
+- **Supabase "Signal Aborted" Error**: Fixed Navigator Locks API conflict causing "signal is aborted without reason" errors:
+  - Added no-op lock function to bypass Navigator Locks in browser Supabase client
+  - Consolidated Supabase client usage to prevent multiple clients competing for locks
+  - Singleton pattern ensures single client instance manages auth state
+
+- **TypeScript Type Errors**: Fixed 37 implicit `any` type errors across the codebase:
+  - Added explicit types for Supabase auth `getUser()` callback parameters
+  - Typed filter and map callback parameters in admin pages
+  - All files now pass strict TypeScript type checking
+
 - **CSV Bulk Upload Conditions Column**: Added `avoid_for_conditions` column to food item CSV import:
   - New column in CSV template for specifying medical conditions (pipe-separated slugs)
   - Parses and normalizes condition slugs (e.g., "Type2 Diabetes" → "type2-diabetes")

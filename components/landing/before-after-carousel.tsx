@@ -3,7 +3,31 @@
 import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { TRANSFORMATIONS } from "@/lib/data/transformations";
+import { createBrowserSupabaseClient } from "@/lib/auth";
+import type { TestimonialPhoto } from "@/lib/database.types";
+
+interface BeforeAfterTransformation {
+  id: string;
+  clientName: string;
+  profession: string;
+  duration: string;
+  result: string;
+  beforeImage: string;
+  afterImage: string;
+}
+
+// Fallback transformation data
+const FALLBACK_TRANSFORMATIONS: BeforeAfterTransformation[] = [
+  {
+    id: "fallback-1",
+    clientName: "Client",
+    profession: "",
+    duration: "12 weeks",
+    result: "Amazing transformation",
+    beforeImage: "/images/transformations/client1-before.jpg",
+    afterImage: "/images/transformations/client1-after.jpg",
+  },
+];
 
 interface BeforeAfterCarouselProps {
   /** Custom class name for the container */
@@ -12,14 +36,69 @@ interface BeforeAfterCarouselProps {
   autoAdvanceInterval?: number;
 }
 
+/**
+ * Get displayable image URL
+ * Handles both static paths (/images/...) and Supabase storage paths
+ */
+function getImageUrl(path: string | null): string {
+  if (!path) return "";
+  if (path.startsWith("/images/") || path.startsWith("http")) {
+    return path;
+  }
+  // For storage paths, construct the public URL
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return `${supabaseUrl}/storage/v1/object/public/testimonials/${path}`;
+}
+
 export function BeforeAfterCarousel({
   className = "",
   autoAdvanceInterval = 0,
 }: BeforeAfterCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [transformations, setTransformations] =
+    useState<BeforeAfterTransformation[]>(FALLBACK_TRANSFORMATIONS);
 
-  const totalSlides = TRANSFORMATIONS.length;
+  // Fetch photos from database
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const supabase = createBrowserSupabaseClient();
+        const { data, error } = await supabase
+          .from("testimonial_photos")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching testimonial photos:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          // Transform database data to component format
+          const transformedData: BeforeAfterTransformation[] = data.map(
+            (photo: TestimonialPhoto) => ({
+              id: photo.id,
+              clientName: photo.client_name,
+              profession: photo.profession || "",
+              duration: photo.duration,
+              result: photo.result,
+              beforeImage: getImageUrl(photo.before_image_url),
+              afterImage: getImageUrl(photo.after_image_url),
+            })
+          );
+          setTransformations(transformedData);
+        }
+      } catch (error) {
+        console.error("Error fetching testimonial photos:", error);
+      }
+    };
+
+    fetchPhotos();
+  }, []);
+
+  const totalSlides = transformations.length;
 
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -58,7 +137,7 @@ export function BeforeAfterCarousel({
     return () => clearInterval(interval);
   }, [autoAdvanceInterval, goToNext]);
 
-  const currentTransformation = TRANSFORMATIONS[currentIndex];
+  const currentTransformation = transformations[currentIndex];
 
   const handleImageError = (imageKey: string) => {
     setImageErrors((prev) => ({ ...prev, [imageKey]: true }));
@@ -167,10 +246,14 @@ export function BeforeAfterCarousel({
                 <span className="px-2 py-1 bg-secondary rounded font-bold">
                   {currentTransformation.duration}
                 </span>
-                <span>•</span>
-                <span className="px-2 py-1 bg-secondary rounded font-bold">
-                  {currentTransformation.profession}
-                </span>
+                {currentTransformation.profession && (
+                  <>
+                    <span>•</span>
+                    <span className="px-2 py-1 bg-secondary rounded font-bold">
+                      {currentTransformation.profession}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -183,7 +266,7 @@ export function BeforeAfterCarousel({
         role="tablist"
         aria-label="Transformation slides"
       >
-        {TRANSFORMATIONS.map((_, index) => (
+        {transformations.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}

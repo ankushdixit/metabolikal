@@ -102,13 +102,43 @@ export function isChallenger(role: UserRole): boolean {
 // Client-side Supabase Client
 // =============================================================================
 
+// Singleton instance for browser client to prevent connection exhaustion
+let browserClientInstance: ReturnType<typeof createBrowserClient> | null = null;
+
+/**
+ * No-op lock function to bypass Navigator Locks API.
+ * This prevents "signal is aborted without reason" errors.
+ */
+const noOpLock = async <R>(
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<R>
+): Promise<R> => {
+  return await fn();
+};
+
 /**
  * Creates a Supabase client for browser/client-side usage with cookie storage.
  * Safe to use in client components.
+ *
+ * Uses singleton pattern to prevent creating multiple connections.
+ * Configured with lock settings to prevent "signal is aborted" errors.
  */
 export function createBrowserSupabaseClient() {
-  return createBrowserClient(
+  if (browserClientInstance) {
+    return browserClientInstance;
+  }
+
+  browserClientInstance = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        // Disable Navigator Locks to prevent "signal is aborted" errors
+        lock: noOpLock,
+      },
+    }
   );
+
+  return browserClientInstance;
 }
