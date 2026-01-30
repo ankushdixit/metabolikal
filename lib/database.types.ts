@@ -2162,3 +2162,96 @@ export interface PlanTemplateWithCounts extends PlanTemplate {
   workout_count: number;
   lifestyle_count: number;
 }
+
+// =============================================================================
+// TESTIMONIALS MANAGEMENT TYPES
+// =============================================================================
+
+/**
+ * Video type for testimonial videos
+ */
+export type TestimonialVideoType = "short" | "landscape";
+
+/**
+ * Testimonial Video - YouTube video testimonials
+ */
+export interface TestimonialVideo {
+  id: string;
+  youtube_video_id: string;
+  title: string;
+  client_name: string | null;
+  video_type: TestimonialVideoType;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestimonialVideoInsert {
+  id?: string;
+  youtube_video_id: string;
+  title: string;
+  client_name?: string | null;
+  video_type?: TestimonialVideoType;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TestimonialVideoUpdate {
+  id?: string;
+  youtube_video_id?: string;
+  title?: string;
+  client_name?: string | null;
+  video_type?: TestimonialVideoType;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Testimonial Photo - Before/after transformation photos
+ */
+export interface TestimonialPhoto {
+  id: string;
+  client_name: string;
+  profession: string | null;
+  duration: string;
+  result: string;
+  before_image_url: string;
+  after_image_url: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestimonialPhotoInsert {
+  id?: string;
+  client_name: string;
+  profession?: string | null;
+  duration: string;
+  result: string;
+  before_image_url: string;
+  after_image_url: string;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TestimonialPhotoUpdate {
+  id?: string;
+  client_name?: string;
+  profession?: string | null;
+  duration?: string;
+  result?: string;
+  before_image_url?: string;
+  after_image_url?: string;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

@@ -190,7 +190,7 @@ export function CopyDayModal({
 
           // Delete by IDs using Supabase .in() for each table
           if (allIds.diet.length > 0) {
-            const ids = allIds.diet.map((i) => i.id);
+            const ids = allIds.diet.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("diet_plans").delete().in("id", ids);
             if (error) {
               console.error("Failed to delete diet_plans:", error);
@@ -200,7 +200,7 @@ export function CopyDayModal({
           }
 
           if (allIds.supplement.length > 0) {
-            const ids = allIds.supplement.map((i) => i.id);
+            const ids = allIds.supplement.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("supplement_plans").delete().in("id", ids);
             if (error) {
               console.error("Failed to delete supplement_plans:", error);
@@ -210,7 +210,7 @@ export function CopyDayModal({
           }
 
           if (allIds.workout.length > 0) {
-            const ids = allIds.workout.map((i) => i.id);
+            const ids = allIds.workout.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("workout_plans").delete().in("id", ids);
             if (error) {
               console.error("Failed to delete workout_plans:", error);
@@ -220,7 +220,7 @@ export function CopyDayModal({
           }
 
           if (allIds.lifestyle.length > 0) {
-            const ids = allIds.lifestyle.map((i) => i.id);
+            const ids = allIds.lifestyle.map((i: { id: string }) => i.id);
             const { error } = await supabase
               .from("lifestyle_activity_plans")
               .delete()

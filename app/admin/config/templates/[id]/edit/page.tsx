@@ -29,7 +29,7 @@ export default function EditTemplatePage() {
   // Get current admin user ID
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setAdminId(data.user.id);
       }

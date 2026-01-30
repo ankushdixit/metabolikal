@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { createBrowserSupabaseClient } from "@/lib/auth";
+import type { TestimonialVideo } from "@/lib/database.types";
 
 interface YouTubeVideo {
   id: string;
@@ -9,29 +11,16 @@ interface YouTubeVideo {
   isLandscape?: boolean;
 }
 
-const YOUTUBE_SHORTS: YouTubeVideo[] = [
+// Fallback data in case database is empty or unavailable
+const FALLBACK_SHORTS: YouTubeVideo[] = [
   { id: "GKbzoiKoQzM", title: "Client Transformation Story" },
   { id: "QutRfBc9jM8", title: "Client Transformation Story" },
   { id: "FASef8aqdfM", title: "Client Transformation Story" },
-  { id: "js1TlePCC7k", title: "Client Transformation Story" },
-  { id: "bCTPI9SvZC0", title: "Client Transformation Story" },
-  { id: "BTOZPZZi5Dk", title: "Client Transformation Story" },
-  { id: "JiI63Walf4g", title: "Client Transformation Story" },
-  { id: "4YWgnJoAH9w", title: "Client Transformation Story" },
-  { id: "KVeFo0IoBA8", title: "Client Transformation Story" },
-  { id: "kyxYUoQRE2M", title: "Client Transformation Story" },
-  { id: "uDpy1Gh8bjs", title: "Client Transformation Story" },
-  { id: "mfPiQjgGzbo", title: "Client Transformation Story" },
 ];
 
-const YOUTUBE_TESTIMONIALS: YouTubeVideo[] = [
+const FALLBACK_TESTIMONIALS: YouTubeVideo[] = [
   { id: "K-HAAkZ1MzI", title: "Client Testimonial", isLandscape: true },
-  { id: "KKejfj9_ZIA", title: "Client Testimonial", isLandscape: true },
-  { id: "qsTew1fhnPY", title: "Client Testimonial", isLandscape: true },
 ];
-
-// Combined array with shorts first, then testimonials
-const ALL_VIDEOS: YouTubeVideo[] = [...YOUTUBE_SHORTS, ...YOUTUBE_TESTIMONIALS];
 
 interface YouTubeShortsCarouselProps {
   /** Whether to show navigation arrows (default: true on desktop) */
@@ -52,6 +41,43 @@ export function YouTubeShortsCarousel({
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [visibleVideos, setVisibleVideos] = useState<Set<number>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [videos, setVideos] = useState<YouTubeVideo[]>([
+    ...FALLBACK_SHORTS,
+    ...FALLBACK_TESTIMONIALS,
+  ]);
+
+  // Fetch videos from database
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const supabase = createBrowserSupabaseClient();
+        const { data, error } = await supabase
+          .from("testimonial_videos")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching testimonial videos:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          // Transform database data to component format
+          const transformedVideos: YouTubeVideo[] = data.map((video: TestimonialVideo) => ({
+            id: video.youtube_video_id,
+            title: video.title,
+            isLandscape: video.video_type === "landscape",
+          }));
+          setVideos(transformedVideos);
+        }
+      } catch (error) {
+        console.error("Error fetching testimonial videos:", error);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   // Update scroll button states
   const updateScrollState = () => {
@@ -64,9 +90,13 @@ export function YouTubeShortsCarousel({
   };
 
   // Set up intersection observer for lazy loading
+  // Re-run when videos change to observe new elements
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container) return;
+    if (!container || videos.length === 0) return;
+
+    // Clear previous visible videos when videos change
+    setVisibleVideos(new Set());
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -79,7 +109,7 @@ export function YouTubeShortsCarousel({
       },
       {
         root: container,
-        rootMargin: "100px",
+        rootMargin: "200px", // Increased margin to load videos earlier
         threshold: 0.1,
       }
     );
@@ -93,7 +123,7 @@ export function YouTubeShortsCarousel({
     return () => {
       observerRef.current?.disconnect();
     };
-  }, []);
+  }, [videos]); // Re-run when videos change
 
   // Update scroll state on scroll
   useEffect(() => {
@@ -191,7 +221,7 @@ export function YouTubeShortsCarousel({
         aria-label="Client transformation video stories"
       >
         <div className={`flex items-end ${gap} pb-2`}>
-          {ALL_VIDEOS.map((video, index) => (
+          {videos.map((video, index) => (
             <div
               key={video.id}
               data-index={index}
@@ -227,4 +257,7 @@ export function YouTubeShortsCarousel({
   );
 }
 
-export { YOUTUBE_SHORTS, YOUTUBE_TESTIMONIALS, ALL_VIDEOS };
+// Export fallback data for backwards compatibility
+export const YOUTUBE_SHORTS = FALLBACK_SHORTS;
+export const YOUTUBE_TESTIMONIALS = FALLBACK_TESTIMONIALS;
+export const ALL_VIDEOS = [...FALLBACK_SHORTS, ...FALLBACK_TESTIMONIALS];

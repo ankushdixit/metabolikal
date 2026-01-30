@@ -29,7 +29,7 @@ export function HeroVariantC({ onOpenCalendly, onOpenMethod }: HeroVariantCProps
 
   const coachCredentials = [
     { icon: Briefcase, text: "200+ clients coached" },
-    { icon: Award, text: "15 years experience" },
+    { icon: Award, text: "2+ years coaching + 13 years fitness experience" },
     { icon: Star, text: "Certified Metabolic Specialist" },
   ];
 

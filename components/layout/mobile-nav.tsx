@@ -43,7 +43,7 @@ export function MobileNav() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setUserId(data.user.id);
 

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import {
   YouTubeShortsCarousel,
   YOUTUBE_SHORTS,
@@ -15,6 +15,19 @@ mockIntersectionObserver.mockReturnValue({
 });
 window.IntersectionObserver = mockIntersectionObserver;
 
+// Mock Supabase client
+jest.mock("@/lib/auth", () => ({
+  createBrowserSupabaseClient: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          order: jest.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
+      })),
+    })),
+  })),
+}));
+
 describe("YouTubeShortsCarousel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -26,11 +39,13 @@ describe("YouTubeShortsCarousel", () => {
     expect(carousel).toBeInTheDocument();
   });
 
-  it("renders video placeholders for all videos (shorts + testimonials)", () => {
+  it("renders video placeholders for fallback videos when database is empty", async () => {
     render(<YouTubeShortsCarousel />);
-    const videoContainers = document.querySelectorAll("[data-index]");
-    expect(videoContainers.length).toBe(ALL_VIDEOS.length);
-    expect(ALL_VIDEOS.length).toBe(YOUTUBE_SHORTS.length + YOUTUBE_TESTIMONIALS.length);
+    await waitFor(() => {
+      const videoContainers = document.querySelectorAll("[data-index]");
+      // Uses fallback data (4 videos) since mock returns null
+      expect(videoContainers.length).toBe(ALL_VIDEOS.length);
+    });
   });
 
   it("renders navigation arrows when showArrows is true", () => {
@@ -55,11 +70,13 @@ describe("YouTubeShortsCarousel", () => {
     expect(container.firstChild).toHaveClass("custom-class");
   });
 
-  it("renders in compact mode with correct sizing", () => {
+  it("renders in compact mode with correct sizing", async () => {
     render(<YouTubeShortsCarousel compact={true} />);
-    const videoContainers = document.querySelectorAll("[data-index]");
-    // Verify first container has compact class
-    expect(videoContainers[0]).toHaveClass("w-[140px]");
+    await waitFor(() => {
+      const videoContainers = document.querySelectorAll("[data-index]");
+      // Verify first container has compact class
+      expect(videoContainers[0]).toHaveClass("w-[140px]");
+    });
   });
 
   it("sets up IntersectionObserver for lazy loading", () => {
@@ -77,17 +94,19 @@ describe("YouTubeShortsCarousel", () => {
   });
 
   it("exports video constants with correct structure", () => {
+    // YOUTUBE_SHORTS is now fallback data
     expect(YOUTUBE_SHORTS).toBeDefined();
     expect(Array.isArray(YOUTUBE_SHORTS)).toBe(true);
-    expect(YOUTUBE_SHORTS.length).toBe(12);
+    expect(YOUTUBE_SHORTS.length).toBeGreaterThan(0);
     YOUTUBE_SHORTS.forEach((short) => {
       expect(short).toHaveProperty("id");
       expect(short).toHaveProperty("title");
     });
 
+    // YOUTUBE_TESTIMONIALS is now fallback data
     expect(YOUTUBE_TESTIMONIALS).toBeDefined();
     expect(Array.isArray(YOUTUBE_TESTIMONIALS)).toBe(true);
-    expect(YOUTUBE_TESTIMONIALS.length).toBe(3);
+    expect(YOUTUBE_TESTIMONIALS.length).toBeGreaterThan(0);
     YOUTUBE_TESTIMONIALS.forEach((video) => {
       expect(video).toHaveProperty("id");
       expect(video).toHaveProperty("title");
@@ -95,7 +114,7 @@ describe("YouTubeShortsCarousel", () => {
     });
 
     expect(ALL_VIDEOS).toBeDefined();
-    expect(ALL_VIDEOS.length).toBe(15);
+    expect(ALL_VIDEOS.length).toBe(YOUTUBE_SHORTS.length + YOUTUBE_TESTIMONIALS.length);
   });
 
   it("renders play button icon in unloaded video placeholders", () => {

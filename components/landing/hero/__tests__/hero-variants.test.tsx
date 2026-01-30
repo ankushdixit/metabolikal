@@ -286,7 +286,9 @@ describe("HeroVariantC - Identity/Positioning Focus", () => {
   it("renders coach credentials", () => {
     render(<HeroVariantC onOpenCalendly={mockOnOpenCalendly} onOpenMethod={mockOnOpenMethod} />);
     expect(screen.getByText(/200\+ clients coached/i)).toBeInTheDocument();
-    expect(screen.getByText(/15 years experience/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/2\+ years coaching \+ 13 years fitness experience/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Certified Metabolic Specialist/i)).toBeInTheDocument();
   });
 

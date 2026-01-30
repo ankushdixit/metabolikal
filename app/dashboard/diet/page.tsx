@@ -87,7 +87,7 @@ export default function DietPlanPage() {
   // Get current user ID and calculate day number
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setUserId(data.user.id);
       }

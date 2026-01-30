@@ -40,6 +40,9 @@ export function createServerSupabaseClient(): SupabaseClient {
  * Creates a Supabase client for browser/client-side usage.
  * Uses only NEXT_PUBLIC_ environment variables.
  *
+ * NOTE: Prefer using createBrowserSupabaseClient from lib/auth.ts for most cases,
+ * as it has better SSR support. This function exists for backwards compatibility.
+ *
  * @throws Error if required NEXT_PUBLIC_ environment variables are missing
  */
 export function createBrowserSupabaseClient(): SupabaseClient {

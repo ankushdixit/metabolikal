@@ -189,7 +189,7 @@ export function useClientTimeline({
   // Get current user ID from Supabase auth
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       if (data.user) {
         setUserId(data.user.id);
       }

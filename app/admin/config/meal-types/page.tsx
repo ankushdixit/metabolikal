@@ -70,7 +70,7 @@ export default function MealTypesPage() {
       .not("meal_types", "is", null);
 
     // Check if any food item uses this meal type slug
-    const usageCount = (foodItems || []).filter((item) =>
+    const usageCount = (foodItems || []).filter((item: { meal_types?: string[] }) =>
       item.meal_types?.includes(itemToDelete.slug)
     ).length;
 

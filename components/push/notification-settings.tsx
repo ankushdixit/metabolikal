@@ -5,7 +5,7 @@ import { Bell, BellOff, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { usePushSubscription } from "@/hooks/use-push-subscription";
-import { createBrowserSupabaseClient } from "@/lib/supabase";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import { toast } from "sonner";
 import type { NotificationPreferences } from "@/lib/database.types";
 
