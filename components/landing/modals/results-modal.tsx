@@ -26,19 +26,22 @@ import {
   Users,
   Droplet,
   Zap,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { CalculatorResults, Goal } from "@/hooks/use-calculator";
 import { AssessmentScores } from "@/hooks/use-assessment";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { StoredAssessment, calculateScoreComparison } from "@/hooks/use-assessment-storage";
 import {
   getHealthScoreTier,
   getActionPlanStrategy,
   generatePriorityRecommendations,
   calculateLifestyleBoost,
-  calculatePhysicalMetricsScore,
   PriorityRecommendation,
 } from "@/lib/results-insights";
+import { toPng } from "html-to-image";
+import { ShareableResultsImage } from "../shareable-results-image";
 
 interface ResultsModalProps {
   open: boolean;
@@ -46,6 +49,11 @@ interface ResultsModalProps {
   results: CalculatorResults | null;
   lifestyleScore: number;
   healthScore: number;
+  /**
+   * Physical score calculated from BMI and body fat (0-100).
+   * This is NOT the same as metabolic impact.
+   */
+  physicalScore: number;
   goal: Goal;
   onBookCall: () => void;
   previousAssessment?: StoredAssessment | null;
@@ -78,6 +86,7 @@ export function ResultsModal({
   results,
   lifestyleScore,
   healthScore,
+  physicalScore,
   goal,
   onBookCall,
   previousAssessment,
@@ -85,6 +94,8 @@ export function ResultsModal({
 }: ResultsModalProps) {
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const shareImageRef = useRef<HTMLDivElement>(null);
 
   if (!results) return null;
 
@@ -99,8 +110,8 @@ export function ResultsModal({
   // Calculate lifestyle boost
   const lifestyleBoost = calculateLifestyleBoost(results.bmr, results.tdee);
 
-  // Calculate physical metrics score
-  const physicalMetricsScore = calculatePhysicalMetricsScore(results.metabolicImpactPercent);
+  // Physical score is now passed as a prop (calculated from BMI + body fat)
+  // No longer calculated from metabolic impact
 
   // Get action plan strategy
   const actionPlan = getActionPlanStrategy(goal, results.targetCalories);
@@ -110,21 +121,77 @@ export function ResultsModal({
     ? generatePriorityRecommendations(assessmentScores, 3)
     : [];
 
-  const handleShare = async () => {
-    const shareText = `My METABOLI-K-AL Results:\n\nHealth Score: ${healthScore}/100\nLifestyle Score: ${lifestyleScore}/100\nBMR: ${results.bmr} cal\nTDEE: ${results.tdee} cal\nTarget: ${results.targetCalories} cal\n\nDiscover your metabolic potential at metabolikal.com`;
+  // Generate shareable image and trigger download/share
+  const generateShareableImage = useCallback(async (): Promise<Blob | null> => {
+    if (!shareImageRef.current) return null;
 
-    if (navigator.share) {
-      try {
+    try {
+      const dataUrl = await toPng(shareImageRef.current, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: "#0a0a0a",
+      });
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      return await response.blob();
+    } catch (error) {
+      console.error("Error generating image:", error);
+      return null;
+    }
+  }, []);
+
+  const handleDownloadImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const blob = await generateShareableImage();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `metabolikal-results-${healthScore}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const blob = await generateShareableImage();
+
+      if (
+        blob &&
+        navigator.share &&
+        navigator.canShare?.({ files: [new File([blob], "results.png", { type: "image/png" })] })
+      ) {
+        // Share with image if supported
+        const file = new File([blob], "metabolikal-results.png", { type: "image/png" });
         await navigator.share({
           title: "My METABOLI-K-AL Results",
-          text: shareText,
+          text: `Check out my METABOLI-K-AL Health Score: ${healthScore}/100! Discover your metabolic potential at metabolikal.com`,
+          files: [file],
         });
-      } catch {
-        // User cancelled or share failed, show copy option
+      } else if (navigator.share) {
+        // Fallback to text-only share
+        await navigator.share({
+          title: "My METABOLI-K-AL Results",
+          text: `My METABOLI-K-AL Results:\n\nHealth Score: ${healthScore}/100\nLifestyle Score: ${lifestyleScore}/100\nBMR: ${results.bmr} cal\nTDEE: ${results.tdee} cal\nTarget: ${results.targetCalories} cal\n\nDiscover your metabolic potential at metabolikal.com`,
+        });
+      } else {
+        // No share API, show download option
         setShowShareOptions(true);
       }
-    } else {
+    } catch {
+      // User cancelled or share failed, show options
       setShowShareOptions(true);
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -238,7 +305,7 @@ export function ResultsModal({
                   <div className="text-xs font-black tracking-wider text-muted-foreground uppercase mb-2">
                     Physical Metrics
                   </div>
-                  <div className="text-4xl font-black text-primary">{physicalMetricsScore}</div>
+                  <div className="text-4xl font-black text-primary">{physicalScore}</div>
                   <div className="text-xs text-muted-foreground font-bold mt-1">Score</div>
                 </div>
                 <div className="athletic-card p-5 pl-8 text-center">
@@ -468,10 +535,38 @@ export function ResultsModal({
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleShare}
-                  className="btn-athletic flex items-center gap-2 px-6 py-3 bg-secondary text-foreground"
+                  disabled={isGeneratingImage}
+                  className="btn-athletic flex items-center gap-2 px-6 py-3 bg-secondary text-foreground disabled:opacity-50"
                 >
-                  <Share2 className="h-4 w-4" />
-                  Share Results
+                  {isGeneratingImage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" />
+                      Share Image
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleDownloadImage}
+                  disabled={isGeneratingImage}
+                  className="btn-athletic flex items-center gap-2 px-6 py-3 bg-secondary text-foreground disabled:opacity-50"
+                >
+                  {isGeneratingImage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Download Image
+                    </>
+                  )}
                 </button>
 
                 {showShareOptions && (
@@ -487,7 +582,7 @@ export function ResultsModal({
                     ) : (
                       <>
                         <Copy className="h-4 w-4" />
-                        Copy to Clipboard
+                        Copy Text
                       </>
                     )}
                   </button>
@@ -512,6 +607,29 @@ export function ResultsModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* Hidden shareable image - rendered off-screen for image generation */}
+      <div
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "-9999px",
+          width: "720px",
+          overflow: "hidden",
+        }}
+        aria-hidden="true"
+      >
+        <ShareableResultsImage
+          ref={shareImageRef}
+          healthScore={healthScore}
+          healthTierName={healthTier.name}
+          lifestyleScore={lifestyleScore}
+          physicalScore={physicalScore}
+          bmr={results.bmr}
+          tdee={results.tdee}
+          lifestyleBoostPercentage={lifestyleBoost.percentage}
+        />
+      </div>
     </Dialog>
   );
 }

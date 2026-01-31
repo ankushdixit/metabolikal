@@ -2255,3 +2255,158 @@ export interface TestimonialPhotoUpdate {
   created_at?: string;
   updated_at?: string;
 }
+
+// =============================================================================
+// CALCULATOR SETTINGS TYPES
+// =============================================================================
+
+/**
+ * Health score tier configuration for display
+ */
+export interface HealthScoreTier {
+  name: string;
+  description: string;
+  minScore: number;
+  maxScore: number;
+}
+
+/**
+ * Calculator settings row from the singleton table
+ * All calculator formulas are configurable through admin portal
+ */
+export interface CalculatorSettingsRow {
+  id: string;
+
+  // Activity Multipliers
+  activity_sedentary: number;
+  activity_lightly_active: number;
+  activity_moderately_active: number;
+  activity_very_active: number;
+  activity_extremely_active: number;
+
+  // Goal Adjustments (calories)
+  goal_fat_loss_adjustment: number;
+  goal_maintain_adjustment: number;
+  goal_muscle_gain_adjustment: number;
+
+  // Protein Ratios (g per kg)
+  protein_fat_loss: number;
+  protein_maintain: number;
+  protein_muscle_gain: number;
+
+  // Health Score Configuration
+  health_score_lifestyle_weight: number;
+  health_score_physical_weight: number;
+  health_score_calorie_bonus: number;
+  health_score_calorie_min: number;
+  health_score_calorie_max: number;
+
+  // Metabolic Impact Cap
+  metabolic_impact_cap: number;
+
+  // Lifestyle Multiplier
+  lifestyle_multiplier_enabled: boolean;
+  lifestyle_multiplier_divisor: number;
+
+  // Physical Score Configuration
+  physical_score_base: number;
+  physical_score_bmi_optimal: number;
+  physical_score_bmi_acceptable: number;
+  physical_score_bmi_outside: number;
+  physical_score_bodyfat_optimal: number;
+  physical_score_bodyfat_acceptable: number;
+  physical_score_bodyfat_outside: number;
+
+  // BMI Range Definitions
+  bmi_optimal_min: number;
+  bmi_optimal_max: number;
+  bmi_acceptable_min: number;
+  bmi_acceptable_max: number;
+
+  // Body Fat Range Definitions - Male
+  bodyfat_male_optimal_min: number;
+  bodyfat_male_optimal_max: number;
+  bodyfat_male_acceptable_min: number;
+  bodyfat_male_acceptable_max: number;
+
+  // Body Fat Range Definitions - Female
+  bodyfat_female_optimal_min: number;
+  bodyfat_female_optimal_max: number;
+  bodyfat_female_acceptable_min: number;
+  bodyfat_female_acceptable_max: number;
+
+  // Health Score Tiers (parsed from JSON)
+  health_score_tiers: HealthScoreTier[];
+
+  // Audit
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalculatorSettingsUpdate {
+  // Activity Multipliers
+  activity_sedentary?: number;
+  activity_lightly_active?: number;
+  activity_moderately_active?: number;
+  activity_very_active?: number;
+  activity_extremely_active?: number;
+
+  // Goal Adjustments
+  goal_fat_loss_adjustment?: number;
+  goal_maintain_adjustment?: number;
+  goal_muscle_gain_adjustment?: number;
+
+  // Protein Ratios
+  protein_fat_loss?: number;
+  protein_maintain?: number;
+  protein_muscle_gain?: number;
+
+  // Health Score Configuration
+  health_score_lifestyle_weight?: number;
+  health_score_physical_weight?: number;
+  health_score_calorie_bonus?: number;
+  health_score_calorie_min?: number;
+  health_score_calorie_max?: number;
+
+  // Metabolic Impact Cap
+  metabolic_impact_cap?: number;
+
+  // Lifestyle Multiplier
+  lifestyle_multiplier_enabled?: boolean;
+  lifestyle_multiplier_divisor?: number;
+
+  // Physical Score Configuration
+  physical_score_base?: number;
+  physical_score_bmi_optimal?: number;
+  physical_score_bmi_acceptable?: number;
+  physical_score_bmi_outside?: number;
+  physical_score_bodyfat_optimal?: number;
+  physical_score_bodyfat_acceptable?: number;
+  physical_score_bodyfat_outside?: number;
+
+  // BMI Range Definitions
+  bmi_optimal_min?: number;
+  bmi_optimal_max?: number;
+  bmi_acceptable_min?: number;
+  bmi_acceptable_max?: number;
+
+  // Body Fat Range Definitions - Male
+  bodyfat_male_optimal_min?: number;
+  bodyfat_male_optimal_max?: number;
+  bodyfat_male_acceptable_min?: number;
+  bodyfat_male_acceptable_max?: number;
+
+  // Body Fat Range Definitions - Female
+  bodyfat_female_optimal_min?: number;
+  bodyfat_female_optimal_max?: number;
+  bodyfat_female_acceptable_min?: number;
+  bodyfat_female_acceptable_max?: number;
+
+  // Health Score Tiers
+  health_score_tiers?: HealthScoreTier[];
+
+  // Audit
+  updated_by?: string | null;
+  updated_at?: string;
+}

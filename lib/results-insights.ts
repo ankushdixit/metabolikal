@@ -9,51 +9,31 @@ import {
   AssessmentCategoryId,
 } from "@/hooks/use-assessment";
 import { Goal } from "@/hooks/use-calculator";
+import { DEFAULT_CALCULATOR_SETTINGS } from "@/hooks/use-calculator-settings";
+import type { CalculatorSettingsRow, HealthScoreTier } from "@/lib/database.types";
+
+// Re-export the HealthScoreTier type for convenience
+export type { HealthScoreTier };
 
 /**
- * Health score status tier configuration
+ * Default health score tiers (used when settings not available)
+ * @deprecated Use settings.health_score_tiers instead
  */
-export interface HealthScoreTier {
-  name: string;
-  description: string;
-  minScore: number;
-  maxScore: number;
-}
-
-export const HEALTH_SCORE_TIERS: HealthScoreTier[] = [
-  {
-    name: "Elite Metabolic Health",
-    description: "Outstanding foundation with peak performance potential",
-    minScore: 86,
-    maxScore: 100,
-  },
-  {
-    name: "Good Metabolic Health",
-    description: "Solid foundation with room for optimization",
-    minScore: 71,
-    maxScore: 85,
-  },
-  {
-    name: "Moderate Metabolic Health",
-    description: "Functional baseline with clear improvement opportunities",
-    minScore: 51,
-    maxScore: 70,
-  },
-  {
-    name: "Needs Attention",
-    description: "Significant optimization potential to unlock your metabolism",
-    minScore: 0,
-    maxScore: 50,
-  },
-];
+export const HEALTH_SCORE_TIERS: HealthScoreTier[] = DEFAULT_CALCULATOR_SETTINGS.health_score_tiers;
 
 /**
  * Get the health score tier based on score value
+ * @param score - The health score (0-100)
+ * @param settings - Optional calculator settings for configurable tiers
  */
-export function getHealthScoreTier(score: number): HealthScoreTier {
+export function getHealthScoreTier(
+  score: number,
+  settings?: CalculatorSettingsRow
+): HealthScoreTier {
+  const tiers = settings?.health_score_tiers ?? HEALTH_SCORE_TIERS;
   return (
-    HEALTH_SCORE_TIERS.find((tier) => score >= tier.minScore && score <= tier.maxScore) ||
-    HEALTH_SCORE_TIERS[HEALTH_SCORE_TIERS.length - 1]
+    tiers.find((tier) => score >= tier.minScore && score <= tier.maxScore) ||
+    tiers[tiers.length - 1]
   );
 }
 
@@ -234,11 +214,19 @@ export function calculateLifestyleBoost(
 }
 
 /**
- * Calculate physical metrics score (0-100)
- * Based on the metabolic component of the health score calculation
- * (inverse of metabolic impact, normalized)
+ * @deprecated This function is INCORRECT and should not be used.
+ * Physical metrics score should be calculated from BMI and body fat using
+ * calculatePhysicalScore() from use-calculator.ts, NOT from metabolic impact.
+ *
+ * Medical conditions affect TDEE (energy expenditure), not physical metrics.
+ * Physical metrics are body composition measures (BMI, body fat %).
+ *
+ * Use calculatePhysicalScore(bmi, bodyFatPercent, gender, settings) instead.
  */
 export function calculatePhysicalMetricsScore(metabolicImpactPercent: number): number {
-  // 0% impact = 100, 30% impact = 0
+  console.warn(
+    "calculatePhysicalMetricsScore is deprecated. Use calculatePhysicalScore from use-calculator.ts instead."
+  );
+  // Legacy formula kept for backward compatibility - DO NOT USE IN NEW CODE
   return Math.round(((30 - metabolicImpactPercent) / 30) * 100);
 }

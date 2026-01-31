@@ -31,6 +31,7 @@ describe("ResultsModal", () => {
     results: defaultResults,
     lifestyleScore: 65,
     healthScore: 72,
+    physicalScore: 85, // Physical score from BMI/body fat calculation
     goal: "fat_loss" as const,
     onBookCall: jest.fn(),
     assessmentScores: defaultAssessmentScores,
@@ -69,25 +70,30 @@ describe("ResultsModal", () => {
 
   it("renders METABOLI-K-AL Health Score section", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText("METABOLI-K-AL Health Score")).toBeInTheDocument();
+    // Multiple matches expected (modal + hidden shareable image)
+    expect(screen.getAllByText("METABOLI-K-AL Health Score").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays health score value and tier", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText("72")).toBeInTheDocument();
-    expect(screen.getByText("Good Metabolic Health")).toBeInTheDocument();
+    // Multiple matches expected (modal + hidden shareable image)
+    expect(screen.getAllByText("72").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Good Metabolic Health").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays Physical Metrics and Lifestyle Factors scores", () => {
     render(<ResultsModal {...defaultProps} />);
     expect(screen.getByText("Physical Metrics")).toBeInTheDocument();
     expect(screen.getByText("Lifestyle Factors")).toBeInTheDocument();
-    expect(screen.getByText("65")).toBeInTheDocument(); // Lifestyle score
+    // Multiple matches expected (modal + hidden shareable image)
+    expect(screen.getAllByText("65").length).toBeGreaterThanOrEqual(1); // Lifestyle score
+    expect(screen.getAllByText("85").length).toBeGreaterThanOrEqual(1); // Physical score
   });
 
   it("renders Your Metabolic Numbers section", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByText("Your Metabolic Numbers")).toBeInTheDocument();
+    // Multiple matches expected (modal + hidden shareable image)
+    expect(screen.getAllByText("Your Metabolic Numbers").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays BMR value", () => {
@@ -134,28 +140,32 @@ describe("ResultsModal", () => {
   describe("Health Score Tiers", () => {
     it("shows Needs Attention for score < 51", () => {
       render(<ResultsModal {...defaultProps} healthScore={45} />);
-      expect(screen.getByText("Needs Attention")).toBeInTheDocument();
+      // Multiple matches expected (modal + hidden shareable image)
+      expect(screen.getAllByText("Needs Attention").length).toBeGreaterThanOrEqual(1);
     });
 
     it("shows Moderate Metabolic Health for score 51-70", () => {
       render(<ResultsModal {...defaultProps} healthScore={60} />);
-      expect(screen.getByText("Moderate Metabolic Health")).toBeInTheDocument();
+      // Multiple matches expected (modal + hidden shareable image)
+      expect(screen.getAllByText("Moderate Metabolic Health").length).toBeGreaterThanOrEqual(1);
     });
 
     it("shows Good Metabolic Health for score 71-85", () => {
       render(<ResultsModal {...defaultProps} healthScore={80} />);
-      expect(screen.getByText("Good Metabolic Health")).toBeInTheDocument();
+      // Multiple matches expected (modal + hidden shareable image)
+      expect(screen.getAllByText("Good Metabolic Health").length).toBeGreaterThanOrEqual(1);
     });
 
     it("shows Elite Metabolic Health for score > 85", () => {
       render(<ResultsModal {...defaultProps} healthScore={90} />);
-      expect(screen.getByText("Elite Metabolic Health")).toBeInTheDocument();
+      // Multiple matches expected (modal + hidden shareable image)
+      expect(screen.getAllByText("Elite Metabolic Health").length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it("renders Share Results button", () => {
+  it("renders Share Image button", () => {
     render(<ResultsModal {...defaultProps} />);
-    expect(screen.getByRole("button", { name: /Share Results/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Share Image/i })).toBeInTheDocument();
   });
 
   it("renders Share Your Results section", () => {
@@ -227,7 +237,10 @@ describe("ResultsModal", () => {
 
     it("shows lifestyle boost calculation", () => {
       render(<ResultsModal {...defaultProps} />);
-      expect(screen.getByText(/Your lifestyle is boosting your metabolism/i)).toBeInTheDocument();
+      // Multiple matches expected (modal + hidden shareable image)
+      expect(
+        screen.getAllByText(/Your lifestyle is boosting your metabolism/i).length
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 

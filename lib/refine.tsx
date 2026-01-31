@@ -242,6 +242,12 @@ export const refineResources: {
   show?: string;
   meta?: Record<string, unknown>;
 }[] = [
+  // Calculator Settings (singleton - no create/delete)
+  {
+    name: "calculator_settings",
+    list: "/admin/config/calculator-settings",
+    meta: { canDelete: false },
+  },
   // Plan Templates
   {
     name: "plan_templates",

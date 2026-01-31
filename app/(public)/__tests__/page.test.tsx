@@ -54,6 +54,93 @@ jest.mock("@/hooks/use-meal-types", () => ({
   ],
 }));
 
+// Mock the calculator settings hook to avoid needing Refine context
+jest.mock("@/hooks/use-calculator-settings", () => {
+  const DEFAULT_SETTINGS = {
+    id: "default",
+    activity_sedentary: 1.2,
+    activity_lightly_active: 1.375,
+    activity_moderately_active: 1.55,
+    activity_very_active: 1.725,
+    activity_extremely_active: 1.9,
+    goal_fat_loss_adjustment: -550,
+    goal_maintain_adjustment: 0,
+    goal_muscle_gain_adjustment: 475,
+    protein_fat_loss: 2.0,
+    protein_maintain: 1.8,
+    protein_muscle_gain: 2.2,
+    health_score_lifestyle_weight: 60,
+    health_score_physical_weight: 40,
+    health_score_calorie_bonus: 5,
+    health_score_calorie_min: 1200,
+    health_score_calorie_max: 3500,
+    metabolic_impact_cap: 25,
+    lifestyle_multiplier_enabled: true,
+    lifestyle_multiplier_divisor: 500,
+    physical_score_base: 75,
+    physical_score_bmi_optimal: 15,
+    physical_score_bmi_acceptable: 10,
+    physical_score_bmi_outside: 5,
+    physical_score_bodyfat_optimal: 10,
+    physical_score_bodyfat_acceptable: 7,
+    physical_score_bodyfat_outside: 3,
+    bmi_optimal_min: 18.5,
+    bmi_optimal_max: 24.9,
+    bmi_acceptable_min: 17.0,
+    bmi_acceptable_max: 29.9,
+    bodyfat_male_optimal_min: 10,
+    bodyfat_male_optimal_max: 20,
+    bodyfat_male_acceptable_min: 8,
+    bodyfat_male_acceptable_max: 24,
+    bodyfat_female_optimal_min: 18,
+    bodyfat_female_optimal_max: 28,
+    bodyfat_female_acceptable_min: 15,
+    bodyfat_female_acceptable_max: 32,
+    health_score_tiers: [
+      { name: "Elite", description: "Outstanding", minScore: 86, maxScore: 100 },
+      { name: "Good", description: "Solid foundation", minScore: 71, maxScore: 85 },
+      { name: "Moderate", description: "Functional baseline", minScore: 51, maxScore: 70 },
+      { name: "Needs Attention", description: "Optimization potential", minScore: 0, maxScore: 50 },
+    ],
+  };
+  return {
+    useCalculatorSettings: () => ({
+      settings: DEFAULT_SETTINGS,
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+      getActivityMultiplier: (level: string) => {
+        const map: Record<string, number> = {
+          sedentary: 1.2,
+          lightly_active: 1.375,
+          moderately_active: 1.55,
+          very_active: 1.725,
+          extremely_active: 1.9,
+        };
+        return map[level] || 1.2;
+      },
+      getGoalAdjustment: (goal: string) => {
+        const map: Record<string, number> = { fat_loss: -550, maintain: 0, muscle_gain: 475 };
+        return map[goal] || 0;
+      },
+      getProteinRatio: (goal: string) => {
+        const map: Record<string, number> = { fat_loss: 2.0, maintain: 1.8, muscle_gain: 2.2 };
+        return map[goal] || 1.8;
+      },
+      getHealthScoreTier: () => ({
+        name: "Good",
+        description: "Solid",
+        minScore: 71,
+        maxScore: 85,
+      }),
+      calculatePhysicalScore: () => 85,
+      calculateLifestyleMultiplier: () => 1.0,
+    }),
+    DEFAULT_CALCULATOR_SETTINGS: DEFAULT_SETTINGS,
+    getDefaultCalculatorSettings: () => DEFAULT_SETTINGS,
+  };
+});
+
 // Mock next/image
 jest.mock("next/image", () => ({
   __esModule: true,
