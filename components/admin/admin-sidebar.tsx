@@ -20,6 +20,7 @@ import {
   LayoutTemplate,
   Video,
   ImageIcon,
+  Calculator,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
@@ -97,6 +98,12 @@ const navItems: NavItem[] = [
     label: "Conditions",
     icon: HeartPulse,
     href: "/admin/config/conditions",
+    indent: true,
+  },
+  {
+    label: "Calculator Settings",
+    icon: Calculator,
+    href: "/admin/config/calculator-settings",
     indent: true,
   },
   {

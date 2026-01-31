@@ -95,14 +95,15 @@ describe("calculateMetabolicImpactFromConditions", () => {
     );
   });
 
-  it("caps total impact at 30%", () => {
-    // hypothyroidism (8) + type2-diabetes (12) + metabolic-syndrome (15) = 35 → capped at 30
+  it("caps total impact at default 25% (per documentation)", () => {
+    // hypothyroidism (8) + type2-diabetes (12) + metabolic-syndrome (15) = 35 → capped at 25
+    // Default cap is now 25% per documentation (was 30%)
     expect(
       calculateMetabolicImpactFromConditions(
         ["hypothyroidism", "type2-diabetes", "metabolic-syndrome"],
         mockConditions
       )
-    ).toBe(30);
+    ).toBe(25);
   });
 
   it("ignores unknown condition slugs", () => {

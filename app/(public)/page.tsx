@@ -40,11 +40,15 @@ import {
   calculateHealthScore,
   calculateBmrMifflinStJeor,
   calculateBmrKatchMcArdle,
-  calculateProteinRecommendation,
-  ACTIVITY_MULTIPLIERS,
-  GOAL_ADJUSTMENTS,
+  calculateBmi,
+  calculatePhysicalScore,
+  calculateLifestyleMultiplier,
+  getActivityMultiplierFromSettings,
+  getGoalAdjustmentFromSettings,
+  getProteinRatioFromSettings,
   Goal,
 } from "@/hooks/use-calculator";
+import { useCalculatorSettings } from "@/hooks/use-calculator-settings";
 import { useGamification } from "@/hooks/use-gamification";
 import {
   useProfileCompletion,
@@ -181,6 +185,9 @@ export default function LandingPage() {
     }
   }, [activeModal, previousAssessment, setAllScores]);
 
+  // Calculator settings from admin configuration
+  const { settings: calculatorSettings } = useCalculatorSettings();
+
   const [calculatorData, setCalculatorData] = useState<CalculatorFormData | null>(null);
   const calculatorResults = useCalculator(
     calculatorData
@@ -194,17 +201,34 @@ export default function LandingPage() {
           goal: calculatorData.goal,
           goalWeightKg: calculatorData.goalWeightKg,
           metabolicImpactPercent: calculatorData.metabolicImpactPercent,
+          lifestyleScore: lifestyleScore,
+          settings: calculatorSettings,
         }
       : null
   );
 
-  const healthScore = calculatorResults
-    ? calculateHealthScore(
-        lifestyleScore,
-        calculatorResults.metabolicImpactPercent,
-        calculatorResults.targetCalories
-      )
-    : 0;
+  // Calculate physical score from BMI + body fat (per documentation)
+  // This is separate from metabolic impact - physical score measures body composition
+  const physicalScore =
+    calculatorResults && calculatorData
+      ? calculatePhysicalScore(
+          calculateBmi(calculatorData.weightKg, calculatorData.heightCm),
+          calculatorData.bodyFatPercent,
+          calculatorData.gender,
+          calculatorSettings
+        )
+      : 0;
+
+  // Calculate health score using physical score (BMI + body fat) per documentation
+  const healthScore =
+    calculatorResults && calculatorData
+      ? calculateHealthScore(
+          lifestyleScore,
+          physicalScore,
+          calculatorResults.targetCalories,
+          calculatorSettings
+        )
+      : 0;
 
   // Profile completion state for gating Challenge Hub
   const profileCompletion = useProfileCompletion();
@@ -268,26 +292,55 @@ export default function LandingPage() {
   const handleCalculatorComplete = async (data: CalculatorFormData) => {
     setCalculatorData(data);
 
-    // Calculate results using exported functions (not calling hook)
-    // metabolicImpactPercent is pre-calculated from database conditions in the calculator modal
-    const bmr =
+    // Calculate results using exported functions with admin-configured settings
+    // Per COMPLETE-FORMULAE-GUIDE.md, the order is: BMR → Medical → Activity → Lifestyle → Target
+
+    // Step 1: Calculate base BMR
+    const baseBmr =
       data.bodyFatPercent !== undefined
         ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
         : calculateBmrMifflinStJeor(data.gender, data.weightKg, data.heightCm, data.age);
 
-    const activityMultiplier = ACTIVITY_MULTIPLIERS[data.activityLevel].multiplier;
-    const tdee = bmr * activityMultiplier;
-    const metabolicImpactPercent = data.metabolicImpactPercent;
-    const adjustedTdee = tdee * (1 - metabolicImpactPercent / 100);
-    const goalAdjustment = GOAL_ADJUSTMENTS[data.goal].adjustment;
-    const targetCalories = Math.round(adjustedTdee + goalAdjustment);
-    const proteinGrams = calculateProteinRecommendation(data.weightKg, data.goal);
+    // Step 2: Apply medical conditions adjustment to BMR (per documentation)
+    // Cap metabolic impact at configured maximum (default 25%)
+    const metabolicImpactPercent = Math.min(
+      data.metabolicImpactPercent,
+      calculatorSettings.metabolic_impact_cap
+    );
+    const medicalMultiplier = 1 - metabolicImpactPercent / 100;
+    const adjustedBmr = baseBmr * medicalMultiplier;
 
-    // Calculate health score for localStorage save
+    // Step 3: Calculate TDEE from adjusted BMR
+    const activityMultiplier = getActivityMultiplierFromSettings(
+      data.activityLevel,
+      calculatorSettings
+    );
+    const tdee = adjustedBmr * activityMultiplier;
+
+    // Step 4: Apply lifestyle multiplier (per documentation)
+    const lifestyleMultiplier = calculateLifestyleMultiplier(lifestyleScore, calculatorSettings);
+    const lifestyleAdjustedTdee = tdee * lifestyleMultiplier;
+
+    // Step 5: Calculate target calories
+    const goalAdjustment = getGoalAdjustmentFromSettings(data.goal, calculatorSettings);
+    const targetCalories = Math.round(lifestyleAdjustedTdee + goalAdjustment);
+
+    const proteinRatio = getProteinRatioFromSettings(data.goal, calculatorSettings);
+    const proteinGrams = Math.round(data.weightKg * proteinRatio);
+
+    // Calculate health score using physical score (BMI + body fat) per documentation
+    const bmi = calculateBmi(data.weightKg, data.heightCm);
+    const physicalScore = calculatePhysicalScore(
+      bmi,
+      data.bodyFatPercent,
+      data.gender,
+      calculatorSettings
+    );
     const calculatedHealthScore = calculateHealthScore(
       lifestyleScore,
-      metabolicImpactPercent,
-      targetCalories
+      physicalScore,
+      targetCalories,
+      calculatorSettings
     );
 
     // Save to localStorage for all users (so returning visitors see progress and for migration after signup)
@@ -311,8 +364,8 @@ export default function LandingPage() {
         goal: data.goal,
       },
       {
-        bmr: Math.round(bmr),
-        tdee: Math.round(tdee),
+        bmr: Math.round(baseBmr),
+        tdee: Math.round(lifestyleAdjustedTdee),
         targetCalories,
         protein: proteinGrams,
         carbs: carbsGrams,
@@ -337,8 +390,8 @@ export default function LandingPage() {
           medicalConditions: data.medicalConditions,
         },
         {
-          bmr: Math.round(bmr),
-          tdee: Math.round(tdee),
+          bmr: Math.round(baseBmr),
+          tdee: Math.round(lifestyleAdjustedTdee),
           targetCalories,
           proteinGrams,
           carbsGrams,
@@ -818,6 +871,7 @@ export default function LandingPage() {
         results={calculatorResults}
         lifestyleScore={lifestyleScore}
         healthScore={healthScore}
+        physicalScore={physicalScore}
         goal={(calculatorData?.goal as Goal) || "fat_loss"}
         onBookCall={() => openModal("calendly")}
         previousAssessment={previousAssessment}

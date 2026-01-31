@@ -764,3 +764,168 @@ export const testimonialPhotoSchema = z.object({
 });
 
 export type TestimonialPhotoFormData = z.infer<typeof testimonialPhotoSchema>;
+
+/**
+ * Health score tier validation schema.
+ */
+export const healthScoreTierSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }).max(100),
+  description: z.string().min(1, { message: "Description is required" }).max(500),
+  minScore: z.number().int().min(0).max(100),
+  maxScore: z.number().int().min(0).max(100),
+});
+
+export type HealthScoreTierFormData = z.infer<typeof healthScoreTierSchema>;
+
+/**
+ * Calculator settings validation schema.
+ * Validates admin-configurable calculator parameters.
+ */
+export const calculatorSettingsSchema = z
+  .object({
+    // Activity Multipliers
+    activity_sedentary: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0" })
+      .max(2.5, { message: "Must be 2.5 or less" }),
+    activity_lightly_active: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0" })
+      .max(2.5, { message: "Must be 2.5 or less" }),
+    activity_moderately_active: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0" })
+      .max(2.5, { message: "Must be 2.5 or less" }),
+    activity_very_active: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0" })
+      .max(2.5, { message: "Must be 2.5 or less" }),
+    activity_extremely_active: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0" })
+      .max(2.5, { message: "Must be 2.5 or less" }),
+
+    // Goal Adjustments
+    goal_fat_loss_adjustment: z
+      .number()
+      .int()
+      .min(-1500, { message: "Deficit too extreme" })
+      .max(0, { message: "Fat loss must have deficit (negative)" }),
+    goal_maintain_adjustment: z.literal(0),
+    goal_muscle_gain_adjustment: z
+      .number()
+      .int()
+      .min(0, { message: "Muscle gain must have surplus (positive)" })
+      .max(1500, { message: "Surplus too extreme" }),
+
+    // Protein Ratios
+    protein_fat_loss: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0 g/kg" })
+      .max(4.0, { message: "Must be 4.0 g/kg or less" }),
+    protein_maintain: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0 g/kg" })
+      .max(4.0, { message: "Must be 4.0 g/kg or less" }),
+    protein_muscle_gain: z
+      .number()
+      .min(1.0, { message: "Must be at least 1.0 g/kg" })
+      .max(4.0, { message: "Must be 4.0 g/kg or less" }),
+
+    // Health Score Weights
+    health_score_lifestyle_weight: z
+      .number()
+      .int()
+      .min(0, { message: "Must be at least 0" })
+      .max(100, { message: "Must be 100 or less" }),
+    health_score_physical_weight: z
+      .number()
+      .int()
+      .min(0, { message: "Must be at least 0" })
+      .max(100, { message: "Must be 100 or less" }),
+    health_score_calorie_bonus: z
+      .number()
+      .int()
+      .min(0, { message: "Must be at least 0" })
+      .max(20, { message: "Must be 20 or less" }),
+    health_score_calorie_min: z
+      .number()
+      .int()
+      .min(800, { message: "Minimum too low" })
+      .max(2000, { message: "Minimum too high" }),
+    health_score_calorie_max: z
+      .number()
+      .int()
+      .min(2000, { message: "Maximum too low" })
+      .max(6000, { message: "Maximum too high" }),
+
+    // Metabolic Impact Cap
+    metabolic_impact_cap: z
+      .number()
+      .int()
+      .min(10, { message: "Cap too low" })
+      .max(50, { message: "Cap too high" }),
+
+    // Lifestyle Multiplier
+    lifestyle_multiplier_enabled: z.boolean(),
+    lifestyle_multiplier_divisor: z
+      .number()
+      .int()
+      .min(100, { message: "Divisor too low" })
+      .max(1000, { message: "Divisor too high" }),
+
+    // Physical Score Configuration
+    physical_score_base: z
+      .number()
+      .int()
+      .min(50, { message: "Base too low" })
+      .max(90, { message: "Base too high" }),
+    physical_score_bmi_optimal: z.number().int().min(0).max(25),
+    physical_score_bmi_acceptable: z.number().int().min(0).max(25),
+    physical_score_bmi_outside: z.number().int().min(0).max(25),
+    physical_score_bodyfat_optimal: z.number().int().min(0).max(25),
+    physical_score_bodyfat_acceptable: z.number().int().min(0).max(25),
+    physical_score_bodyfat_outside: z.number().int().min(0).max(25),
+
+    // BMI Range Definitions
+    bmi_optimal_min: z.number().min(15).max(25),
+    bmi_optimal_max: z.number().min(20).max(30),
+    bmi_acceptable_min: z.number().min(10).max(20),
+    bmi_acceptable_max: z.number().min(25).max(40),
+
+    // Body Fat Range Definitions - Male
+    bodyfat_male_optimal_min: z.number().int().min(3).max(20),
+    bodyfat_male_optimal_max: z.number().int().min(10).max(30),
+    bodyfat_male_acceptable_min: z.number().int().min(3).max(15),
+    bodyfat_male_acceptable_max: z.number().int().min(15).max(35),
+
+    // Body Fat Range Definitions - Female
+    bodyfat_female_optimal_min: z.number().int().min(10).max(25),
+    bodyfat_female_optimal_max: z.number().int().min(20).max(40),
+    bodyfat_female_acceptable_min: z.number().int().min(8).max(20),
+    bodyfat_female_acceptable_max: z.number().int().min(25).max(45),
+
+    // Health Score Tiers
+    health_score_tiers: z.array(healthScoreTierSchema).min(1).max(10),
+  })
+  .refine(
+    (data) => data.health_score_lifestyle_weight + data.health_score_physical_weight === 100,
+    {
+      message: "Lifestyle and Physical weights must sum to 100",
+      path: ["health_score_lifestyle_weight"],
+    }
+  )
+  .refine((data) => data.bmi_optimal_min < data.bmi_optimal_max, {
+    message: "BMI optimal min must be less than max",
+    path: ["bmi_optimal_min"],
+  })
+  .refine((data) => data.bmi_acceptable_min < data.bmi_acceptable_max, {
+    message: "BMI acceptable min must be less than max",
+    path: ["bmi_acceptable_min"],
+  })
+  .refine((data) => data.health_score_calorie_min < data.health_score_calorie_max, {
+    message: "Calorie min must be less than max",
+    path: ["health_score_calorie_min"],
+  });
+
+export type CalculatorSettingsFormData = z.infer<typeof calculatorSettingsSchema>;

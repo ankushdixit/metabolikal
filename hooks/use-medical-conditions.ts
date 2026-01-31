@@ -2,7 +2,8 @@
 
 import { useList } from "@refinedev/core";
 import { useMemo } from "react";
-import type { MedicalConditionRow, Gender } from "@/lib/database.types";
+import type { MedicalConditionRow, Gender, CalculatorSettingsRow } from "@/lib/database.types";
+import { DEFAULT_CALCULATOR_SETTINGS } from "./use-calculator-settings";
 
 interface UseMedicalConditionsOptions {
   includeInactive?: boolean;
@@ -54,14 +55,16 @@ export function useMedicalConditions(options: UseMedicalConditionsOptions = {}) 
 
 /**
  * Calculate total metabolic impact from selected condition slugs.
- * Returns the sum of impacts, capped at 30% to prevent unrealistic reductions.
+ * Returns the sum of impacts, capped at the configurable maximum (default 25%).
  *
  * @param selectedSlugs - Array of condition slugs selected by the user
  * @param conditions - Array of MedicalConditionRow from the database
+ * @param settings - Optional calculator settings for configurable cap
  */
 export function calculateMetabolicImpactFromConditions(
   selectedSlugs: string[],
-  conditions: MedicalConditionRow[]
+  conditions: MedicalConditionRow[],
+  settings?: CalculatorSettingsRow
 ): number {
   // If "none" is selected or no conditions selected, return 0
   if (selectedSlugs.includes("none") || selectedSlugs.length === 0) {
@@ -73,6 +76,8 @@ export function calculateMetabolicImpactFromConditions(
     return sum + (condition?.impact_percent ?? 0);
   }, 0);
 
-  // Cap at 30% to prevent unrealistic metabolic reductions
-  return Math.min(totalImpact, 30);
+  // Cap at configurable maximum (default 25% per documentation)
+  const impactCap =
+    settings?.metabolic_impact_cap ?? DEFAULT_CALCULATOR_SETTINGS.metabolic_impact_cap;
+  return Math.min(totalImpact, impactCap);
 }

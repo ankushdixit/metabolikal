@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin-Configurable Calculator Settings**: All calculator formulas now configurable through admin portal at `/admin/config/calculator-settings`:
+  - **Database Schema**: New `calculator_settings` singleton table with 40+ configurable parameters
+  - **Activity Multipliers**: Configurable TDEE multipliers for all 5 activity levels
+  - **Goal Adjustments**: Fat loss (-550), maintenance (0), muscle gain (+475) calorie adjustments
+  - **Protein Ratios**: Configurable g/kg ratios per goal
+  - **Health Score Weights**: Lifestyle (60%) and Physical (40%) weight configuration
+  - **Metabolic Impact Cap**: Configurable maximum medical condition impact (default 25%)
+  - **Lifestyle Multiplier**: Enable/disable and configure divisor for lifestyle TDEE adjustment
+  - **Physical Score Settings**: BMI and body fat range thresholds with point awards
+  - **Health Score Tiers**: Customizable tier names, descriptions, and score ranges
+  - **Settings Hook**: `useCalculatorSettings()` hook with caching and helper functions
+  - Added Calculator Settings navigation link under Configuration in admin sidebar
+
+- **Shareable Results Image**: Users can generate branded images of their results for social media:
+  - **Share Image Button**: Generates PNG image with health score, breakdown, and metabolic numbers
+  - **Download Image Button**: Downloads image as `metabolikal-results-{score}.png`
+  - **Web Share API**: Shares image file on supported devices, falls back to text sharing
+  - **Athletic Branding**: Dark gradient background with orange/gold accents matching app theme
+  - **Circular Progress**: Visual health score indicator with tier-based colors
+  - **Score Breakdown**: Progress bars showing Lifestyle and Physical scores
+  - **Call-to-Action**: Footer with website URL for viral sharing
+
 - **Testimonials Management**: Admin portal functionality to manage testimonial videos and before/after transformation photos:
   - **Database Schema**: New `testimonial_videos` and `testimonial_photos` tables with RLS policies, storage bucket for photo uploads
   - **Video Management**: Full CRUD for YouTube videos (shorts and landscape formats) at `/admin/config/testimonial-videos`
@@ -24,6 +46,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hero Variant C**: Updated coach experience text to "2+ years coaching + 13 years fitness experience"
 
 ### Fixed
+
+- **Calculator Formulas Alignment with Documentation**: Fixed calculation order and formulas per COMPLETE-FORMULAE-GUIDE.md:
+  - **Calculation Order**: Now correctly applies BMR → Medical → Activity → Lifestyle → Target
+  - **Medical Impact on BMR**: Medical conditions now reduce BMR first (not applied after lifestyle)
+  - **TDEE Display**: TDEE now reflects medical condition impact (previously showed pre-medical value)
+  - **Physical Score**: Now correctly calculated from BMI + body fat ranges, not metabolic impact
+  - **Health Score Consistency**: Modal displays same physical score used in health score calculation
+  - **Goal Adjustments**: Updated defaults to -550 (fat loss) and +475 (muscle gain) per documentation
 
 - **Supabase "Signal Aborted" Error**: Fixed Navigator Locks API conflict causing "signal is aborted without reason" errors:
   - Added no-op lock function to bypass Navigator Locks in browser Supabase client

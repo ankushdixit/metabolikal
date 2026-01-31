@@ -68,32 +68,44 @@ describe("calculateProteinRecommendation", () => {
 });
 
 describe("calculateHealthScore", () => {
+  // Note: calculateHealthScore now uses physical score (0-100) instead of metabolic impact
+  // When passed a value <= 50, it's treated as metabolic impact % and converted
+  // When passed a value > 50, it's treated as a physical score directly
+
   it("returns maximum score for optimal inputs", () => {
-    // 100 lifestyle, 0 impact, reasonable calories
-    const score = calculateHealthScore(100, 0, 2000);
+    // 100 lifestyle, 100 physical score (not metabolic impact), reasonable calories
+    const score = calculateHealthScore(100, 100, 2000);
     expect(score).toBe(100);
   });
 
-  it("returns lower score for high metabolic impact", () => {
-    const scoreNoImpact = calculateHealthScore(70, 0, 2000);
-    const scoreHighImpact = calculateHealthScore(70, 30, 2000);
-    expect(scoreNoImpact).toBeGreaterThan(scoreHighImpact);
+  it("returns lower score for lower physical score", () => {
+    const scoreHighPhysical = calculateHealthScore(70, 90, 2000);
+    const scoreLowPhysical = calculateHealthScore(70, 60, 2000);
+    expect(scoreHighPhysical).toBeGreaterThan(scoreLowPhysical);
   });
 
-  it("weights lifestyle at 60%", () => {
-    // 50 lifestyle, 0 impact, reasonable calories = 50 × 0.6 + 40 + 5 = 30 + 40 + 5 = 75
-    const score = calculateHealthScore(50, 0, 2000);
+  it("expects physical score (0-100) as second parameter, NOT metabolic impact", () => {
+    // Physical score should come from calculatePhysicalScore(bmi, bodyFat, gender, settings)
+    // NOT from metabolic impact. A higher physical score = better health score.
+    const scoreHighPhysical = calculateHealthScore(50, 100, 2000);
+    const scoreLowPhysical = calculateHealthScore(50, 25, 2000);
+    expect(scoreHighPhysical).toBeGreaterThan(scoreLowPhysical);
+  });
+
+  it("weights lifestyle at 60% by default", () => {
+    // 50 lifestyle, 100 physical, reasonable calories = 50 × 0.6 + 100 × 0.4 + 5 = 30 + 40 + 5 = 75
+    const score = calculateHealthScore(50, 100, 2000);
     expect(score).toBe(75);
   });
 
   it("includes calorie bonus for reasonable targets", () => {
-    const goodCalories = calculateHealthScore(50, 0, 2000);
-    const lowCalories = calculateHealthScore(50, 0, 1000);
+    const goodCalories = calculateHealthScore(50, 100, 2000);
+    const lowCalories = calculateHealthScore(50, 100, 1000);
     expect(goodCalories).toBeGreaterThan(lowCalories);
   });
 
   it("does not exceed 100", () => {
-    const score = calculateHealthScore(100, 0, 2500);
+    const score = calculateHealthScore(100, 100, 2500);
     expect(score).toBeLessThanOrEqual(100);
   });
 });
@@ -150,10 +162,10 @@ describe("useCalculator", () => {
     expect(result.current?.metabolicImpactPercent).toBe(8);
   });
 
-  it("calculates target calories for fat loss (TDEE - 500)", () => {
+  it("calculates target calories for fat loss (TDEE - 550)", () => {
     const { result } = renderHook(() => useCalculator(defaultInputs));
-    // Target = 2759 - 500 = 2259
-    expect(result.current?.targetCalories).toBe(2259);
+    // Target = 2759 - 550 = 2209 (with default lifestyle score of 50, no lifestyle adjustment)
+    expect(result.current?.targetCalories).toBe(2209);
   });
 
   it("calculates target calories for maintenance (TDEE + 0)", () => {
@@ -165,14 +177,14 @@ describe("useCalculator", () => {
     expect(result.current?.targetCalories).toBe(2759);
   });
 
-  it("calculates target calories for muscle gain (TDEE + 300)", () => {
+  it("calculates target calories for muscle gain (TDEE + 475)", () => {
     const inputs: CalculatorInputs = {
       ...defaultInputs,
       goal: "muscle_gain",
     };
     const { result } = renderHook(() => useCalculator(inputs));
-    // Target = 2759 + 300 = 3059
-    expect(result.current?.targetCalories).toBe(3059);
+    // Target = 2759 + 475 = 3234 (with default lifestyle score of 50, no lifestyle adjustment)
+    expect(result.current?.targetCalories).toBe(3234);
   });
 
   it("calculates protein recommendation correctly", () => {
@@ -202,8 +214,9 @@ describe("GOAL_ADJUSTMENTS", () => {
   });
 
   it("has correct adjustment values", () => {
-    expect(GOAL_ADJUSTMENTS.fat_loss.adjustment).toBe(-500);
+    // Updated per documentation: -550 for fat loss, +475 for muscle gain
+    expect(GOAL_ADJUSTMENTS.fat_loss.adjustment).toBe(-550);
     expect(GOAL_ADJUSTMENTS.maintain.adjustment).toBe(0);
-    expect(GOAL_ADJUSTMENTS.muscle_gain.adjustment).toBe(300);
+    expect(GOAL_ADJUSTMENTS.muscle_gain.adjustment).toBe(475);
   });
 });
