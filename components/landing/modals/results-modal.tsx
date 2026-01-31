@@ -42,6 +42,13 @@ import {
 } from "@/lib/results-insights";
 import { toPng } from "html-to-image";
 import { ShareableResultsImage } from "../shareable-results-image";
+import { HealthScoreChart } from "../health-score-chart";
+import {
+  MedicalConsiderationsSection,
+  MedicalConditionDisplay,
+} from "../medical-considerations-section";
+import { FatLossActionPlan } from "../fat-loss-action-plan";
+import type { CalculatorSettingsRow } from "@/lib/database.types";
 
 interface ResultsModalProps {
   open: boolean;
@@ -58,6 +65,18 @@ interface ResultsModalProps {
   onBookCall: () => void;
   previousAssessment?: StoredAssessment | null;
   assessmentScores?: AssessmentScores;
+
+  // NEW: For Medical Considerations section
+  medicalConditions?: MedicalConditionDisplay[];
+  baseBmr?: number;
+  adjustedBmr?: number;
+
+  // NEW: For Timeline to Goal
+  weightKg?: number;
+  goalWeightKg?: number;
+
+  // NEW: Calculator settings for fat loss deficit
+  calculatorSettings?: CalculatorSettingsRow;
 }
 
 /**
@@ -91,12 +110,40 @@ export function ResultsModal({
   onBookCall,
   previousAssessment,
   assessmentScores,
+  medicalConditions,
+  baseBmr,
+  adjustedBmr,
+  weightKg,
+  goalWeightKg,
+  calculatorSettings,
 }: ResultsModalProps) {
   const [copied, setCopied] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const shareImageRef = useRef<HTMLDivElement>(null);
 
+  // Generate shareable image and trigger download/share
+  // IMPORTANT: This hook must be called before any early returns
+  const generateShareableImage = useCallback(async (): Promise<Blob | null> => {
+    if (!shareImageRef.current) return null;
+
+    try {
+      const dataUrl = await toPng(shareImageRef.current, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: "#0a0a0a",
+      });
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      return await response.blob();
+    } catch (error) {
+      console.error("Error generating image:", error);
+      return null;
+    }
+  }, []);
+
+  // Early return AFTER all hooks are called
   if (!results) return null;
 
   // Get health score tier (status label and description)
@@ -121,25 +168,20 @@ export function ResultsModal({
     ? generatePriorityRecommendations(assessmentScores, 3)
     : [];
 
-  // Generate shareable image and trigger download/share
-  const generateShareableImage = useCallback(async (): Promise<Blob | null> => {
-    if (!shareImageRef.current) return null;
+  // Check if we should show medical considerations
+  const showMedicalConsiderations =
+    medicalConditions &&
+    medicalConditions.length > 0 &&
+    baseBmr !== undefined &&
+    results.metabolicImpactPercent > 0;
 
-    try {
-      const dataUrl = await toPng(shareImageRef.current, {
-        quality: 1.0,
-        pixelRatio: 2,
-        backgroundColor: "#0a0a0a",
-      });
+  // Check if we should show fat loss action plan
+  const isFatLossGoal = goal === "fat_loss";
 
-      // Convert data URL to blob
-      const response = await fetch(dataUrl);
-      return await response.blob();
-    } catch (error) {
-      console.error("Error generating image:", error);
-      return null;
-    }
-  }, []);
+  // Get nutrition deficit from settings (default 550)
+  const nutritionDeficit = calculatorSettings?.goal_fat_loss_adjustment
+    ? Math.abs(calculatorSettings.goal_fat_loss_adjustment)
+    : 550;
 
   const handleDownloadImage = async () => {
     setIsGeneratingImage(true);
@@ -226,7 +268,7 @@ export function ResultsModal({
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
-            {/* Health Score Section with Status */}
+            {/* Health Score Section with Animated Chart */}
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-1 gradient-electric" />
@@ -235,15 +277,10 @@ export function ResultsModal({
                 </h3>
               </div>
 
-              {/* Main Health Score Display */}
-              <div className="athletic-card p-6 pl-8 text-center mb-4">
-                <div className="text-7xl font-black gradient-athletic bg-clip-text text-transparent">
-                  {healthScore}
-                </div>
-                <div className="text-sm font-black tracking-wider text-muted-foreground uppercase mt-2">
-                  Score
-                </div>
-                <div className="mt-4">
+              {/* Main Health Score Display with Animated Chart */}
+              <div className="athletic-card p-6 pl-8 flex flex-col items-center mb-4">
+                <HealthScoreChart score={healthScore} size={180} animated={true} />
+                <div className="mt-4 text-center">
                   <div className="text-lg font-black uppercase tracking-wide">
                     {healthTier.name}
                   </div>
@@ -364,6 +401,16 @@ export function ResultsModal({
               </div>
             </section>
 
+            {/* Medical Considerations Section (conditional) */}
+            {showMedicalConsiderations && adjustedBmr !== undefined && (
+              <MedicalConsiderationsSection
+                conditions={medicalConditions!}
+                baseBmr={baseBmr!}
+                adjustedBmr={adjustedBmr}
+                totalImpactPercent={results.metabolicImpactPercent}
+              />
+            )}
+
             {/* Action Plan Section */}
             <section>
               <div className="flex items-center gap-3 mb-4">
@@ -398,6 +445,18 @@ export function ResultsModal({
                 </div>
               </div>
             </section>
+
+            {/* Fat Loss Action Plan (conditional - fat loss goal only) */}
+            {isFatLossGoal && weightKg !== undefined && (
+              <FatLossActionPlan
+                targetCalories={results.targetCalories}
+                lifestyleScore={lifestyleScore}
+                physicalScore={physicalScore}
+                weightKg={weightKg}
+                goalWeightKg={goalWeightKg}
+                nutritionDeficit={nutritionDeficit}
+              />
+            )}
 
             {/* Priority Action Plan */}
             {priorityRecommendations.length > 0 && (
@@ -511,8 +570,8 @@ export function ResultsModal({
                 </div>
               </div>
 
-              {/* Metabolic Impact Note */}
-              {results.metabolicImpactPercent > 0 && (
+              {/* Metabolic Impact Note - Only show if medical section is not displayed */}
+              {results.metabolicImpactPercent > 0 && !showMedicalConsiderations && (
                 <div className="mt-4 athletic-card p-4 pl-8 bg-secondary/30">
                   <p className="text-xs text-muted-foreground">
                     <strong>Note:</strong> Your TDEE has been adjusted by -

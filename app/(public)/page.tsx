@@ -49,6 +49,8 @@ import {
   Goal,
 } from "@/hooks/use-calculator";
 import { useCalculatorSettings } from "@/hooks/use-calculator-settings";
+import { useMedicalConditions } from "@/hooks/use-medical-conditions";
+import type { MedicalConditionDisplay } from "@/components/landing/medical-considerations-section";
 import { useGamification } from "@/hooks/use-gamification";
 import {
   useProfileCompletion,
@@ -188,7 +190,17 @@ export default function LandingPage() {
   // Calculator settings from admin configuration
   const { settings: calculatorSettings } = useCalculatorSettings();
 
+  // Fetch medical conditions for resolving slugs to full objects
+  const { conditions: medicalConditionsList } = useMedicalConditions();
+
   const [calculatorData, setCalculatorData] = useState<CalculatorFormData | null>(null);
+
+  // State for additional results modal data
+  const [resolvedMedicalConditions, setResolvedMedicalConditions] = useState<
+    MedicalConditionDisplay[]
+  >([]);
+  const [baseBmrValue, setBaseBmrValue] = useState<number | undefined>(undefined);
+  const [adjustedBmrValue, setAdjustedBmrValue] = useState<number | undefined>(undefined);
   const calculatorResults = useCalculator(
     calculatorData
       ? {
@@ -301,6 +313,26 @@ export default function LandingPage() {
         ? calculateBmrKatchMcArdle(data.weightKg, data.bodyFatPercent)
         : calculateBmrMifflinStJeor(data.gender, data.weightKg, data.heightCm, data.age);
 
+    // Store base BMR for results modal
+    setBaseBmrValue(Math.round(baseBmr));
+
+    // Resolve medical condition slugs to full display objects
+    const resolvedConditions: MedicalConditionDisplay[] = [];
+    if (data.medicalConditions && data.medicalConditions.length > 0) {
+      for (const slug of data.medicalConditions) {
+        if (slug === "none") continue;
+        const condition = medicalConditionsList.find((c) => c.slug === slug);
+        if (condition) {
+          resolvedConditions.push({
+            name: condition.name,
+            slug: condition.slug,
+            impactPercent: condition.impact_percent,
+          });
+        }
+      }
+    }
+    setResolvedMedicalConditions(resolvedConditions);
+
     // Step 2: Apply medical conditions adjustment to BMR (per documentation)
     // Cap metabolic impact at configured maximum (default 25%)
     const metabolicImpactPercent = Math.min(
@@ -309,6 +341,9 @@ export default function LandingPage() {
     );
     const medicalMultiplier = 1 - metabolicImpactPercent / 100;
     const adjustedBmr = baseBmr * medicalMultiplier;
+
+    // Store adjusted BMR for results modal medical considerations section
+    setAdjustedBmrValue(Math.round(adjustedBmr));
 
     // Step 3: Calculate TDEE from adjusted BMR
     const activityMultiplier = getActivityMultiplierFromSettings(
@@ -876,6 +911,12 @@ export default function LandingPage() {
         onBookCall={() => openModal("calendly")}
         previousAssessment={previousAssessment}
         assessmentScores={scores}
+        medicalConditions={resolvedMedicalConditions}
+        baseBmr={baseBmrValue}
+        adjustedBmr={adjustedBmrValue}
+        weightKg={calculatorData?.weightKg}
+        goalWeightKg={calculatorData?.goalWeightKg}
+        calculatorSettings={calculatorSettings}
       />
       <BodyFatGuideModal
         open={activeModal === "body-fat-guide"}
