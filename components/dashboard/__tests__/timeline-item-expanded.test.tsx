@@ -64,6 +64,9 @@ describe("TimelineItemExpanded", () => {
         relative_anchor: null,
         relative_offset_minutes: 0,
         display_order: 1,
+        quantity_grams: null,
+        quantity_type: null,
+        quantity_note: null,
         created_at: "",
         updated_at: "",
         food_items: {

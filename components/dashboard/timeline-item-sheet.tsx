@@ -33,6 +33,7 @@ import type {
   LifestyleActivityPlanWithType,
 } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
+import { formatQuantityDisplay } from "@/lib/utils/quantity";
 
 // =============================================================================
 // TYPES
@@ -159,10 +160,19 @@ function MealSheetContent({
             const fats = Math.round((food?.fats || 0) * multiplier);
             const isCompleted = isSourceItemCompleted(plan.id);
 
-            // Build quantity display
+            // Build quantity display - prefer stored quantity_grams, fall back to raw/cooked from food
+            const quantityDisplay = formatQuantityDisplay(
+              plan.quantity_grams,
+              plan.quantity_type,
+              plan.quantity_note
+            );
+
+            // Fallback to showing raw/cooked quantities from food item
             const quantities: string[] = [];
-            if (food?.cooked_quantity) quantities.push(`Cooked: ${food.cooked_quantity}`);
-            if (food?.raw_quantity) quantities.push(`Raw: ${food.raw_quantity}`);
+            if (!quantityDisplay) {
+              if (food?.cooked_quantity) quantities.push(`Cooked: ${food.cooked_quantity}`);
+              if (food?.raw_quantity) quantities.push(`Raw: ${food.raw_quantity}`);
+            }
 
             return (
               <div
@@ -193,8 +203,12 @@ function MealSheetContent({
                       {food?.name || "Unknown"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {food?.serving_size}
-                      {multiplier !== 1 && ` × ${multiplier}`}
+                      {quantityDisplay || (
+                        <>
+                          {food?.serving_size}
+                          {multiplier !== 1 && ` × ${multiplier}`}
+                        </>
+                      )}
                     </p>
                     {quantities.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">{quantities.join(" | ")}</p>

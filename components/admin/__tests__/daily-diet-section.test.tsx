@@ -23,6 +23,9 @@ describe("DailyDietSection", () => {
     relative_anchor: null,
     relative_offset_minutes: 0,
     display_order: 0,
+    quantity_grams: null,
+    quantity_type: null,
+    quantity_note: null,
     created_at: "2026-01-01",
     updated_at: "2026-01-01",
     food_items: {

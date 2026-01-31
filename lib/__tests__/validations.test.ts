@@ -269,11 +269,12 @@ describe("assessmentResultsSchema", () => {
 });
 
 describe("foodItemSchema", () => {
+  // serving_size, raw_quantity, cooked_quantity are now numeric (grams only)
   const validData = {
     name: "Grilled Chicken Breast",
     calories: 165,
     protein: 31,
-    serving_size: "100g",
+    serving_size: 100, // Now numeric (grams)
     is_vegetarian: false,
   };
 
@@ -422,25 +423,29 @@ describe("foodItemSchema", () => {
   });
 
   describe("serving_size validation", () => {
-    it("rejects empty serving size", () => {
-      const result = foodItemSchema.safeParse({ ...validData, serving_size: "" });
+    // serving_size is now numeric (grams only)
+    it("rejects zero serving size", () => {
+      const result = foodItemSchema.safeParse({ ...validData, serving_size: 0 });
       expect(result.success).toBe(false);
     });
 
-    it("rejects serving size over 50 characters", () => {
+    it("rejects negative serving size", () => {
+      const result = foodItemSchema.safeParse({ ...validData, serving_size: -1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects serving size above 5000g", () => {
       const result = foodItemSchema.safeParse({
         ...validData,
-        serving_size: "a".repeat(51),
+        serving_size: 5001,
       });
       expect(result.success).toBe(false);
     });
 
-    it("accepts valid serving sizes", () => {
-      expect(foodItemSchema.safeParse({ ...validData, serving_size: "100g" }).success).toBe(true);
-      expect(foodItemSchema.safeParse({ ...validData, serving_size: "1 cup" }).success).toBe(true);
-      expect(foodItemSchema.safeParse({ ...validData, serving_size: "1 medium" }).success).toBe(
-        true
-      );
+    it("accepts valid serving sizes (numeric grams)", () => {
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: 100 }).success).toBe(true);
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: 150 }).success).toBe(true);
+      expect(foodItemSchema.safeParse({ ...validData, serving_size: 250 }).success).toBe(true);
     });
   });
 
@@ -450,7 +455,7 @@ describe("foodItemSchema", () => {
         name: "Test",
         calories: 100,
         protein: 10,
-        serving_size: "100g",
+        serving_size: 100, // Now numeric
       });
       expect(result.success).toBe(false);
     });

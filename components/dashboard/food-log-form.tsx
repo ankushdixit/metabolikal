@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -10,8 +10,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import type { MealCategory } from "@/lib/database.types";
+import { Input } from "@/components/ui/input";
+import type { MealCategory, QuantityType } from "@/lib/database.types";
 import { MEAL_LABELS } from "./meal-card";
+import {
+  calculateMultiplier,
+  getDefaultQuantityType,
+  getInitialQuantity,
+  hasQuantityDefinitions,
+  shouldShowQuantityTypeToggle,
+} from "@/lib/utils/quantity";
 
 interface FoodItem {
   id: string;
@@ -19,6 +27,8 @@ interface FoodItem {
   calories: number;
   protein: number;
   serving_size: string;
+  raw_quantity: string | null;
+  cooked_quantity: string | null;
 }
 
 interface FoodLogFormProps {
@@ -32,25 +42,25 @@ interface FoodLogFormProps {
     protein: number;
     serving_multiplier: number;
     meal_category: string;
+    quantity_grams?: number | null;
+    quantity_type?: QuantityType | null;
+    quantity_note?: string | null;
   }) => void;
   isLogging?: boolean;
+  /** Pre-filled quantity from planned meal */
+  initialQuantityGrams?: number | null;
+  initialQuantityType?: QuantityType | null;
+  initialQuantityNote?: string | null;
 }
 
 /**
- * Available serving multiplier options
+ * Quick quantity presets for common amounts
  */
-const SERVING_MULTIPLIERS = [
-  { value: 0.5, label: "0.5x" },
-  { value: 0.75, label: "0.75x" },
-  { value: 1, label: "1x" },
-  { value: 1.25, label: "1.25x" },
-  { value: 1.5, label: "1.5x" },
-  { value: 2, label: "2x" },
-];
+const QUICK_QUANTITIES = [50, 100, 150, 200, 250, 300];
 
 /**
  * FoodLogForm component
- * Quick log form for logging food with serving multiplier
+ * Quick log form for logging food with quantity-based input
  */
 export function FoodLogForm({
   isOpen,
@@ -59,12 +69,38 @@ export function FoodLogForm({
   mealCategory,
   onLogFood,
   isLogging = false,
+  initialQuantityGrams,
+  initialQuantityType,
+  initialQuantityNote,
 }: FoodLogFormProps) {
-  const [selectedMultiplier, setSelectedMultiplier] = useState(1);
+  const [quantityGrams, setQuantityGrams] = useState<number>(100);
+  const [quantityType, setQuantityType] = useState<QuantityType | null>(null);
+  const [quantityNote, setQuantityNote] = useState("");
+
+  // Initialize quantity when dialog opens or food item changes
+  useEffect(() => {
+    if (isOpen && foodItem) {
+      // Use initial values if provided (from planned meal), otherwise calculate defaults
+      if (initialQuantityGrams != null) {
+        setQuantityGrams(initialQuantityGrams);
+        setQuantityType(initialQuantityType || getDefaultQuantityType(foodItem));
+        setQuantityNote(initialQuantityNote || "");
+      } else {
+        setQuantityGrams(getInitialQuantity(foodItem));
+        setQuantityType(getDefaultQuantityType(foodItem));
+        setQuantityNote("");
+      }
+    }
+  }, [isOpen, foodItem, initialQuantityGrams, initialQuantityType, initialQuantityNote]);
+
+  // Calculate multiplier from quantity
+  const calculatedMultiplier = useMemo(() => {
+    return calculateMultiplier(quantityGrams, quantityType, foodItem);
+  }, [quantityGrams, quantityType, foodItem]);
 
   // Calculate adjusted values
-  const adjustedCalories = foodItem ? Math.round(foodItem.calories * selectedMultiplier) : 0;
-  const adjustedProtein = foodItem ? Math.round(foodItem.protein * selectedMultiplier) : 0;
+  const adjustedCalories = foodItem ? Math.round(foodItem.calories * calculatedMultiplier) : 0;
+  const adjustedProtein = foodItem ? Math.round(foodItem.protein * calculatedMultiplier) : 0;
 
   const handleLog = () => {
     if (!foodItem || isLogging) return;
@@ -73,16 +109,18 @@ export function FoodLogForm({
       food_item_id: foodItem.id,
       calories: adjustedCalories,
       protein: adjustedProtein,
-      serving_multiplier: selectedMultiplier,
+      serving_multiplier: calculatedMultiplier,
       meal_category: mealCategory,
+      quantity_grams: quantityGrams,
+      quantity_type: quantityType,
+      quantity_note: quantityNote || null,
     });
   };
 
-  // Reset multiplier when dialog opens
+  // Reset when dialog closes
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
-      setSelectedMultiplier(1);
     }
   };
 
@@ -117,27 +155,105 @@ export function FoodLogForm({
             </div>
           </div>
 
-          {/* Serving Multiplier Selection */}
-          <div>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-              Serving Size
+          {/* Quantity Input */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Quantity
             </p>
-            <div className="grid grid-cols-3 gap-2">
-              {SERVING_MULTIPLIERS.map((multiplier) => (
+
+            {/* Quantity input with raw/cooked toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min="1"
+                  max="5000"
+                  step="1"
+                  value={quantityGrams}
+                  onChange={(e) => setQuantityGrams(Number(e.target.value) || 0)}
+                  disabled={isLogging}
+                  className="w-20 bg-secondary border-border text-center font-bold"
+                />
+                <span className="text-sm text-muted-foreground font-bold">g</span>
+              </div>
+
+              {/* Raw/Cooked Toggle */}
+              {foodItem && shouldShowQuantityTypeToggle(foodItem) && (
+                <div className="flex items-center gap-1 bg-secondary rounded p-1">
+                  <button
+                    type="button"
+                    onClick={() => setQuantityType("raw")}
+                    disabled={isLogging}
+                    className={cn(
+                      "px-3 py-1 text-xs font-bold rounded transition-colors",
+                      quantityType === "raw"
+                        ? "gradient-electric text-black"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Raw
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuantityType("cooked")}
+                    disabled={isLogging}
+                    className={cn(
+                      "px-3 py-1 text-xs font-bold rounded transition-colors",
+                      quantityType === "cooked"
+                        ? "gradient-electric text-black"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Cooked
+                  </button>
+                </div>
+              )}
+
+              {/* Show type label when only one is available */}
+              {foodItem &&
+                hasQuantityDefinitions(foodItem) &&
+                !shouldShowQuantityTypeToggle(foodItem) &&
+                quantityType && (
+                  <span className="text-xs text-muted-foreground">({quantityType})</span>
+                )}
+            </div>
+
+            {/* Quick quantity presets */}
+            <div className="grid grid-cols-6 gap-1">
+              {QUICK_QUANTITIES.map((qty) => (
                 <button
-                  key={multiplier.value}
-                  onClick={() => setSelectedMultiplier(multiplier.value)}
+                  key={qty}
+                  type="button"
+                  onClick={() => setQuantityGrams(qty)}
+                  disabled={isLogging}
                   className={cn(
-                    "py-3 text-sm font-black uppercase tracking-wider transition-all",
-                    selectedMultiplier === multiplier.value
+                    "py-2 text-xs font-bold rounded transition-all",
+                    quantityGrams === qty
                       ? "gradient-electric text-black"
-                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {multiplier.label}
+                  {qty}g
                 </button>
               ))}
             </div>
+
+            {/* Serving note */}
+            <Input
+              value={quantityNote}
+              onChange={(e) => setQuantityNote(e.target.value)}
+              placeholder="Note (e.g., 2 chapatis)"
+              disabled={isLogging}
+              maxLength={100}
+              className="bg-secondary border-border text-sm"
+            />
+
+            {/* Warning when no quantity definitions */}
+            {foodItem && !hasQuantityDefinitions(foodItem) && (
+              <p className="text-xs text-amber-400">
+                No quantity reference defined. Using 100g as base.
+              </p>
+            )}
           </div>
 
           {/* Calculated Nutrition */}

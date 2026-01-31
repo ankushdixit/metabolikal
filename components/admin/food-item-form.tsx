@@ -200,17 +200,49 @@ export function FoodItemForm({
         </div>
       </div>
 
+      {/* Serving Size - Required (numeric grams only) */}
+      <div>
+        <label
+          htmlFor="serving_size"
+          className="block text-xs font-black tracking-[0.2em] uppercase text-muted-foreground mb-2"
+        >
+          Serving Size <span className="text-primary">*</span>
+        </label>
+        <p className="text-sm text-muted-foreground mb-2">
+          The reference serving size for nutritional values (all quantities are in grams)
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            id="serving_size"
+            type="number"
+            step="1"
+            min="1"
+            max="5000"
+            placeholder="100"
+            className="w-32 px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+            {...register("serving_size", { valueAsNumber: true })}
+          />
+          <span className="text-sm font-bold text-muted-foreground">g</span>
+        </div>
+        {errors.serving_size && (
+          <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
+            <AlertCircle className="h-4 w-4" />
+            <span>{errors.serving_size.message as string}</span>
+          </div>
+        )}
+      </div>
+
       {/* Quantity Information */}
       <div>
         <div className="flex items-center gap-3 mb-4">
           <Scale className="h-5 w-5 text-primary" />
           <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
-            Quantity Information
+            Raw / Cooked Quantities
           </span>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
           Track raw and cooked quantities for accurate meal planning (e.g., 100g raw chicken = 75g
-          cooked)
+          cooked). Enter values in grams only.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,13 +254,19 @@ export function FoodItemForm({
             >
               Raw Quantity
             </label>
-            <input
-              id="raw_quantity"
-              type="text"
-              placeholder="e.g., 100g raw"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("raw_quantity")}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                id="raw_quantity"
+                type="number"
+                step="1"
+                min="1"
+                max="5000"
+                placeholder="100"
+                className="w-32 px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                {...register("raw_quantity", { valueAsNumber: true })}
+              />
+              <span className="text-sm font-bold text-muted-foreground">g</span>
+            </div>
             {errors.raw_quantity && (
               <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
                 <AlertCircle className="h-4 w-4" />
@@ -245,13 +283,19 @@ export function FoodItemForm({
             >
               Cooked Quantity
             </label>
-            <input
-              id="cooked_quantity"
-              type="text"
-              placeholder="e.g., 75g cooked"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("cooked_quantity")}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                id="cooked_quantity"
+                type="number"
+                step="1"
+                min="1"
+                max="5000"
+                placeholder="75"
+                className="w-32 px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                {...register("cooked_quantity", { valueAsNumber: true })}
+              />
+              <span className="text-sm font-bold text-muted-foreground">g</span>
+            </div>
             {errors.cooked_quantity && (
               <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
                 <AlertCircle className="h-4 w-4" />
@@ -260,29 +304,6 @@ export function FoodItemForm({
             )}
           </div>
         </div>
-      </div>
-
-      {/* Serving Size - Required */}
-      <div>
-        <label
-          htmlFor="serving_size"
-          className="block text-xs font-black tracking-[0.2em] uppercase text-muted-foreground mb-2"
-        >
-          Serving Size <span className="text-primary">*</span>
-        </label>
-        <input
-          id="serving_size"
-          type="text"
-          placeholder="e.g., 100g, 1 cup, 1 medium"
-          className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-          {...register("serving_size")}
-        />
-        {errors.serving_size && (
-          <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
-            <AlertCircle className="h-4 w-4" />
-            <span>{errors.serving_size.message as string}</span>
-          </div>
-        )}
       </div>
 
       {/* Vegetarian Checkbox */}

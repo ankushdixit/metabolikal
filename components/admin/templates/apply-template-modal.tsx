@@ -231,6 +231,10 @@ export function ApplyTemplateModal({
               relative_offset_minutes: item.relative_offset_minutes,
               notes: item.notes,
               display_order: item.display_order,
+              // Copy quantity fields from template
+              quantity_grams: item.quantity_grams,
+              quantity_type: item.quantity_type,
+              quantity_note: item.quantity_note,
             },
           })
         );

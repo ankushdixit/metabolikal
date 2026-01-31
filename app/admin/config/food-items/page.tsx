@@ -285,13 +285,13 @@ export default function FoodItemsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {item.serving_size || "—"}
+                        {item.serving_size ? `${item.serving_size}g` : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {item.raw_quantity || "—"}
+                        {item.raw_quantity ? `${item.raw_quantity}g` : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {item.cooked_quantity || "—"}
+                        {item.cooked_quantity ? `${item.cooked_quantity}g` : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-bold text-orange-400">{item.calories}</span>

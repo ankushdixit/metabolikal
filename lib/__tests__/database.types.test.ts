@@ -190,6 +190,10 @@ describe("Database Types", () => {
         relative_anchor: null,
         relative_offset_minutes: 0,
         display_order: 0,
+        // Quantity input fields
+        quantity_grams: null,
+        quantity_type: null,
+        quantity_note: null,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
@@ -288,6 +292,10 @@ describe("Database Types", () => {
         protein: 31,
         serving_multiplier: 1.0,
         meal_category: "lunch",
+        // Quantity input fields
+        quantity_grams: null,
+        quantity_type: null,
+        quantity_note: null,
         created_at: "2026-01-19T12:00:00Z",
       };
       expect(foodLog.calories).toBe(165);

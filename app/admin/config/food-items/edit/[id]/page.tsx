@@ -60,11 +60,11 @@ export default function EditFoodItemPage() {
       protein: undefined,
       carbs: null,
       fats: null,
-      serving_size: "",
+      serving_size: undefined, // Now numeric
       is_vegetarian: false,
       meal_types: [],
-      raw_quantity: null,
-      cooked_quantity: null,
+      raw_quantity: null, // Now numeric
+      cooked_quantity: null, // Now numeric
       avoid_for_conditions: [],
       alternative_food_ids: [],
     },
@@ -115,17 +115,25 @@ export default function EditFoodItemPage() {
   // Populate form with existing data
   useEffect(() => {
     if (foodItem && !isLoadingRelationships && !isFormInitialized.current) {
+      // Helper to parse string to number (handles both "100" and "100g" formats)
+      const parseNumeric = (val: string | null): number | null => {
+        if (!val) return null;
+        const num = parseFloat(val.replace(/[^\d.]/g, ""));
+        return isNaN(num) ? null : num;
+      };
+
       reset({
         name: foodItem.name,
         calories: foodItem.calories,
         protein: foodItem.protein,
         carbs: foodItem.carbs,
         fats: foodItem.fats,
-        serving_size: foodItem.serving_size,
+        // Convert string from DB to number for form (handles legacy "100g" format)
+        serving_size: parseNumeric(foodItem.serving_size) || undefined,
         is_vegetarian: foodItem.is_vegetarian,
         meal_types: (foodItem.meal_types as FoodItemFormData["meal_types"]) || [],
-        raw_quantity: foodItem.raw_quantity || null,
-        cooked_quantity: foodItem.cooked_quantity || null,
+        raw_quantity: parseNumeric(foodItem.raw_quantity),
+        cooked_quantity: parseNumeric(foodItem.cooked_quantity),
         avoid_for_conditions: existingConditionIds,
         alternative_food_ids: existingAlternativeIds,
       });
@@ -142,17 +150,20 @@ export default function EditFoodItemPage() {
     const alternativeFoodIds = data.alternative_food_ids || [];
 
     // Clean up data - convert empty strings and NaN to null for optional fields
+    // Convert numeric quantities to strings for database storage (DB columns are VARCHAR)
     const cleanData = {
       name: data.name,
       calories: data.calories,
       protein: data.protein,
       carbs: data.carbs && !isNaN(data.carbs) ? data.carbs : null,
       fats: data.fats && !isNaN(data.fats) ? data.fats : null,
-      serving_size: data.serving_size,
+      serving_size: String(data.serving_size), // Convert number to string for DB
       is_vegetarian: data.is_vegetarian,
       meal_types: data.meal_types && data.meal_types.length > 0 ? data.meal_types : null,
-      raw_quantity: data.raw_quantity?.trim() || null,
-      cooked_quantity: data.cooked_quantity?.trim() || null,
+      raw_quantity:
+        data.raw_quantity && !isNaN(data.raw_quantity) ? String(data.raw_quantity) : null,
+      cooked_quantity:
+        data.cooked_quantity && !isNaN(data.cooked_quantity) ? String(data.cooked_quantity) : null,
     };
 
     updateMutation.mutate(

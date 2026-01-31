@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { DietPlanWithFood, ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
+import { formatQuantityDisplay } from "@/lib/utils/quantity";
 
 interface GroupedMealModalProps {
   isOpen: boolean;
@@ -140,6 +141,13 @@ export function GroupedMealModal({
               const protein = Math.round((food?.protein || 0) * multiplier);
               const isDeleting = deletingId === plan.id;
 
+              // Format quantity display
+              const quantityDisplay = formatQuantityDisplay(
+                plan.quantity_grams,
+                plan.quantity_type,
+                plan.quantity_note
+              );
+
               return (
                 <div
                   key={plan.id}
@@ -152,7 +160,11 @@ export function GroupedMealModal({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate">{food?.name || "Unknown Food"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {multiplier !== 1 && `${multiplier}x • `}
+                      {quantityDisplay
+                        ? `${quantityDisplay} • `
+                        : multiplier !== 1
+                          ? `${multiplier}x • `
+                          : ""}
                       {calories} cal • {protein}g protein
                     </p>
                   </div>

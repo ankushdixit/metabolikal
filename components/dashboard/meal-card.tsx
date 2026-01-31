@@ -1,7 +1,8 @@
 "use client";
 
 import { Utensils, ArrowRight, Plus } from "lucide-react";
-import type { MealCategory } from "@/lib/database.types";
+import type { MealCategory, QuantityType } from "@/lib/database.types";
+import { formatQuantityDisplay } from "@/lib/utils/quantity";
 
 interface FoodItem {
   id: string;
@@ -9,6 +10,8 @@ interface FoodItem {
   calories: number;
   protein: number;
   serving_size: string;
+  raw_quantity?: string | null;
+  cooked_quantity?: string | null;
 }
 
 interface MealCardProps {
@@ -17,6 +20,10 @@ interface MealCardProps {
   servingMultiplier: number;
   onSeeAlternatives: () => void;
   onLogFood: () => void;
+  /** Quantity input fields */
+  quantityGrams?: number | null;
+  quantityType?: QuantityType | null;
+  quantityNote?: string | null;
 }
 
 /**
@@ -49,12 +56,18 @@ export function MealCard({
   servingMultiplier,
   onSeeAlternatives,
   onLogFood,
+  quantityGrams,
+  quantityType,
+  quantityNote,
 }: MealCardProps) {
   const MealIcon = getMealIcon(mealCategory);
 
   // Calculate adjusted values based on serving multiplier
   const adjustedCalories = foodItem ? Math.round(foodItem.calories * servingMultiplier) : 0;
   const adjustedProtein = foodItem ? Math.round(foodItem.protein * servingMultiplier) : 0;
+
+  // Format quantity display
+  const quantityDisplay = formatQuantityDisplay(quantityGrams, quantityType, quantityNote);
 
   if (!foodItem) {
     return (
@@ -84,11 +97,15 @@ export function MealCard({
             {MEAL_LABELS[mealCategory]}
           </h3>
         </div>
-        {servingMultiplier !== 1 && (
+        {quantityDisplay ? (
+          <span className="text-xs font-bold text-muted-foreground tracking-wider px-2 py-1 bg-secondary">
+            {quantityDisplay}
+          </span>
+        ) : servingMultiplier !== 1 ? (
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-2 py-1 bg-secondary">
             {servingMultiplier}x serving
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Food Item Details */}

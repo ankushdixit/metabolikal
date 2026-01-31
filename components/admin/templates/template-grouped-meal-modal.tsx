@@ -17,6 +17,7 @@ import type {
   ExtendedTemplateTimelineItem,
 } from "@/hooks/use-template-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
+import { formatQuantityDisplay } from "@/lib/utils/quantity";
 
 interface TemplateGroupedMealModalProps {
   isOpen: boolean;
@@ -143,6 +144,13 @@ export function TemplateGroupedMealModal({
               const protein = Math.round((food?.protein || 0) * multiplier);
               const isDeleting = deletingId === templateItem.id;
 
+              // Format quantity display
+              const quantityDisplay = formatQuantityDisplay(
+                templateItem.quantity_grams,
+                templateItem.quantity_type,
+                templateItem.quantity_note
+              );
+
               return (
                 <div
                   key={templateItem.id}
@@ -155,7 +163,11 @@ export function TemplateGroupedMealModal({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate">{food?.name || "Unknown Food"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {multiplier !== 1 && `${multiplier}x • `}
+                      {quantityDisplay
+                        ? `${quantityDisplay} • `
+                        : multiplier !== 1
+                          ? `${multiplier}x • `
+                          : ""}
                       {calories} cal • {protein}g protein
                     </p>
                   </div>

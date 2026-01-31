@@ -114,11 +114,11 @@ function TestWrapper({
       protein: undefined,
       carbs: null,
       fats: null,
-      serving_size: "",
+      serving_size: undefined, // Now numeric
       is_vegetarian: false,
       meal_types: [],
-      raw_quantity: null,
-      cooked_quantity: null,
+      raw_quantity: null, // Now numeric
+      cooked_quantity: null, // Now numeric
       avoid_for_conditions: [],
       alternative_food_ids: [],
       ...defaultValues,
@@ -249,7 +249,7 @@ describe("FoodItemForm Component", () => {
           name: "Test Food",
           calories: 100,
           protein: 20,
-          serving_size: "100g",
+          serving_size: 100, // Now numeric
           is_vegetarian: true,
         }}
       />
@@ -258,7 +258,7 @@ describe("FoodItemForm Component", () => {
     expect(screen.getByLabelText(/food name/i)).toHaveValue("Test Food");
     expect(screen.getByLabelText(/calories/i)).toHaveValue(100);
     expect(screen.getByLabelText(/protein/i)).toHaveValue(20);
-    expect(screen.getByLabelText(/serving size/i)).toHaveValue("100g");
+    expect(screen.getByLabelText(/serving size/i)).toHaveValue(100); // Now numeric
     expect(screen.getByRole("checkbox", { name: /vegetarian/i })).toBeChecked();
   });
 
@@ -289,7 +289,7 @@ describe("FoodItemForm Component", () => {
   it("renders quantity information section", () => {
     render(<TestWrapper />);
 
-    expect(screen.getByText("Quantity Information")).toBeInTheDocument();
+    expect(screen.getByText("Raw / Cooked Quantities")).toBeInTheDocument();
     expect(screen.getByLabelText(/raw quantity/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/cooked quantity/i)).toBeInTheDocument();
   });
@@ -297,13 +297,14 @@ describe("FoodItemForm Component", () => {
   it("allows typing in quantity fields", () => {
     render(<TestWrapper />);
 
+    // Quantity fields are now number inputs (grams only)
     const rawQuantityInput = screen.getByLabelText(/raw quantity/i);
-    fireEvent.change(rawQuantityInput, { target: { value: "100g raw" } });
-    expect(rawQuantityInput).toHaveValue("100g raw");
+    fireEvent.change(rawQuantityInput, { target: { value: "100" } });
+    expect(rawQuantityInput).toHaveValue(100);
 
     const cookedQuantityInput = screen.getByLabelText(/cooked quantity/i);
-    fireEvent.change(cookedQuantityInput, { target: { value: "75g cooked" } });
-    expect(cookedQuantityInput).toHaveValue("75g cooked");
+    fireEvent.change(cookedQuantityInput, { target: { value: "75" } });
+    expect(cookedQuantityInput).toHaveValue(75);
   });
 
   it("renders avoid for conditions section", () => {
@@ -330,15 +331,15 @@ describe("FoodItemForm Component", () => {
           name: "Test Food",
           calories: 100,
           protein: 20,
-          serving_size: "100g",
-          raw_quantity: "150g raw",
-          cooked_quantity: "100g cooked",
+          serving_size: 100, // Now numeric
+          raw_quantity: 150, // Now numeric
+          cooked_quantity: 100, // Now numeric
         }}
       />
     );
 
-    expect(screen.getByLabelText(/raw quantity/i)).toHaveValue("150g raw");
-    expect(screen.getByLabelText(/cooked quantity/i)).toHaveValue("100g cooked");
+    expect(screen.getByLabelText(/raw quantity/i)).toHaveValue(150); // Now numeric
+    expect(screen.getByLabelText(/cooked quantity/i)).toHaveValue(100); // Now numeric
   });
 
   it("shows description text for quantity section", () => {
