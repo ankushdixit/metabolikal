@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced Results Modal**: New visual components for the calculator results display:
+  - **Health Score Chart**: Animated circular progress chart with tier-based colors (Elite/Good/Moderate/Needs Attention)
+  - **Medical Considerations Section**: Shows medical conditions affecting BMR with individual impact percentages, base vs adjusted BMR comparison, and daily calorie reduction summary
+  - **Fat Loss Action Plan**: Smart nutrition and strategic movement cards showing calorie deficits, combined weekly result banner, timeline to goal calculation, and recommended activities
+  - **Resolved Medical Conditions**: Landing page now fetches full condition data to display names and impacts instead of just slugs
+
 - **Quantity-Based Food Input System**: Replaced serving multiplier with intuitive gram-based quantity input for diet plans:
   - **Quantity in Grams**: Coaches and clients now enter weight in grams (e.g., 150g) instead of abstract multipliers
   - **Raw/Cooked Toggle**: Select whether quantity refers to raw or cooked weight when food has both defined
