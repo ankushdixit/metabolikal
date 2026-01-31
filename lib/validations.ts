@@ -237,24 +237,29 @@ export const foodItemSchema = z.object({
     .max(500, { message: "Fats must be 500g or less" })
     .nullish()
     .catch(null),
+  // Serving size in grams (numeric only, "g" unit is hardcoded in UI)
   serving_size: z
-    .string()
-    .min(1, { message: "Serving size is required" })
-    .max(50, { message: "Serving size must be 50 characters or less" }),
+    .number({
+      message: "Serving size is required and must be a number",
+    })
+    .min(1, { message: "Serving size must be at least 1g" })
+    .max(5000, { message: "Serving size must be 5000g or less" }),
   is_vegetarian: z.boolean(),
   // meal_types is now dynamic from database, so accept any string array
   meal_types: z.array(z.string()).optional().nullable(),
-  // Quantity information for raw vs cooked tracking
+  // Quantity information for raw vs cooked tracking (numeric only, in grams)
   raw_quantity: z
-    .string()
-    .max(50, { message: "Raw quantity must be 50 characters or less" })
-    .optional()
-    .nullable(),
+    .number()
+    .min(1, { message: "Raw quantity must be at least 1g" })
+    .max(5000, { message: "Raw quantity must be 5000g or less" })
+    .nullish()
+    .catch(null),
   cooked_quantity: z
-    .string()
-    .max(50, { message: "Cooked quantity must be 50 characters or less" })
-    .optional()
-    .nullable(),
+    .number()
+    .min(1, { message: "Cooked quantity must be at least 1g" })
+    .max(5000, { message: "Cooked quantity must be 5000g or less" })
+    .nullish()
+    .catch(null),
   // Avoid for conditions - array of condition IDs (UUIDs from database)
   avoid_for_conditions: z.array(z.string().min(1)).optional().nullable(),
   // Food alternatives - array of food item IDs (UUIDs from database)

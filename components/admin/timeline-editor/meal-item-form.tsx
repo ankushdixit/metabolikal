@@ -33,7 +33,22 @@ import { TimingSelector, type TimingValues } from "./timing-selector";
 import { FoodWarningDialog } from "./food-warning-dialog";
 import { useFoodCompatibility } from "@/hooks/use-food-compatibility";
 import type { ClientConditionWithDetails } from "@/hooks/use-timeline-data";
-import type { FoodItem, MealCategory, DietPlan, DietPlanInsert } from "@/lib/database.types";
+import type {
+  FoodItem,
+  MealCategory,
+  DietPlan,
+  DietPlanInsert,
+  QuantityType,
+} from "@/lib/database.types";
+import {
+  calculateMultiplier,
+  calculateQuantityFromMultiplier,
+  getDefaultQuantityType,
+  getInitialQuantity,
+  hasQuantityDefinitions,
+  shouldShowQuantityTypeToggle,
+  validateQuantityInput,
+} from "@/lib/utils/quantity";
 
 // Meal categories
 const MEAL_CATEGORIES: { value: MealCategory; label: string }[] = [
@@ -73,7 +88,9 @@ export function MealItemForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [mealCategory, setMealCategory] = useState<MealCategory>("breakfast");
-  const [servingMultiplier, setServingMultiplier] = useState(1);
+  const [quantityGrams, setQuantityGrams] = useState<number>(100);
+  const [quantityType, setQuantityType] = useState<QuantityType | null>(null);
+  const [quantityNote, setQuantityNote] = useState("");
   const [notes, setNotes] = useState("");
   const [timing, setTiming] = useState<TimingValues>({
     timeType: "period",
@@ -97,9 +114,33 @@ export function MealItemForm({
   useEffect(() => {
     if (isOpen) {
       setSearchQuery("");
-      setSelectedFood(editItem?.food_items || null);
+      const food = editItem?.food_items || null;
+      setSelectedFood(food);
       setMealCategory(editItem?.meal_category || "breakfast");
-      setServingMultiplier(editItem?.serving_multiplier || 1);
+
+      // Handle quantity fields - prioritize stored quantity_grams, fall back to calculating from multiplier
+      if (editItem?.quantity_grams != null) {
+        setQuantityGrams(editItem.quantity_grams);
+        setQuantityType(editItem.quantity_type || getDefaultQuantityType(food));
+        setQuantityNote(editItem.quantity_note || "");
+      } else if (food) {
+        // Legacy: calculate quantity from multiplier
+        const defaultType = getDefaultQuantityType(food);
+        setQuantityType(defaultType);
+        if (editItem?.serving_multiplier) {
+          setQuantityGrams(
+            calculateQuantityFromMultiplier(editItem.serving_multiplier, defaultType, food)
+          );
+        } else {
+          setQuantityGrams(getInitialQuantity(food));
+        }
+        setQuantityNote("");
+      } else {
+        setQuantityGrams(100);
+        setQuantityType(null);
+        setQuantityNote("");
+      }
+
       setNotes(editItem?.notes || "");
       setTiming({
         timeType: editItem?.time_type || "period",
@@ -112,6 +153,23 @@ export function MealItemForm({
       setShowWarningDialog(false);
     }
   }, [isOpen, editItem]);
+
+  // Auto-set quantity type and initial quantity when food is newly selected (not from reset)
+  useEffect(() => {
+    // Only run when food selection changes after initial load
+    if (!isOpen || editItem?.food_items?.id === selectedFood?.id) return;
+
+    if (selectedFood) {
+      const defaultType = getDefaultQuantityType(selectedFood);
+      setQuantityType(defaultType);
+      setQuantityGrams(getInitialQuantity(selectedFood));
+      setQuantityNote("");
+    } else {
+      setQuantityType(null);
+      setQuantityGrams(100);
+      setQuantityNote("");
+    }
+  }, [selectedFood?.id, isOpen, editItem?.food_items?.id]);
 
   // Fetch food items
   const foodItemsQuery = useList<FoodItem>({
@@ -135,14 +193,19 @@ export function MealItemForm({
 
   const isSubmitting = createMutation.mutation.isPending || updateMutation.mutation.isPending;
 
+  // Calculate the multiplier from quantity
+  const calculatedMultiplier = useMemo(() => {
+    return calculateMultiplier(quantityGrams, quantityType, selectedFood);
+  }, [quantityGrams, quantityType, selectedFood]);
+
   // Calculate nutrition for selected food
   const calculatedNutrition = useMemo(() => {
     if (!selectedFood) return null;
     return {
-      calories: Math.round(selectedFood.calories * servingMultiplier),
-      protein: Math.round(selectedFood.protein * servingMultiplier),
+      calories: Math.round(selectedFood.calories * calculatedMultiplier),
+      protein: Math.round(selectedFood.protein * calculatedMultiplier),
     };
-  }, [selectedFood, servingMultiplier]);
+  }, [selectedFood, calculatedMultiplier]);
 
   // Perform the actual save operation
   const performSave = async () => {
@@ -153,7 +216,7 @@ export function MealItemForm({
       day_number: dayNumber,
       food_item_id: selectedFood.id,
       meal_category: mealCategory,
-      serving_multiplier: servingMultiplier,
+      serving_multiplier: calculatedMultiplier,
       notes: notes || null,
       time_type: timing.timeType,
       time_start: timing.timeStart,
@@ -161,6 +224,9 @@ export function MealItemForm({
       time_period: timing.timePeriod,
       relative_anchor: timing.relativeAnchor,
       relative_offset_minutes: timing.relativeOffsetMinutes,
+      quantity_grams: quantityGrams,
+      quantity_type: quantityType,
+      quantity_note: quantityNote || null,
     };
 
     try {
@@ -190,6 +256,13 @@ export function MealItemForm({
 
     if (!selectedFood) {
       toast.error("Please select a food item");
+      return;
+    }
+
+    // Validate quantity input
+    const validation = validateQuantityInput(quantityGrams, quantityType, selectedFood);
+    if (!validation.valid) {
+      toast.error(validation.error || "Invalid quantity");
       return;
     }
 
@@ -339,35 +412,102 @@ export function MealItemForm({
               </Select>
             </div>
 
-            {/* Serving Multiplier */}
+            {/* Quantity Input */}
+            <div className="space-y-3">
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                Quantity *
+              </Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="5000"
+                    step="1"
+                    value={quantityGrams}
+                    onChange={(e) => setQuantityGrams(Number(e.target.value) || 0)}
+                    disabled={isSubmitting}
+                    className="w-20 bg-secondary border-border"
+                  />
+                  <span className="text-sm text-muted-foreground font-bold">g</span>
+                </div>
+
+                {/* Raw/Cooked Toggle - only show when both are defined */}
+                {selectedFood && shouldShowQuantityTypeToggle(selectedFood) && (
+                  <div className="flex items-center gap-1 bg-secondary rounded p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantityType("raw")}
+                      disabled={isSubmitting}
+                      className={cn(
+                        "px-3 py-1 text-xs font-bold rounded transition-colors",
+                        quantityType === "raw"
+                          ? "bg-orange-500 text-black"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Raw
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuantityType("cooked")}
+                      disabled={isSubmitting}
+                      className={cn(
+                        "px-3 py-1 text-xs font-bold rounded transition-colors",
+                        quantityType === "cooked"
+                          ? "bg-orange-500 text-black"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Cooked
+                    </button>
+                  </div>
+                )}
+
+                {/* Show type label when only one is available */}
+                {selectedFood &&
+                  hasQuantityDefinitions(selectedFood) &&
+                  !shouldShowQuantityTypeToggle(selectedFood) &&
+                  quantityType && (
+                    <span className="text-xs text-muted-foreground">({quantityType})</span>
+                  )}
+              </div>
+
+              {/* Calculated nutrition */}
+              {calculatedNutrition && (
+                <p className="text-sm text-muted-foreground">
+                  ={" "}
+                  <span className="font-bold text-foreground">
+                    {calculatedNutrition.calories} cal
+                  </span>
+                  ,{" "}
+                  <span className="font-bold text-foreground">
+                    {calculatedNutrition.protein}g protein
+                  </span>
+                </p>
+              )}
+
+              {/* Warning when no quantity definitions */}
+              {selectedFood && !hasQuantityDefinitions(selectedFood) && (
+                <p className="text-xs text-amber-400">
+                  No quantity reference defined for this food. Using 100g as base.
+                </p>
+              )}
+            </div>
+
+            {/* Serving Note (optional) */}
             <div>
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-                Serving Multiplier
+                Serving Note (optional)
               </Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  type="number"
-                  min="0.25"
-                  max="10"
-                  step="0.25"
-                  value={servingMultiplier}
-                  onChange={(e) => setServingMultiplier(Number(e.target.value) || 1)}
-                  disabled={isSubmitting}
-                  className="w-24 bg-secondary border-border"
-                />
-                {calculatedNutrition && (
-                  <p className="text-sm text-muted-foreground">
-                    ={" "}
-                    <span className="font-bold text-foreground">
-                      {calculatedNutrition.calories} cal
-                    </span>
-                    ,{" "}
-                    <span className="font-bold text-foreground">
-                      {calculatedNutrition.protein}g protein
-                    </span>
-                  </p>
-                )}
-              </div>
+              <Input
+                value={quantityNote}
+                onChange={(e) => setQuantityNote(e.target.value)}
+                placeholder="e.g., 2 chapatis, 3 slices"
+                disabled={isSubmitting}
+                maxLength={100}
+                className="bg-secondary border-border"
+              />
             </div>
 
             {/* Timing */}

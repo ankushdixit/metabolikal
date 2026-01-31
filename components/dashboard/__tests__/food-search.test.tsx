@@ -9,6 +9,8 @@ const mockSearchResults = [
     protein: 35,
     serving_size: "200g",
     is_vegetarian: false,
+    raw_quantity: "200g",
+    cooked_quantity: "150g",
   },
   {
     id: "food-2",
@@ -17,6 +19,8 @@ const mockSearchResults = [
     protein: 5,
     serving_size: "150g",
     is_vegetarian: true,
+    raw_quantity: null,
+    cooked_quantity: "150g",
   },
 ];
 

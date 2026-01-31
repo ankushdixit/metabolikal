@@ -541,6 +541,10 @@ export interface Database {
           relative_anchor: RelativeAnchor | null;
           relative_offset_minutes: number;
           display_order: number | null;
+          // Quantity input fields
+          quantity_grams: number | null;
+          quantity_type: QuantityType | null;
+          quantity_note: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -560,6 +564,10 @@ export interface Database {
           relative_anchor?: RelativeAnchor | null;
           relative_offset_minutes?: number;
           display_order?: number | null;
+          // Quantity input fields
+          quantity_grams?: number | null;
+          quantity_type?: QuantityType | null;
+          quantity_note?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -579,6 +587,10 @@ export interface Database {
           relative_anchor?: RelativeAnchor | null;
           relative_offset_minutes?: number;
           display_order?: number | null;
+          // Quantity input fields
+          quantity_grams?: number | null;
+          quantity_type?: QuantityType | null;
+          quantity_note?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -739,6 +751,10 @@ export interface Database {
           protein: number;
           serving_multiplier: number;
           meal_category: string;
+          // Quantity input fields
+          quantity_grams: number | null;
+          quantity_type: QuantityType | null;
+          quantity_note: string | null;
           created_at: string;
         };
         Insert: {
@@ -751,6 +767,10 @@ export interface Database {
           protein: number;
           serving_multiplier?: number;
           meal_category: string;
+          // Quantity input fields
+          quantity_grams?: number | null;
+          quantity_type?: QuantityType | null;
+          quantity_note?: string | null;
           created_at?: string;
         };
         Update: {
@@ -763,6 +783,10 @@ export interface Database {
           protein?: number;
           serving_multiplier?: number;
           meal_category?: string;
+          // Quantity input fields
+          quantity_grams?: number | null;
+          quantity_type?: QuantityType | null;
+          quantity_note?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -1734,6 +1758,15 @@ export type NotificationPreferencesUpdate = UpdateTables<"notification_preferenc
 export type DeviceType = "desktop" | "mobile" | "tablet";
 
 // =============================================================================
+// QUANTITY INPUT TYPES
+// =============================================================================
+
+/**
+ * Type of quantity measurement (raw or cooked weight)
+ */
+export type QuantityType = "raw" | "cooked";
+
+// =============================================================================
 // PLAN COMPLETION TYPE EXPORTS
 // =============================================================================
 
@@ -1901,6 +1934,10 @@ export interface TemplateDietItem {
   relative_offset_minutes: number | null;
   notes: string | null;
   display_order: number;
+  // Quantity input fields
+  quantity_grams: number | null;
+  quantity_type: QuantityType | null;
+  quantity_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1919,6 +1956,10 @@ export interface TemplateDietItemInsert {
   relative_offset_minutes?: number | null;
   notes?: string | null;
   display_order?: number;
+  // Quantity input fields
+  quantity_grams?: number | null;
+  quantity_type?: QuantityType | null;
+  quantity_note?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -1937,6 +1978,10 @@ export interface TemplateDietItemUpdate {
   relative_offset_minutes?: number | null;
   notes?: string | null;
   display_order?: number;
+  // Quantity input fields
+  quantity_grams?: number | null;
+  quantity_type?: QuantityType | null;
+  quantity_note?: string | null;
   created_at?: string;
   updated_at?: string;
 }

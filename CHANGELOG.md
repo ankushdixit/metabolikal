@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Quantity-Based Food Input System**: Replaced serving multiplier with intuitive gram-based quantity input for diet plans:
+  - **Quantity in Grams**: Coaches and clients now enter weight in grams (e.g., 150g) instead of abstract multipliers
+  - **Raw/Cooked Toggle**: Select whether quantity refers to raw or cooked weight when food has both defined
+  - **Serving Notes**: Optional notes field for context (e.g., "2 chapatis", "3 slices")
+  - **Auto-Calculation**: System calculates multiplier internally: `multiplier = entered_quantity / reference_quantity`
+  - **Database Migration**: New columns `quantity_grams`, `quantity_type`, `quantity_note` on `diet_plans`, `template_diet_items`, and `food_logs` tables
+  - **Quantity Utilities**: New `lib/utils/quantity.ts` with parsing, validation, and formatting functions
+  - **Backwards Compatible**: Existing multiplier-based data still works; quantity calculated from multiplier for editing
+
+- **Numeric-Only Food Item Quantities**: Standardized serving_size, raw_quantity, and cooked_quantity to grams-only:
+  - **Form Validation**: All quantity fields now accept numbers only (1-5000g range)
+  - **UI Update**: Number inputs with "g" suffix label instead of free-text fields
+  - **CSV Import**: Template updated to use numeric values without "g" suffix
+  - **Display Format**: Values shown as `{value}g` throughout the app
+  - **Legacy Support**: Parsing handles both "100" and "100g" formats for existing data
+
 - **Admin-Configurable Calculator Settings**: All calculator formulas now configurable through admin portal at `/admin/config/calculator-settings`:
   - **Database Schema**: New `calculator_settings` singleton table with 40+ configurable parameters
   - **Activity Multipliers**: Configurable TDEE multipliers for all 5 activity levels

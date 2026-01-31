@@ -11,6 +11,7 @@ import { Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MealCategory } from "@/lib/database.types";
 import type { DietPlanWithFood, DietTotals } from "@/hooks/use-daily-plan-data";
+import { formatQuantityDisplay } from "@/lib/utils/quantity";
 
 interface DailyDietSectionProps {
   dietByMeal: Map<MealCategory, DietPlanWithFood[]>;
@@ -83,13 +84,24 @@ export function DailyDietSection({ dietByMeal, totals, className }: DailyDietSec
                     const totalCal = Math.round(calories * multiplier);
                     const totalProt = Math.round(protein * multiplier);
 
+                    // Format quantity display
+                    const quantityDisplay = formatQuantityDisplay(
+                      item.quantity_grams,
+                      item.quantity_type,
+                      item.quantity_note
+                    );
+
                     return (
                       <div key={item.id} className="flex items-center justify-between text-sm">
                         <span className="truncate pr-2">
                           {item.food_items?.name || "Unknown Food"}
-                          {multiplier !== 1 && (
+                          {quantityDisplay ? (
+                            <span className="text-muted-foreground ml-1 text-xs">
+                              - {quantityDisplay}
+                            </span>
+                          ) : multiplier !== 1 ? (
                             <span className="text-muted-foreground ml-1">x{multiplier}</span>
-                          )}
+                          ) : null}
                         </span>
                         <span className="text-muted-foreground flex-shrink-0">
                           {totalCal} cal

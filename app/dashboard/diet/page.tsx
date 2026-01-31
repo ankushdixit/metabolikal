@@ -30,6 +30,8 @@ interface FoodItem {
   protein: number;
   serving_size: string;
   is_vegetarian: boolean;
+  raw_quantity: string | null;
+  cooked_quantity: string | null;
 }
 
 interface DietPlanEntry {

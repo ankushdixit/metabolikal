@@ -72,6 +72,9 @@ export interface CSVParseResult {
 /**
  * Generate CSV template content for download
  *
+ * IMPORTANT: All quantity fields (serving_size, raw_quantity, cooked_quantity)
+ * must be numeric values in grams. Do NOT include units like "g" or "grams".
+ *
  * Available condition slugs (from medical_conditions table):
  * - hypothyroidism
  * - pcos (female only)
@@ -85,10 +88,11 @@ export interface CSVParseResult {
 export function generateCSVTemplate(): string {
   const headers = CSV_HEADERS.join(",");
   const exampleRows = [
-    '"Grilled Chicken Breast",165,31,0,3.6,"100g",false,"130g raw","100g cooked","lunch|dinner",""',
-    '"White Rice",206,4.3,45,0.4,"1 cup cooked",true,"80g dry","240g cooked","lunch|dinner","type2-diabetes|insulin-resistance"',
-    '"Greek Yogurt",100,17,6,0.7,"170g",true,,,"breakfast|snack",""',
-    '"Banana",105,1.3,27,0.4,"1 medium",true,,,"breakfast|snack|pre-workout","type2-diabetes"',
+    // All quantities are numeric (grams) - no "g" suffix
+    '"Grilled Chicken Breast",165,31,0,3.6,100,false,130,100,"lunch|dinner",""',
+    '"White Rice",206,4.3,45,0.4,150,true,80,240,"lunch|dinner","type2-diabetes|insulin-resistance"',
+    '"Greek Yogurt",100,17,6,0.7,170,true,,,"breakfast|snack",""',
+    '"Banana",105,1.3,27,0.4,120,true,,,"breakfast|snack|pre-workout","type2-diabetes"',
   ];
 
   return [headers, ...exampleRows].join("\n");
@@ -174,22 +178,38 @@ export function validateCSVRow(row: RawCSVRow, rowNumber: number): ValidatedCSVR
     errors.push({ field: "fats", message: "Fats must be between 0 and 500g" });
   }
 
-  // Validate serving size
-  if (!row.serving_size || row.serving_size.trim() === "") {
-    errors.push({ field: "serving_size", message: "Serving size is required" });
-  } else if (row.serving_size.length > 50) {
-    errors.push({ field: "serving_size", message: "Serving size must be 50 characters or less" });
+  // Validate serving size (must be numeric, in grams)
+  const servingSize = parseNumber(row.serving_size);
+  if (servingSize === null) {
+    errors.push({
+      field: "serving_size",
+      message: "Serving size is required and must be a number (grams)",
+    });
+  } else if (servingSize < 1 || servingSize > 5000) {
+    errors.push({
+      field: "serving_size",
+      message: "Serving size must be between 1 and 5000 grams",
+    });
   }
 
-  // Validate optional string fields
-  if (row.raw_quantity && row.raw_quantity.length > 50) {
-    errors.push({ field: "raw_quantity", message: "Raw quantity must be 50 characters or less" });
+  // Validate optional quantity fields (must be numeric if provided, in grams)
+  const rawQuantity = parseNumber(row.raw_quantity);
+  if (row.raw_quantity && row.raw_quantity.trim() !== "" && rawQuantity === null) {
+    errors.push({ field: "raw_quantity", message: "Raw quantity must be a number (grams)" });
+  } else if (rawQuantity !== null && (rawQuantity < 1 || rawQuantity > 5000)) {
+    errors.push({
+      field: "raw_quantity",
+      message: "Raw quantity must be between 1 and 5000 grams",
+    });
   }
 
-  if (row.cooked_quantity && row.cooked_quantity.length > 50) {
+  const cookedQuantity = parseNumber(row.cooked_quantity);
+  if (row.cooked_quantity && row.cooked_quantity.trim() !== "" && cookedQuantity === null) {
+    errors.push({ field: "cooked_quantity", message: "Cooked quantity must be a number (grams)" });
+  } else if (cookedQuantity !== null && (cookedQuantity < 1 || cookedQuantity > 5000)) {
     errors.push({
       field: "cooked_quantity",
-      message: "Cooked quantity must be 50 characters or less",
+      message: "Cooked quantity must be between 1 and 5000 grams",
     });
   }
 
@@ -207,10 +227,11 @@ export function validateCSVRow(row: RawCSVRow, rowNumber: number): ValidatedCSVR
       protein: protein!,
       carbs: carbs,
       fats: fats,
-      serving_size: row.serving_size!.trim(),
+      // Store numeric values as strings (database columns are VARCHAR but we enforce numeric-only)
+      serving_size: String(servingSize!),
       is_vegetarian: parseBoolean(row.is_vegetarian),
-      raw_quantity: row.raw_quantity?.trim() || null,
-      cooked_quantity: row.cooked_quantity?.trim() || null,
+      raw_quantity: rawQuantity !== null ? String(rawQuantity) : null,
+      cooked_quantity: cookedQuantity !== null ? String(cookedQuantity) : null,
       meal_types: parseMealTypes(row.meal_types),
     };
   }

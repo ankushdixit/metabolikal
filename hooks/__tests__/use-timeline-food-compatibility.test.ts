@@ -36,6 +36,9 @@ describe("useTimelineFoodCompatibility", () => {
     relative_anchor: null,
     relative_offset_minutes: 0,
     display_order: 1,
+    quantity_grams: null,
+    quantity_type: null,
+    quantity_note: null,
     created_at: "2026-01-26T00:00:00Z",
     updated_at: "2026-01-26T00:00:00Z",
     food_items: {
