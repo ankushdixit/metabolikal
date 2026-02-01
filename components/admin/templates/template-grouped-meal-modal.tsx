@@ -17,7 +17,7 @@ import type {
   ExtendedTemplateTimelineItem,
 } from "@/hooks/use-template-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
-import { formatQuantityDisplay } from "@/lib/utils/quantity";
+import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
 
 interface TemplateGroupedMealModalProps {
   isOpen: boolean;
@@ -144,11 +144,12 @@ export function TemplateGroupedMealModal({
               const protein = Math.round((food?.protein || 0) * multiplier);
               const isDeleting = deletingId === templateItem.id;
 
-              // Format quantity display
-              const quantityDisplay = formatQuantityDisplay(
+              // Format quantity display with equivalent
+              const quantityDisplay = formatQuantityDisplayWithEquivalent(
                 templateItem.quantity_grams,
                 templateItem.quantity_type,
-                templateItem.quantity_note
+                templateItem.quantity_note,
+                food
               );
 
               return (

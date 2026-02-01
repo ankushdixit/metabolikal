@@ -30,7 +30,7 @@ import type {
   LifestyleActivityPlanWithType,
 } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
-import { formatQuantityDisplay } from "@/lib/utils/quantity";
+import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
 
 // =============================================================================
 // TYPES
@@ -136,11 +136,12 @@ function MealDetails({
             const fats = Math.round((food?.fats || 0) * multiplier);
             const isCompleted = isSourceItemCompleted(plan.id);
 
-            // Build quantity display - prefer stored quantity_grams, fall back to raw/cooked from food
-            const quantityDisplay = formatQuantityDisplay(
+            // Build quantity display with equivalent - prefer stored quantity_grams, fall back to raw/cooked from food
+            const quantityDisplay = formatQuantityDisplayWithEquivalent(
               plan.quantity_grams,
               plan.quantity_type,
-              plan.quantity_note
+              plan.quantity_note,
+              food
             );
 
             // Fallback to showing raw/cooked quantities from food item

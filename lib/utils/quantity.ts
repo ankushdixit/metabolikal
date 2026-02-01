@@ -212,6 +212,57 @@ export function validateQuantityInput(
 }
 
 /**
+ * Calculate the equivalent quantity in the other form (raw <-> cooked)
+ *
+ * @param quantityGrams - The entered quantity in grams
+ * @param quantityType - The type of quantity entered (raw or cooked)
+ * @param food - The food item with reference quantities
+ * @returns Object with equivalent grams and type, or null if conversion not possible
+ *
+ * @example
+ * // Food item with raw_quantity: "100g", cooked_quantity: "75g"
+ * calculateEquivalentQuantity(50, "raw", food)
+ * // returns { equivalentGrams: 37.5, equivalentType: "cooked" }
+ *
+ * calculateEquivalentQuantity(50, "cooked", food)
+ * // returns { equivalentGrams: 66.67, equivalentType: "raw" }
+ */
+export function calculateEquivalentQuantity(
+  quantityGrams: number | null | undefined,
+  quantityType: QuantityType | null | undefined,
+  food: Pick<FoodItem, "raw_quantity" | "cooked_quantity"> | null | undefined
+): { equivalentGrams: number; equivalentType: QuantityType } | null {
+  if (!quantityGrams || !quantityType || !food) return null;
+
+  // Both raw and cooked quantities must be defined for conversion
+  const rawQty = parseQuantityString(food.raw_quantity);
+  const cookedQty = parseQuantityString(food.cooked_quantity);
+
+  if (rawQty === null || cookedQty === null) return null;
+
+  // Calculate the conversion ratio
+  // raw_quantity : cooked_quantity represents the same amount of food
+  // e.g., 100g raw = 75g cooked means ratio = 75/100 = 0.75
+  const rawToCookedRatio = cookedQty / rawQty;
+
+  if (quantityType === "raw") {
+    // Convert raw to cooked: raw * ratio = cooked
+    const equivalentGrams = quantityGrams * rawToCookedRatio;
+    return {
+      equivalentGrams: Math.round(equivalentGrams * 10) / 10, // Round to 1 decimal
+      equivalentType: "cooked",
+    };
+  } else {
+    // Convert cooked to raw: cooked / ratio = raw
+    const equivalentGrams = quantityGrams / rawToCookedRatio;
+    return {
+      equivalentGrams: Math.round(equivalentGrams * 10) / 10, // Round to 1 decimal
+      equivalentType: "raw",
+    };
+  }
+}
+
+/**
  * Format quantity for display
  *
  * @param quantityGrams - The quantity in grams
@@ -235,6 +286,62 @@ export function formatQuantityDisplay(
 
   if (quantityType) {
     display += ` (${quantityType})`;
+  }
+
+  if (quantityNote?.trim()) {
+    display += ` - ${quantityNote.trim()}`;
+  }
+
+  return display;
+}
+
+/**
+ * Format quantity for display with equivalent quantity in other form
+ *
+ * Shows both the entered quantity and its equivalent (e.g., "50g (raw) / 37.5g (cooked)")
+ * Only shows equivalent when both raw and cooked quantities are defined on the food item.
+ *
+ * @param quantityGrams - The quantity in grams
+ * @param quantityType - The type of quantity (raw or cooked)
+ * @param quantityNote - Optional descriptive note (e.g., "2 chapatis")
+ * @param food - The food item with reference quantities for conversion
+ * @returns Formatted string for display with equivalent
+ *
+ * @example
+ * // Food item with raw_quantity: "100g", cooked_quantity: "75g"
+ * formatQuantityDisplayWithEquivalent(50, "raw", null, food)
+ * // "50g (raw) / 37.5g (cooked)"
+ *
+ * formatQuantityDisplayWithEquivalent(50, "cooked", "2 pieces", food)
+ * // "50g (cooked) / 66.7g (raw) - 2 pieces"
+ *
+ * // Food with only raw_quantity defined - no equivalent shown
+ * formatQuantityDisplayWithEquivalent(50, "raw", null, { raw_quantity: "100g", cooked_quantity: null })
+ * // "50g (raw)"
+ */
+export function formatQuantityDisplayWithEquivalent(
+  quantityGrams: number | null | undefined,
+  quantityType: QuantityType | null | undefined,
+  quantityNote: string | null | undefined,
+  food: Pick<FoodItem, "raw_quantity" | "cooked_quantity"> | null | undefined
+): string {
+  if (!quantityGrams) return "";
+
+  let display = `${Math.round(quantityGrams)}g`;
+
+  if (quantityType) {
+    display += ` (${quantityType})`;
+  }
+
+  // Calculate and add equivalent if both quantities are defined
+  const equivalent = calculateEquivalentQuantity(quantityGrams, quantityType, food);
+  if (equivalent) {
+    // Format equivalent grams - show decimal only if needed
+    const equivalentStr =
+      equivalent.equivalentGrams % 1 === 0
+        ? `${equivalent.equivalentGrams}g`
+        : `${equivalent.equivalentGrams}g`;
+    display += ` / ${equivalentStr} (${equivalent.equivalentType})`;
   }
 
   if (quantityNote?.trim()) {
