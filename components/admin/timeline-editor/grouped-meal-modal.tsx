@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { DietPlanWithFood, ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
-import { formatQuantityDisplay } from "@/lib/utils/quantity";
+import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
 
 interface GroupedMealModalProps {
   isOpen: boolean;
@@ -141,11 +141,12 @@ export function GroupedMealModal({
               const protein = Math.round((food?.protein || 0) * multiplier);
               const isDeleting = deletingId === plan.id;
 
-              // Format quantity display
-              const quantityDisplay = formatQuantityDisplay(
+              // Format quantity display with equivalent
+              const quantityDisplay = formatQuantityDisplayWithEquivalent(
                 plan.quantity_grams,
                 plan.quantity_type,
-                plan.quantity_note
+                plan.quantity_note,
+                food
               );
 
               return (

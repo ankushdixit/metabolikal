@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Equivalent Quantity Display**: Food items now show both entered and equivalent quantities when both raw and cooked reference quantities are defined:
+  - **Automatic Conversion**: Shows equivalent in other form (e.g., "50g (raw) / 37.5g (cooked)")
+  - **Ratio-Based Calculation**: Uses food item's raw/cooked ratio for accurate conversion
+  - **Universal Display**: Updated in all food display locations (admin timeline editor, template editor, client dashboard, mobile sheet)
+  - **Utility Functions**: New `calculateEquivalentQuantity()` and `formatQuantityDisplayWithEquivalent()` in `lib/utils/quantity.ts`
+  - **Comprehensive Tests**: Added 18 new tests for equivalent quantity functionality
+
 - **Enhanced Results Modal**: New visual components for the calculator results display:
   - **Health Score Chart**: Animated circular progress chart with tier-based colors (Elite/Good/Moderate/Needs Attention)
   - **Medical Considerations Section**: Shows medical conditions affecting BMR with individual impact percentages, base vs adjusted BMR comparison, and daily calorie reduction summary

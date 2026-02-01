@@ -10,6 +10,8 @@ import {
   hasQuantityDefinitions,
   shouldShowQuantityTypeToggle,
   getInitialQuantity,
+  calculateEquivalentQuantity,
+  formatQuantityDisplayWithEquivalent,
 } from "../quantity";
 
 describe("parseQuantityString", () => {
@@ -325,5 +327,106 @@ describe("getInitialQuantity", () => {
 
   it("returns 100 as fallback when no quantities defined", () => {
     expect(getInitialQuantity({ raw_quantity: null, cooked_quantity: null })).toBe(100);
+  });
+});
+
+describe("calculateEquivalentQuantity", () => {
+  const food = { raw_quantity: "100g", cooked_quantity: "75g" };
+
+  it("converts raw to cooked correctly", () => {
+    const result = calculateEquivalentQuantity(50, "raw", food);
+    expect(result).toEqual({ equivalentGrams: 37.5, equivalentType: "cooked" });
+  });
+
+  it("converts cooked to raw correctly", () => {
+    const result = calculateEquivalentQuantity(50, "cooked", food);
+    // 50 cooked / (75/100) = 50 / 0.75 = 66.67
+    expect(result).toEqual({ equivalentGrams: 66.7, equivalentType: "raw" });
+  });
+
+  it("handles exact ratio conversion", () => {
+    // 100g raw = 75g cooked
+    const result = calculateEquivalentQuantity(100, "raw", food);
+    expect(result).toEqual({ equivalentGrams: 75, equivalentType: "cooked" });
+  });
+
+  it("handles reverse exact ratio conversion", () => {
+    // 75g cooked = 100g raw
+    const result = calculateEquivalentQuantity(75, "cooked", food);
+    expect(result).toEqual({ equivalentGrams: 100, equivalentType: "raw" });
+  });
+
+  it("returns null when quantity is null", () => {
+    expect(calculateEquivalentQuantity(null, "raw", food)).toBeNull();
+  });
+
+  it("returns null when quantity type is null", () => {
+    expect(calculateEquivalentQuantity(50, null, food)).toBeNull();
+  });
+
+  it("returns null when food is null", () => {
+    expect(calculateEquivalentQuantity(50, "raw", null)).toBeNull();
+  });
+
+  it("returns null when only raw quantity is defined", () => {
+    const foodOnlyRaw = { raw_quantity: "100g", cooked_quantity: null };
+    expect(calculateEquivalentQuantity(50, "raw", foodOnlyRaw)).toBeNull();
+  });
+
+  it("returns null when only cooked quantity is defined", () => {
+    const foodOnlyCooked = { raw_quantity: null, cooked_quantity: "75g" };
+    expect(calculateEquivalentQuantity(50, "cooked", foodOnlyCooked)).toBeNull();
+  });
+
+  it("rounds to 1 decimal place", () => {
+    // Test with numbers that would have many decimals
+    const result = calculateEquivalentQuantity(33, "raw", food);
+    // 33 * 0.75 = 24.75
+    expect(result?.equivalentGrams).toBe(24.8);
+  });
+});
+
+describe("formatQuantityDisplayWithEquivalent", () => {
+  const food = { raw_quantity: "100g", cooked_quantity: "75g" };
+
+  it("formats with equivalent when both quantities defined", () => {
+    const result = formatQuantityDisplayWithEquivalent(50, "raw", null, food);
+    expect(result).toBe("50g (raw) / 37.5g (cooked)");
+  });
+
+  it("formats cooked with raw equivalent", () => {
+    const result = formatQuantityDisplayWithEquivalent(50, "cooked", null, food);
+    expect(result).toBe("50g (cooked) / 66.7g (raw)");
+  });
+
+  it("includes note after equivalent", () => {
+    const result = formatQuantityDisplayWithEquivalent(50, "raw", "2 pieces", food);
+    expect(result).toBe("50g (raw) / 37.5g (cooked) - 2 pieces");
+  });
+
+  it("falls back to basic display when only one quantity defined", () => {
+    const foodOnlyRaw = { raw_quantity: "100g", cooked_quantity: null };
+    const result = formatQuantityDisplayWithEquivalent(50, "raw", null, foodOnlyRaw);
+    expect(result).toBe("50g (raw)");
+  });
+
+  it("falls back to basic display when food is null", () => {
+    const result = formatQuantityDisplayWithEquivalent(50, "raw", null, null);
+    expect(result).toBe("50g (raw)");
+  });
+
+  it("returns empty string for null quantity", () => {
+    expect(formatQuantityDisplayWithEquivalent(null, "raw", null, food)).toBe("");
+  });
+
+  it("handles missing type", () => {
+    const result = formatQuantityDisplayWithEquivalent(50, null, null, food);
+    expect(result).toBe("50g");
+  });
+
+  it("rounds main quantity to integer", () => {
+    const result = formatQuantityDisplayWithEquivalent(50.7, "raw", null, food);
+    // Main quantity rounds to 51g, equivalent is calculated from original: 50.7 * 0.75 = 38.025 → 38g
+    expect(result).toBe("51g (raw) / 38g (cooked)");
   });
 });
