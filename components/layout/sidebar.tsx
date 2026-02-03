@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ClipboardList, LineChart, User, LogOut } from "lucide-react";
+import { LayoutDashboard, ClipboardList, LineChart, User, LogOut, Trophy } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 
 /**
@@ -28,6 +28,11 @@ const navItems = [
     label: "Progress",
     icon: LineChart,
     href: "/dashboard/progress",
+  },
+  {
+    label: "Challenge",
+    icon: Trophy,
+    href: "/dashboard/challenge",
   },
 ];
 
