@@ -1,0 +1,577 @@
+"use client";
+
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Trophy,
+  Flame,
+  Calendar,
+  AlertCircle,
+  Check,
+  Footprints,
+  Droplets,
+  Building2,
+  Beef,
+  Moon,
+} from "lucide-react";
+import { createBrowserSupabaseClient } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+
+interface ChallengeProgressRow {
+  id: string;
+  user_id: string;
+  day_number: number;
+  logged_date: string;
+  steps: number;
+  water_liters: number;
+  floors_climbed: number;
+  protein_grams: number;
+  sleep_hours: number;
+  feeling: string | null;
+  tomorrow_focus: string | null;
+  points_earned: number;
+}
+
+interface DayProgress {
+  dayNumber: number;
+  loggedDate: string;
+  metrics: {
+    steps: number;
+    waterLiters: number;
+    floorsClimbed: number;
+    proteinGrams: number;
+    sleepHours: number;
+    feeling?: string;
+    tomorrowFocus?: string;
+  };
+  pointsEarned: number;
+  hasData: boolean;
+}
+
+interface CumulativeStats {
+  totalSteps: number;
+  totalWater: number;
+  totalFloors: number;
+  totalProtein: number;
+  totalSleepHours: number;
+  daysCompleted: number;
+  totalPoints: number;
+}
+
+const TOTAL_DAYS = 30;
+
+/**
+ * Challenge History Page
+ * Displays the user's 30-day challenge progress in the client portal
+ */
+export default function ChallengeHistoryPage() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<Record<number, DayProgress>>({});
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+
+  // Get current user ID
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+      }
+    });
+  }, [supabase]);
+
+  // Fetch challenge progress
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchProgress = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("challenge_progress")
+          .select("*")
+          .eq("user_id", userId)
+          .order("day_number", { ascending: true });
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        // Convert to DayProgress records
+        const progressMap: Record<number, DayProgress> = {};
+        (data || []).forEach((row: ChallengeProgressRow) => {
+          if (row.day_number !== null) {
+            progressMap[row.day_number] = {
+              dayNumber: row.day_number,
+              loggedDate: row.logged_date,
+              metrics: {
+                steps: row.steps || 0,
+                waterLiters: Number(row.water_liters) || 0,
+                floorsClimbed: row.floors_climbed || 0,
+                proteinGrams: row.protein_grams || 0,
+                sleepHours: Number(row.sleep_hours) || 0,
+                feeling: row.feeling || undefined,
+                tomorrowFocus: row.tomorrow_focus || undefined,
+              },
+              pointsEarned: row.points_earned || 0,
+              hasData: true,
+            };
+          }
+        });
+
+        setProgress(progressMap);
+      } catch (err) {
+        console.error("Error fetching challenge progress:", err);
+        setError("Failed to load challenge history. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, [userId, supabase]);
+
+  // Calculate cumulative stats
+  const cumulativeStats = useMemo((): CumulativeStats => {
+    let totalSteps = 0;
+    let totalWater = 0;
+    let totalFloors = 0;
+    let totalProtein = 0;
+    let totalSleepHours = 0;
+    let totalPoints = 0;
+    let daysCompleted = 0;
+
+    Object.values(progress).forEach((day) => {
+      if (day.hasData) {
+        totalSteps += day.metrics.steps;
+        totalWater += day.metrics.waterLiters;
+        totalFloors += day.metrics.floorsClimbed;
+        totalProtein += day.metrics.proteinGrams;
+        totalSleepHours += day.metrics.sleepHours;
+        totalPoints += day.pointsEarned;
+        daysCompleted++;
+      }
+    });
+
+    return {
+      totalSteps,
+      totalWater: Math.round(totalWater * 10) / 10,
+      totalFloors,
+      totalProtein,
+      totalSleepHours: Math.round(totalSleepHours * 10) / 10,
+      totalPoints,
+      daysCompleted,
+    };
+  }, [progress]);
+
+  // Calculate completion percentage
+  const completionPercent = Math.round((cumulativeStats.daysCompleted / TOTAL_DAYS) * 100);
+
+  // Handle day click
+  const handleDayClick = useCallback(
+    (day: number) => {
+      const dayProgress = progress[day];
+      if (dayProgress?.hasData) {
+        setSelectedDay(selectedDay === day ? null : day);
+      } else {
+        setSelectedDay(null);
+      }
+    },
+    [progress, selectedDay]
+  );
+
+  const selectedDayProgress = selectedDay ? progress[selectedDay] : null;
+  const isEmpty = !isLoading && cumulativeStats.daysCompleted === 0;
+
+  const summaryStats = [
+    {
+      icon: Flame,
+      label: "Days Completed",
+      value: cumulativeStats.daysCompleted,
+      unit: `/ ${TOTAL_DAYS}`,
+      color: "text-orange-500",
+    },
+    {
+      icon: Trophy,
+      label: "Total Points",
+      value: cumulativeStats.totalPoints.toLocaleString(),
+      unit: "pts",
+      color: "text-primary",
+    },
+    {
+      icon: Calendar,
+      label: "Completion",
+      value: completionPercent,
+      unit: "%",
+      color: "text-blue-500",
+    },
+  ];
+
+  const detailedStats = [
+    {
+      icon: Footprints,
+      label: "Total Steps",
+      value: cumulativeStats.totalSteps.toLocaleString(),
+      unit: "steps",
+    },
+    {
+      icon: Droplets,
+      label: "Total Water",
+      value: cumulativeStats.totalWater.toFixed(1),
+      unit: "liters",
+    },
+    {
+      icon: Building2,
+      label: "Total Floors",
+      value: cumulativeStats.totalFloors.toLocaleString(),
+      unit: "floors",
+    },
+    {
+      icon: Beef,
+      label: "Total Protein",
+      value: cumulativeStats.totalProtein.toLocaleString(),
+      unit: "grams",
+    },
+    {
+      icon: Moon,
+      label: "Total Sleep",
+      value: cumulativeStats.totalSleepHours.toFixed(1),
+      unit: "hours",
+    },
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header Section */}
+      <div className="athletic-card p-6 pl-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight mb-2">
+              Challenge <span className="gradient-athletic">History</span>
+            </h1>
+            <p className="text-sm text-muted-foreground font-bold">
+              Your 30-day metabolic challenge journey
+            </p>
+          </div>
+
+          {/* Completion Badge */}
+          {cumulativeStats.daysCompleted > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-secondary">
+              <Trophy className="h-4 w-4 text-primary" />
+              <span className="font-bold text-sm">
+                {cumulativeStats.daysCompleted} days completed
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="athletic-card p-4 pl-6 animate-pulse">
+                <div className="h-8 w-16 bg-secondary mx-auto mb-2" />
+                <div className="h-6 w-20 bg-secondary mx-auto" />
+              </div>
+            ))}
+          </div>
+          <div className="athletic-card p-6 pl-8 animate-pulse">
+            <div className="h-64 bg-secondary" />
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="athletic-card p-6 pl-8">
+          <div className="flex items-center gap-3 text-red-500">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-bold">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {isEmpty && (
+        <div className="athletic-card p-8 pl-10 text-center">
+          <div className="p-4 bg-secondary inline-block mb-4">
+            <Trophy className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-black uppercase tracking-tight mb-2">
+            No Challenge Data Yet
+          </h3>
+          <p className="text-muted-foreground font-bold mb-6 max-w-md mx-auto">
+            Your 30-day challenge progress will appear here once you start logging your daily
+            metrics. Visit the Challenge Hub on the landing page to begin!
+          </p>
+        </div>
+      )}
+
+      {/* Content */}
+      {!isLoading && !error && !isEmpty && (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {summaryStats.map((stat, i) => (
+              <div key={i} className="athletic-card p-2 sm:p-4 pl-3 sm:pl-6 text-center">
+                <div className="p-1.5 sm:p-2 bg-secondary w-fit mx-auto mb-1 sm:mb-2">
+                  <stat.icon className={cn("h-4 w-4 sm:h-5 sm:w-5", stat.color)} />
+                </div>
+                <div className="text-lg sm:text-2xl font-black">{stat.value}</div>
+                <div className="text-[10px] sm:text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  {stat.unit}
+                </div>
+                <div className="text-[10px] sm:text-xs font-bold text-muted-foreground mt-0.5 sm:mt-1">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 30-Day Calendar */}
+          <div className="athletic-card p-6 pl-8">
+            {/* Section Title */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-1 gradient-electric" />
+              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                30-Day Calendar
+              </h3>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="bg-secondary/30 p-3 sm:p-4">
+              {/* Week Labels */}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
+                {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+                  <div
+                    key={i}
+                    className="text-center text-xs font-black text-muted-foreground uppercase"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1).map((day) => {
+                  const dayProgress = progress[day];
+                  const hasData = dayProgress?.hasData || false;
+                  const isSelected = selectedDay === day;
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleDayClick(day)}
+                      disabled={!hasData}
+                      className={cn(
+                        "aspect-square flex items-center justify-center relative",
+                        "text-sm font-black transition-all",
+                        hasData
+                          ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90"
+                          : "bg-secondary text-muted-foreground cursor-default",
+                        isSelected && "ring-2 ring-accent"
+                      )}
+                    >
+                      {hasData ? <Check className="h-4 w-4" /> : day}
+                    </button>
+                  );
+                })}
+
+                {/* Fill remaining cells for visual consistency */}
+                {Array.from({ length: (7 - (TOTAL_DAYS % 7)) % 7 }, (_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-primary flex-shrink-0" />
+                  <span className="text-xs font-bold text-muted-foreground">Completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-secondary flex-shrink-0" />
+                  <span className="text-xs font-bold text-muted-foreground">Not Logged</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Day Details */}
+            {selectedDayProgress && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-secondary">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-black uppercase tracking-wide">
+                      Day {selectedDay} Details
+                    </h4>
+                    <p className="text-xs text-muted-foreground font-bold">
+                      Logged on {selectedDayProgress.loggedDate}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+                  <div className="bg-secondary p-3">
+                    <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                      Steps
+                    </div>
+                    <div className="text-lg font-black">
+                      {selectedDayProgress.metrics.steps.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="bg-secondary p-3">
+                    <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                      Water
+                    </div>
+                    <div className="text-lg font-black">
+                      {selectedDayProgress.metrics.waterLiters}L
+                    </div>
+                  </div>
+                  <div className="bg-secondary p-3">
+                    <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                      Floors
+                    </div>
+                    <div className="text-lg font-black">
+                      {selectedDayProgress.metrics.floorsClimbed}
+                    </div>
+                  </div>
+                  <div className="bg-secondary p-3">
+                    <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                      Protein
+                    </div>
+                    <div className="text-lg font-black">
+                      {selectedDayProgress.metrics.proteinGrams}g
+                    </div>
+                  </div>
+                  <div className="bg-secondary p-3">
+                    <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                      Sleep
+                    </div>
+                    <div className="text-lg font-black">
+                      {selectedDayProgress.metrics.sleepHours}h
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                  <span className="text-sm font-black uppercase tracking-wide">Points Earned</span>
+                  <span className="px-4 py-2 gradient-electric text-black font-black">
+                    {selectedDayProgress.pointsEarned} pts
+                  </span>
+                </div>
+
+                {selectedDayProgress.metrics.feeling && (
+                  <div className="mt-3">
+                    <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-1">
+                      Feeling
+                    </span>
+                    <p className="text-sm font-bold">{selectedDayProgress.metrics.feeling}</p>
+                  </div>
+                )}
+
+                {selectedDayProgress.metrics.tomorrowFocus && (
+                  <div className="mt-3">
+                    <span className="text-xs font-black tracking-wider text-muted-foreground uppercase block mb-1">
+                      Tomorrow&apos;s Focus
+                    </span>
+                    <p className="text-sm font-bold">{selectedDayProgress.metrics.tomorrowFocus}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Cumulative Metrics */}
+          <div className="athletic-card p-6 pl-8">
+            {/* Section Title */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-1 gradient-electric" />
+              <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
+                Cumulative Metrics
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+              {detailedStats.map((stat, i) => (
+                <div key={i} className="bg-secondary/50 p-2 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="p-1.5 sm:p-2 bg-secondary flex-shrink-0">
+                      <stat.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] sm:text-xs font-black tracking-wider text-muted-foreground uppercase truncate">
+                        {stat.label}
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm sm:text-lg font-black">{stat.value}</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground font-bold">
+                          {stat.unit}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress Message */}
+          <div className="athletic-card p-6 pl-8">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-secondary flex-shrink-0">
+                <Flame className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-black uppercase tracking-wide mb-2">
+                  {getProgressMessage(cumulativeStats.daysCompleted)}
+                </h4>
+                <p className="text-sm text-muted-foreground font-bold leading-relaxed">
+                  {getProgressDescription(
+                    cumulativeStats.daysCompleted,
+                    cumulativeStats.totalPoints
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function getProgressMessage(daysCompleted: number): string {
+  if (daysCompleted >= 30) return "Challenge Complete!";
+  if (daysCompleted >= 25) return "Almost There!";
+  if (daysCompleted >= 20) return "Final Stretch!";
+  if (daysCompleted >= 15) return "Halfway Champion!";
+  if (daysCompleted >= 10) return "Building Momentum!";
+  if (daysCompleted >= 7) return "Week One Complete!";
+  if (daysCompleted >= 3) return "Great Start!";
+  return "Keep Going!";
+}
+
+function getProgressDescription(daysCompleted: number, totalPoints: number): string {
+  if (daysCompleted >= 30) {
+    return `Congratulations! You've completed all 30 days with ${totalPoints.toLocaleString()} total points. Your metabolic transformation journey is complete!`;
+  }
+  if (daysCompleted >= 25) {
+    return `You've completed ${daysCompleted} days with ${totalPoints.toLocaleString()} total points. Just ${30 - daysCompleted} more days to finish the challenge!`;
+  }
+  if (daysCompleted >= 15) {
+    return `Incredible progress! You're over halfway through with ${totalPoints.toLocaleString()} points earned. Your metabolic habits are becoming second nature.`;
+  }
+  if (daysCompleted >= 7) {
+    return `One week down! You've earned ${totalPoints.toLocaleString()} points so far. Keep this momentum going!`;
+  }
+  return `You've completed ${daysCompleted} day${daysCompleted === 1 ? "" : "s"} so far with ${totalPoints.toLocaleString()} points. Every day logged brings you closer to your metabolic transformation goals.`;
+}

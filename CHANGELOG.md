@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Challenge History in Client Portal**: New dashboard page for clients to view their 30-day challenge progress:
+  - **Challenge Page**: New `/dashboard/challenge` route displaying complete challenge history
+  - **Summary Stats**: Days completed, total points, and completion percentage in responsive 3-column layout
+  - **30-Day Calendar**: Visual calendar grid showing completed days with checkmarks, click to view details
+  - **Day Details**: Expandable view showing steps, water, floors, protein, sleep, points, and reflections
+  - **Cumulative Metrics**: Total stats across all logged days (steps, water, floors, protein, sleep)
+  - **Progress Messages**: Dynamic encouragement based on completion progress
+  - **Navigation**: Added "Challenge" link with Trophy icon to sidebar and mobile nav
+  - **Challenger-to-Client Flow**: When admin upgrades a challenger to client, their challenge history is now visible in the client portal
+
 - **Equivalent Quantity Display**: Food items now show both entered and equivalent quantities when both raw and cooked reference quantities are defined:
   - **Automatic Conversion**: Shows equivalent in other form (e.g., "50g (raw) / 37.5g (cooked)")
   - **Ratio-Based Calculation**: Uses food item's raw/cooked ratio for accurate conversion
