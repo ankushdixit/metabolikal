@@ -55,15 +55,10 @@ export default function AuthCallbackPage() {
           const isInvitedUser = profile?.invited_at && !profile?.invitation_accepted_at;
 
           if (isInvitedUser) {
-            // Mark invitation as accepted
-            await supabase
-              .from("profiles")
-              .update({ invitation_accepted_at: new Date().toISOString() })
-              .eq("id", data.user.id);
-
+            // Don't mark invitation as accepted yet - wait until password is set
             setStatus("Welcome! Redirecting to password setup...");
             router.push(
-              "/reset-password?message=Welcome! Please set your password to complete your account setup."
+              "/reset-password?message=Welcome! Please set your password to complete your account setup.&invited=true"
             );
             return;
           }
@@ -108,13 +103,9 @@ export default function AuthCallbackPage() {
           const isInvitedUser = profile?.invited_at && !profile?.invitation_accepted_at;
 
           if (isInvitedUser) {
-            await supabase
-              .from("profiles")
-              .update({ invitation_accepted_at: new Date().toISOString() })
-              .eq("id", data.user.id);
-
+            // Don't mark invitation as accepted yet - wait until password is set
             router.push(
-              "/reset-password?message=Welcome! Please set your password to complete your account setup."
+              "/reset-password?message=Welcome! Please set your password to complete your account setup.&invited=true"
             );
             return;
           }
@@ -139,13 +130,9 @@ export default function AuthCallbackPage() {
         const isInvitedUser = profile?.invited_at && !profile?.invitation_accepted_at;
 
         if (isInvitedUser) {
-          await supabase
-            .from("profiles")
-            .update({ invitation_accepted_at: new Date().toISOString() })
-            .eq("id", session.user.id);
-
+          // Don't mark invitation as accepted yet - wait until password is set
           router.push(
-            "/reset-password?message=Welcome! Please set your password to complete your account setup."
+            "/reset-password?message=Welcome! Please set your password to complete your account setup.&invited=true"
           );
           return;
         }

@@ -24,12 +24,13 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
+  const isInvitedParam = searchParams.get("invited") === "true";
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if this is a new invited user
-  const isInvitedUser = message?.includes("Welcome");
+  // Check if this is a new invited user (from URL param or message content)
+  const isInvitedUser = isInvitedParam || message?.includes("Welcome");
 
   const {
     register,
@@ -54,6 +55,19 @@ export default function ResetPasswordPage() {
         setError(updateError.message);
         setIsLoading(false);
         return;
+      }
+
+      // If this is an invited user, mark the invitation as accepted now that password is set
+      if (isInvitedUser) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from("profiles")
+            .update({ invitation_accepted_at: new Date().toISOString() })
+            .eq("id", user.id);
+        }
       }
 
       // Sign out after password reset to ensure clean session
