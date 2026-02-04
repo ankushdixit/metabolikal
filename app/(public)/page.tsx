@@ -176,18 +176,6 @@ export default function LandingPage() {
     }
   }, [router]);
 
-  // Show loading state when redirecting for auth
-  if (isAuthRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-2 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground font-bold">Processing authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Assessment storage for localStorage persistence
   const assessmentStorage = useAssessmentStorage();
   const { getPreviousAssessment, saveAssessmentWithHealthScore, saveCalculator } =
@@ -537,6 +525,18 @@ export default function LandingPage() {
   }, []);
 
   // Profile refetch is now handled in handleCalculatorComplete after save completes
+
+  // Show loading state when redirecting for auth (must be after all hooks)
+  if (isAuthRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-2 border-primary border-t-transparent rounded-full" />
+          <p className="text-muted-foreground font-bold">Processing authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
