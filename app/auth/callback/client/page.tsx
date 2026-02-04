@@ -21,6 +21,7 @@ export default function AuthCallbackPage() {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
+      const tokenType = hashParams.get("type"); // 'invite', 'recovery', 'signup', etc.
 
       // If we have tokens in the hash, set the session
       if (accessToken && refreshToken) {
@@ -33,6 +34,13 @@ export default function AuthCallbackPage() {
         if (error) {
           setStatus("Authentication failed. Redirecting to login...");
           setTimeout(() => router.push(`/login?error=${encodeURIComponent(error.message)}`), 2000);
+          return;
+        }
+
+        // Handle password recovery flow - redirect directly to reset password page
+        if (tokenType === "recovery") {
+          setStatus("Redirecting to password reset...");
+          router.push("/reset-password?message=Please enter your new password.");
           return;
         }
 
@@ -70,6 +78,7 @@ export default function AuthCallbackPage() {
       // Check for code in query params (PKCE flow)
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
+      const queryType = urlParams.get("type"); // type can also come in query params
 
       if (code) {
         setStatus("Exchanging authorization code...");
@@ -78,6 +87,13 @@ export default function AuthCallbackPage() {
         if (error) {
           setStatus("Authentication failed. Redirecting to login...");
           setTimeout(() => router.push(`/login?error=${encodeURIComponent(error.message)}`), 2000);
+          return;
+        }
+
+        // Handle password recovery flow
+        if (queryType === "recovery") {
+          setStatus("Redirecting to password reset...");
+          router.push("/reset-password?message=Please enter your new password.");
           return;
         }
 

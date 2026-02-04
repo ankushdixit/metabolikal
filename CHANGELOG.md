@@ -86,6 +86,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Auth Redirect for Invite and Password Reset Links**: Fixed Supabase magic links landing on homepage instead of proper auth flow:
+  - **Root Cause**: Supabase invite/recovery emails redirect to Site URL (homepage), ignoring `redirectTo` parameter
+  - **Homepage Detection**: Added auth token detection on landing page that redirects to auth callback handler
+  - **Recovery Flow**: Auth callback now handles `type=recovery` tokens, redirecting to password reset page
+  - **Invite Flow**: Existing invite handling continues to work, now properly receives tokens from homepage redirect
+  - **Loading State**: Shows spinner during auth redirect to prevent landing page flash
+
 - **Calculator Formulas Alignment with Documentation**: Fixed calculation order and formulas per COMPLETE-FORMULAE-GUIDE.md:
   - **Calculation Order**: Now correctly applies BMR → Medical → Activity → Lifestyle → Target
   - **Medical Impact on BMR**: Medical conditions now reduce BMR first (not applied after lifestyle)
