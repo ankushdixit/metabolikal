@@ -60,7 +60,7 @@ import {
 import { CalculatorFormData } from "@/lib/validations";
 import { generateUUID } from "@/lib/utils";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 // Dynamic imports for modals - reduces initial bundle size
 // Modals are only loaded when opened
@@ -150,6 +150,43 @@ const INSTAGRAM_CARDS = [
 
 export default function LandingPage() {
   const { activeModal, openModal, closeModal } = useModalContext();
+  const router = useRouter();
+
+  // Track if we're redirecting to auth callback (to show loading state)
+  const [isAuthRedirecting, setIsAuthRedirecting] = useState(false);
+
+  // Check for auth tokens in URL hash (invite/magic link redirects)
+  // Supabase sends invite links to the Site URL, which may be the homepage
+  // If we detect auth tokens, redirect to the proper auth callback handler
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const hashParams = new URLSearchParams(hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+
+    // If auth tokens are present in hash, redirect to auth callback to process them
+    if (accessToken && refreshToken) {
+      setIsAuthRedirecting(true);
+      // Preserve the hash fragment when redirecting
+      router.replace(`/auth/callback/client${hash}`);
+    }
+  }, [router]);
+
+  // Show loading state when redirecting for auth
+  if (isAuthRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-2 border-primary border-t-transparent rounded-full" />
+          <p className="text-muted-foreground font-bold">Processing authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Assessment storage for localStorage persistence
   const assessmentStorage = useAssessmentStorage();
