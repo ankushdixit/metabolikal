@@ -93,6 +93,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Server Redirect Fix**: Added `invited=true` parameter when redirecting invited users to password setup
   - **Affected Files**: `app/auth/callback/client/page.tsx`, `app/auth/callback/route.ts`
 
+- **Admin Dashboard Client Count**: Fixed "Total Clients" showing incorrect count (10 instead of actual count):
+  - **Root Cause**: Missing `pagination: { mode: "off" }` in `useList` calls caused Refine to use default pagination of 10 items
+  - **Pagination Fix**: Added `pagination: { mode: "off" }` to both clients and check-ins queries
+  - **Active Count**: Now counts only active clients (excluding invited pending and deactivated) to match the "Active clients in the program" description
+  - **Affected File**: `app/admin/page.tsx`
+
 - **Auth Redirect for Invite and Password Reset Links**: Fixed Supabase magic links landing on homepage instead of proper auth flow:
   - **Root Cause**: Supabase invite/recovery emails redirect to Site URL (homepage), ignoring `redirectTo` parameter
   - **Homepage Detection**: Added auth token detection on landing page that redirects to auth callback handler
