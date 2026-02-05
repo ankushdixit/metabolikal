@@ -37,8 +37,27 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Handle password recovery flow - redirect directly to reset password page
+        // Handle password recovery flow - check if this is an invited user first
         if (tokenType === "recovery") {
+          // Check if this user was invited (resend invite uses password reset flow)
+          if (data.user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("invited_at, invitation_accepted_at")
+              .eq("id", data.user.id)
+              .single();
+
+            // If user was invited but hasn't accepted, treat as invited user
+            if (profile?.invited_at && !profile?.invitation_accepted_at) {
+              setStatus("Welcome! Redirecting to password setup...");
+              router.push(
+                "/reset-password?message=Welcome! Please set your password to complete your account setup.&invited=true"
+              );
+              return;
+            }
+          }
+
+          // Regular password recovery (not an invited user)
           setStatus("Redirecting to password reset...");
           router.push("/reset-password?message=Please enter your new password.");
           return;

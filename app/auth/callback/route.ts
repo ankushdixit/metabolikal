@@ -64,13 +64,10 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // If user was invited but hasn't accepted yet, mark as accepted
+        // Check if user was invited but hasn't accepted yet
+        // Don't mark as accepted here - wait until password is set on the reset-password page
         if (profile?.invited_at && !profile?.invitation_accepted_at) {
           isInvitedUser = true;
-          await supabase
-            .from("profiles")
-            .update({ invitation_accepted_at: new Date().toISOString() })
-            .eq("id", data.user.id);
         }
       } catch (profileError) {
         // Log but don't fail the auth flow
@@ -80,12 +77,13 @@ export async function GET(request: NextRequest) {
 
     // For password recovery or newly invited users, redirect to password setup page
     if (type === "recovery" || isInvitedUser) {
-      const message = isInvitedUser
-        ? "Welcome! Please set your password to complete your account setup."
-        : "";
       const redirectUrl = new URL("/reset-password", requestUrl.origin);
-      if (message) {
-        redirectUrl.searchParams.set("message", message);
+      if (isInvitedUser) {
+        redirectUrl.searchParams.set(
+          "message",
+          "Welcome! Please set your password to complete your account setup."
+        );
+        redirectUrl.searchParams.set("invited", "true");
       }
       return NextResponse.redirect(redirectUrl);
     }

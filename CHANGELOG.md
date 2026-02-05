@@ -86,6 +86,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Resend Invite Status Bug**: Fixed client status remaining "INVITED" after completing password setup via resend invite:
+  - **Root Cause**: Resend invite uses password reset flow (`type=recovery`), but auth callback didn't check if user was invited before redirecting
+  - **Client Callback Fix**: Recovery flow now checks if user has `invited_at` set and passes `invited=true` parameter to reset-password page
+  - **Server Callback Fix**: Removed premature `invitation_accepted_at` update - now waits until password is actually set
+  - **Server Redirect Fix**: Added `invited=true` parameter when redirecting invited users to password setup
+  - **Affected Files**: `app/auth/callback/client/page.tsx`, `app/auth/callback/route.ts`
+
 - **Auth Redirect for Invite and Password Reset Links**: Fixed Supabase magic links landing on homepage instead of proper auth flow:
   - **Root Cause**: Supabase invite/recovery emails redirect to Site URL (homepage), ignoring `redirectTo` parameter
   - **Homepage Detection**: Added auth token detection on landing page that redirects to auth callback handler
