@@ -29,6 +29,7 @@ export default function AdminDashboardPage() {
   const clientsQuery = useList<Profile>({
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "client" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -38,6 +39,7 @@ export default function AdminDashboardPage() {
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
     sorters: [{ field: "submitted_at", order: "desc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -50,7 +52,11 @@ export default function AdminDashboardPage() {
   // Filter for pending check-ins (reviewed_at is null)
   const pendingCheckIns = allCheckIns.filter((checkIn) => !checkIn.reviewed_at);
 
-  const totalClients = clients.length;
+  // Count only active clients (not invited pending, not deactivated)
+  const activeClients = clients.filter(
+    (client) => !client.is_deactivated && !(client.invited_at && !client.invitation_accepted_at)
+  );
+  const totalClients = activeClients.length;
   const pendingReviews = pendingCheckIns.length;
   const flaggedClients = clients.filter((client) =>
     pendingCheckIns.some(
