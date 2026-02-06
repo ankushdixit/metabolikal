@@ -22,17 +22,20 @@ interface ChallengeHubModalProps {
 
 type TabId = "tasks" | "journey" | "calendar";
 
-const TABS: { id: TabId; label: string; icon: typeof ClipboardList }[] = [
-  { id: "tasks", label: "Today's Tasks", icon: ClipboardList },
-  { id: "journey", label: "Journey So Far", icon: Map },
-  { id: "calendar", label: "30-Day Calendar", icon: Calendar },
-];
+function getTabs(totalDays: number): { id: TabId; label: string; icon: typeof ClipboardList }[] {
+  return [
+    { id: "tasks", label: "Today's Tasks", icon: ClipboardList },
+    { id: "journey", label: "Journey So Far", icon: Map },
+    { id: "calendar", label: `${totalDays}-Day Calendar`, icon: Calendar },
+  ];
+}
 
 export function ChallengeHubModal({ open, onOpenChange, gamification }: ChallengeHubModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tasks");
 
   const {
     currentDay,
+    totalDays,
     totalPoints,
     weekUnlocked,
     completionPercent,
@@ -46,6 +49,8 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
     getDayProgress,
   } = gamification;
 
+  const TABS = getTabs(totalDays);
+
   const handleSaveProgress = async (metrics: DailyMetrics): Promise<boolean> => {
     return saveTodayProgress(metrics);
   };
@@ -55,7 +60,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
       <DialogContent className="sm:max-w-4xl bg-card p-0 flex flex-col overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
-            30-Day <span className="gradient-athletic">METABOLI-K-AL</span> Challenge Hub
+            {totalDays}-Day <span className="gradient-athletic">METABOLI-K-AL</span> Challenge Hub
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm mt-2">
             Track your daily progress and earn points towards metabolic mastery
@@ -151,6 +156,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
               {activeTab === "journey" && (
                 <JourneyTab
                   dayStreak={dayStreak}
+                  totalDays={totalDays}
                   totalPoints={totalPoints}
                   cumulativeStats={cumulativeStats}
                 />
@@ -159,6 +165,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
               {activeTab === "calendar" && (
                 <CalendarTab
                   currentDay={currentDay}
+                  totalDays={totalDays}
                   weekUnlocked={weekUnlocked}
                   allProgress={allProgress}
                   isDayUnlocked={isDayUnlocked}

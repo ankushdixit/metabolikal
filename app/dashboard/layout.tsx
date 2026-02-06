@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { PushPermissionPrompt } from "@/components/push/push-permission-prompt";
 import { IOSInstallPrompt } from "@/components/pwa/ios-install-prompt";
+import { DashboardChallengeHub } from "@/components/dashboard/dashboard-challenge-hub";
 
 /**
  * Dashboard layout
@@ -33,6 +34,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* iOS PWA Install Prompt */}
       <IOSInstallPrompt />
+
+      {/* Challenge Hub floating tray + modal (for PWA users who can't navigate to landing page) */}
+      <DashboardChallengeHub />
     </div>
   );
 }

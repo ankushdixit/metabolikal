@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dynamic Challenge Duration for Clients**: Clients with `plan_start_date` and `plan_duration_days` now see their custom challenge duration instead of the hardcoded 30-day default:
+  - **Gamification Hook**: `useGamification()` now fetches user profile to determine `totalDays` (parallelized with challenge data fetch); clients with `plan_start_date` use it as challenge start date
+  - **Database Migration**: Relaxed `challenge_progress.day_number` constraint from `BETWEEN 1 AND 30` to `>= 1` to support plans longer than 30 days
+  - **Component Updates**: `DayCounterTray`, `MobileChallengeTray`, `CalendarTab`, `JourneyTab`, and `ChallengeHubModal` all accept dynamic `totalDays` prop
+  - **Dashboard Challenge Hub**: New `DashboardChallengeHub` component integrated into dashboard layout for PWA users
+  - **Challenge History Page**: `/dashboard/challenge` now fetches profile to determine duration dynamically
+  - **Proportional Progress Messages**: Progress milestones use percentage thresholds (83%, 67%, 50%, etc.) instead of hardcoded day counts
+  - **Backward Compatible**: Challengers and clients without `plan_start_date` continue to see 30-day challenge
+
 - **Challenge History in Client Portal**: New dashboard page for clients to view their 30-day challenge progress:
   - **Challenge Page**: New `/dashboard/challenge` route displaying complete challenge history
   - **Summary Stats**: Days completed, total points, and completion percentage in responsive 3-column layout

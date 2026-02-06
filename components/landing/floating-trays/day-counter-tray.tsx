@@ -4,10 +4,11 @@ import { Calendar, Target } from "lucide-react";
 
 interface DayCounterTrayProps {
   currentDay: number;
+  totalDays: number;
   onOpenChallengeHub: () => void;
 }
 
-export function DayCounterTray({ currentDay, onOpenChallengeHub }: DayCounterTrayProps) {
+export function DayCounterTray({ currentDay, totalDays, onOpenChallengeHub }: DayCounterTrayProps) {
   return (
     <div className="fixed right-4 bottom-4 z-40 hidden md:block">
       <div className="bg-card border border-border shadow-lg w-48">
@@ -17,7 +18,7 @@ export function DayCounterTray({ currentDay, onOpenChallengeHub }: DayCounterTra
             <Calendar className="h-4 w-4 text-primary" />
           </div>
           <span className="text-xs font-black tracking-[0.12em] text-muted-foreground uppercase">
-            30-Day Challenge
+            {totalDays}-Day Challenge
           </span>
         </div>
 
@@ -25,7 +26,7 @@ export function DayCounterTray({ currentDay, onOpenChallengeHub }: DayCounterTra
         <div className="p-4 text-center">
           <div className="text-4xl font-black gradient-athletic">Day {currentDay}</div>
           <div className="text-xs font-bold text-muted-foreground mt-1">
-            {30 - currentDay} days remaining
+            {totalDays - currentDay} days remaining
           </div>
         </div>
 

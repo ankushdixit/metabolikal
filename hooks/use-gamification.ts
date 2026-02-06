@@ -7,7 +7,7 @@ import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 // Constants
 const MAX_DAILY_POINTS = 150;
 const DAYS_IN_WEEK = 7;
-const TOTAL_CHALLENGE_DAYS = 30;
+const DEFAULT_CHALLENGE_DAYS = 30;
 const WEEK_UNLOCK_THRESHOLD = 0.9; // 90% = 6/7 days
 
 // Types
@@ -43,6 +43,7 @@ export interface GamificationState {
   isLoading: boolean;
   user: User | null;
   currentDay: number;
+  totalDays: number;
   totalPoints: number;
   dayStreak: number;
   weekUnlocked: number;
@@ -109,14 +110,14 @@ function getDateString(date: Date = new Date()): string {
   return date.toISOString().split("T")[0];
 }
 
-function getDaysSinceStart(startDate: string): number {
+function getDaysSinceStart(startDate: string, totalDays: number): number {
   const start = new Date(startDate);
   const now = new Date();
   start.setHours(0, 0, 0, 0);
   now.setHours(0, 0, 0, 0);
   const diffTime = now.getTime() - start.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return Math.min(Math.max(diffDays + 1, 1), TOTAL_CHALLENGE_DAYS);
+  return Math.min(Math.max(diffDays + 1, 1), totalDays);
 }
 
 function calculateStreak(progress: Record<number, DayProgress>, currentDay: number): number {
@@ -131,12 +132,13 @@ function calculateStreak(progress: Record<number, DayProgress>, currentDay: numb
   return streak;
 }
 
-function calculateWeekUnlocked(progress: Record<number, DayProgress>): number {
+function calculateWeekUnlocked(progress: Record<number, DayProgress>, totalDays: number): number {
+  const totalWeeks = Math.ceil(totalDays / DAYS_IN_WEEK);
   let unlockedWeek = 1;
 
-  for (let week = 1; week <= 4; week++) {
+  for (let week = 1; week <= totalWeeks; week++) {
     const weekStart = (week - 1) * DAYS_IN_WEEK + 1;
-    const weekEnd = Math.min(week * DAYS_IN_WEEK, TOTAL_CHALLENGE_DAYS);
+    const weekEnd = Math.min(week * DAYS_IN_WEEK, totalDays);
     const daysInThisWeek = weekEnd - weekStart + 1;
 
     let daysWithData = 0;
@@ -148,7 +150,7 @@ function calculateWeekUnlocked(progress: Record<number, DayProgress>): number {
 
     const completionRate = daysWithData / daysInThisWeek;
     if (completionRate >= WEEK_UNLOCK_THRESHOLD) {
-      unlockedWeek = Math.min(week + 1, 5); // Week 5 means all unlocked (days 29-30)
+      unlockedWeek = Math.min(week + 1, totalWeeks + 1);
     } else {
       break;
     }
@@ -157,9 +159,12 @@ function calculateWeekUnlocked(progress: Record<number, DayProgress>): number {
   return unlockedWeek;
 }
 
-function calculateCompletionPercent(progress: Record<number, DayProgress>): number {
+function calculateCompletionPercent(
+  progress: Record<number, DayProgress>,
+  totalDays: number
+): number {
   const daysWithData = Object.values(progress).filter((p) => p.hasData).length;
-  return Math.round((daysWithData / TOTAL_CHALLENGE_DAYS) * 100);
+  return Math.round((daysWithData / totalDays) * 100);
 }
 
 function calculateCumulativeStats(progress: Record<number, DayProgress>) {
@@ -229,6 +234,7 @@ export function useGamification() {
   const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
   const [dailyVisitPoints, setDailyVisitPoints] = useState(0);
   const [startDate, setStartDate] = useState<string>(getDateString());
+  const [totalDays, setTotalDays] = useState<number>(DEFAULT_CHALLENGE_DAYS);
 
   // Memoize Supabase client to prevent recreation on every render
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -322,6 +328,33 @@ export function useGamification() {
     return getDateString();
   }
 
+  // Fetch profile to determine challenge duration for clients
+  const loadProfileDuration = useCallback(
+    async (userId: string): Promise<{ totalDays: number; planStartDate: string | null }> => {
+      if (!supabase) return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: null };
+
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role, plan_duration_days, plan_start_date")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.plan_start_date && profile.plan_duration_days) {
+          return {
+            totalDays: profile.plan_duration_days,
+            planStartDate: profile.plan_start_date,
+          };
+        }
+      } catch (error) {
+        console.error("Error loading profile duration:", error);
+      }
+
+      return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: null };
+    },
+    [supabase]
+  );
+
   // Initialize and subscribe to auth changes
   useEffect(() => {
     if (!supabase) {
@@ -339,8 +372,20 @@ export function useGamification() {
 
       if (currentUser) {
         setUser(currentUser);
-        const data = await loadChallengeData(currentUser.id);
+
+        // Fetch profile and challenge data in parallel
+        const [profileResult, data] = await Promise.all([
+          loadProfileDuration(currentUser.id),
+          loadChallengeData(currentUser.id),
+        ]);
+
+        setTotalDays(profileResult.totalDays);
+
         if (data) {
+          // If client has a plan_start_date, use it as the challenge start date
+          if (profileResult.planStartDate) {
+            data.startDate = profileResult.planStartDate;
+          }
           setChallengeData(data);
           setStartDate(data.startDate);
 
@@ -354,6 +399,7 @@ export function useGamification() {
         // Not authenticated - clear state
         setUser(null);
         setChallengeData(null);
+        setTotalDays(DEFAULT_CHALLENGE_DAYS);
       }
 
       setIsLoading(false);
@@ -368,14 +414,25 @@ export function useGamification() {
       async (_event: AuthChangeEvent, session: Session | null) => {
         if (session?.user) {
           setUser(session.user);
-          const data = await loadChallengeData(session.user.id);
+
+          const [profileResult, data] = await Promise.all([
+            loadProfileDuration(session.user.id),
+            loadChallengeData(session.user.id),
+          ]);
+
+          setTotalDays(profileResult.totalDays);
+
           if (data) {
+            if (profileResult.planStartDate) {
+              data.startDate = profileResult.planStartDate;
+            }
             setChallengeData(data);
             setStartDate(data.startDate);
           }
         } else {
           setUser(null);
           setChallengeData(null);
+          setTotalDays(DEFAULT_CHALLENGE_DAYS);
         }
       }
     );
@@ -383,12 +440,12 @@ export function useGamification() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase, loadChallengeData]);
+  }, [supabase, loadChallengeData, loadProfileDuration]);
 
   // Calculate current day
   const currentDay = useMemo(() => {
-    return getDaysSinceStart(startDate);
-  }, [startDate]);
+    return getDaysSinceStart(startDate, totalDays);
+  }, [startDate, totalDays]);
 
   // Get today's progress
   const todayProgress = useMemo(() => {
@@ -422,14 +479,14 @@ export function useGamification() {
   // Calculate week unlocked
   const weekUnlocked = useMemo(() => {
     if (!challengeData) return 1;
-    return calculateWeekUnlocked(challengeData.dailyProgress);
-  }, [challengeData]);
+    return calculateWeekUnlocked(challengeData.dailyProgress, totalDays);
+  }, [challengeData, totalDays]);
 
   // Calculate completion percent
   const completionPercent = useMemo(() => {
     if (!challengeData) return 0;
-    return calculateCompletionPercent(challengeData.dailyProgress);
-  }, [challengeData]);
+    return calculateCompletionPercent(challengeData.dailyProgress, totalDays);
+  }, [challengeData, totalDays]);
 
   // Calculate cumulative stats
   const cumulativeStats = useMemo(() => {
@@ -596,6 +653,7 @@ export function useGamification() {
     isLoading,
     user,
     currentDay,
+    totalDays,
     totalPoints,
     dayStreak,
     weekUnlocked,

@@ -562,12 +562,14 @@ export default function LandingPage() {
 
           <DayCounterTray
             currentDay={gamification.currentDay}
+            totalDays={gamification.totalDays}
             onOpenChallengeHub={handleOpenChallengeHub}
           />
 
           {/* Mobile Tray */}
           <MobileChallengeTray
             currentDay={gamification.currentDay}
+            totalDays={gamification.totalDays}
             totalPoints={gamification.totalPoints}
             dayStreak={gamification.dayStreak}
             onOpenChallengeHub={handleOpenChallengeHub}

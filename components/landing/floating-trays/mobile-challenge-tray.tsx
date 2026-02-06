@@ -5,6 +5,7 @@ import { Trophy, Calendar, Target, ChevronUp, Flame, X } from "lucide-react";
 
 interface MobileChallengeTrayProps {
   currentDay: number;
+  totalDays: number;
   totalPoints: number;
   dayStreak: number;
   onOpenChallengeHub: () => void;
@@ -12,6 +13,7 @@ interface MobileChallengeTrayProps {
 
 export function MobileChallengeTray({
   currentDay,
+  totalDays,
   totalPoints,
   dayStreak,
   onOpenChallengeHub,
@@ -68,7 +70,7 @@ export function MobileChallengeTray({
                 <Calendar className="h-4 w-4 text-primary" />
               </div>
               <span className="text-xs font-black tracking-[0.12em] text-muted-foreground uppercase">
-                30-Day Challenge
+                {totalDays}-Day Challenge
               </span>
             </div>
             <button
@@ -106,7 +108,7 @@ export function MobileChallengeTray({
           {/* Remaining Days */}
           <div className="px-3 pb-2">
             <div className="text-xs font-bold text-muted-foreground text-center">
-              {30 - currentDay} days remaining
+              {totalDays - currentDay} days remaining
             </div>
           </div>
 

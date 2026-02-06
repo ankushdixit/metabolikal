@@ -57,11 +57,11 @@ interface CumulativeStats {
   totalPoints: number;
 }
 
-const TOTAL_DAYS = 30;
+const DEFAULT_TOTAL_DAYS = 30;
 
 /**
  * Challenge History Page
- * Displays the user's 30-day challenge progress in the client portal
+ * Displays the user's challenge progress in the client portal
  */
 export default function ChallengeHistoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -69,6 +69,7 @@ export default function ChallengeHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<number, DayProgress>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [totalDays, setTotalDays] = useState<number>(DEFAULT_TOTAL_DAYS);
 
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
@@ -81,7 +82,7 @@ export default function ChallengeHistoryPage() {
     });
   }, [supabase]);
 
-  // Fetch challenge progress
+  // Fetch challenge progress and profile duration
   useEffect(() => {
     if (!userId) return;
 
@@ -90,19 +91,34 @@ export default function ChallengeHistoryPage() {
       setError(null);
 
       try {
-        const { data, error: fetchError } = await supabase
-          .from("challenge_progress")
-          .select("*")
-          .eq("user_id", userId)
-          .order("day_number", { ascending: true });
+        // Fetch profile and challenge progress in parallel
+        const [profileResult, progressResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("role, plan_duration_days, plan_start_date")
+            .eq("id", userId)
+            .single(),
+          supabase
+            .from("challenge_progress")
+            .select("*")
+            .eq("user_id", userId)
+            .order("day_number", { ascending: true }),
+        ]);
 
-        if (fetchError) {
-          throw fetchError;
+        // Determine total days from profile
+        if (profileResult.data?.plan_start_date && profileResult.data?.plan_duration_days) {
+          setTotalDays(profileResult.data.plan_duration_days);
+        } else {
+          setTotalDays(DEFAULT_TOTAL_DAYS);
+        }
+
+        if (progressResult.error) {
+          throw progressResult.error;
         }
 
         // Convert to DayProgress records
         const progressMap: Record<number, DayProgress> = {};
-        (data || []).forEach((row: ChallengeProgressRow) => {
+        (progressResult.data || []).forEach((row: ChallengeProgressRow) => {
           if (row.day_number !== null) {
             progressMap[row.day_number] = {
               dayNumber: row.day_number,
@@ -168,7 +184,7 @@ export default function ChallengeHistoryPage() {
   }, [progress]);
 
   // Calculate completion percentage
-  const completionPercent = Math.round((cumulativeStats.daysCompleted / TOTAL_DAYS) * 100);
+  const completionPercent = Math.round((cumulativeStats.daysCompleted / totalDays) * 100);
 
   // Handle day click
   const handleDayClick = useCallback(
@@ -191,7 +207,7 @@ export default function ChallengeHistoryPage() {
       icon: Flame,
       label: "Days Completed",
       value: cumulativeStats.daysCompleted,
-      unit: `/ ${TOTAL_DAYS}`,
+      unit: `/ ${totalDays}`,
       color: "text-orange-500",
     },
     {
@@ -253,7 +269,7 @@ export default function ChallengeHistoryPage() {
               Challenge <span className="gradient-athletic">History</span>
             </h1>
             <p className="text-sm text-muted-foreground font-bold">
-              Your 30-day metabolic challenge journey
+              Your {totalDays}-day metabolic challenge journey
             </p>
           </div>
 
@@ -306,8 +322,8 @@ export default function ChallengeHistoryPage() {
             No Challenge Data Yet
           </h3>
           <p className="text-muted-foreground font-bold mb-6 max-w-md mx-auto">
-            Your 30-day challenge progress will appear here once you start logging your daily
-            metrics. Visit the Challenge Hub on the landing page to begin!
+            Your {totalDays}-day challenge progress will appear here once you start logging your
+            daily metrics. Visit the Challenge Hub on the landing page to begin!
           </p>
         </div>
       )}
@@ -339,7 +355,7 @@ export default function ChallengeHistoryPage() {
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-1 gradient-electric" />
               <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-                30-Day Calendar
+                {totalDays}-Day Calendar
               </h3>
             </div>
 
@@ -359,7 +375,7 @@ export default function ChallengeHistoryPage() {
 
               {/* Days Grid */}
               <div className="grid grid-cols-7 gap-1 sm:gap-2">
-                {Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1).map((day) => {
+                {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
                   const dayProgress = progress[day];
                   const hasData = dayProgress?.hasData || false;
                   const isSelected = selectedDay === day;
@@ -384,7 +400,7 @@ export default function ChallengeHistoryPage() {
                 })}
 
                 {/* Fill remaining cells for visual consistency */}
-                {Array.from({ length: (7 - (TOTAL_DAYS % 7)) % 7 }, (_, i) => (
+                {Array.from({ length: (7 - (totalDays % 7)) % 7 }, (_, i) => (
                   <div key={`empty-${i}`} className="aspect-square" />
                 ))}
               </div>
@@ -532,12 +548,13 @@ export default function ChallengeHistoryPage() {
               </div>
               <div>
                 <h4 className="font-black uppercase tracking-wide mb-2">
-                  {getProgressMessage(cumulativeStats.daysCompleted)}
+                  {getProgressMessage(cumulativeStats.daysCompleted, totalDays)}
                 </h4>
                 <p className="text-sm text-muted-foreground font-bold leading-relaxed">
                   {getProgressDescription(
                     cumulativeStats.daysCompleted,
-                    cumulativeStats.totalPoints
+                    cumulativeStats.totalPoints,
+                    totalDays
                   )}
                 </p>
               </div>
@@ -549,28 +566,35 @@ export default function ChallengeHistoryPage() {
   );
 }
 
-function getProgressMessage(daysCompleted: number): string {
-  if (daysCompleted >= 30) return "Challenge Complete!";
-  if (daysCompleted >= 25) return "Almost There!";
-  if (daysCompleted >= 20) return "Final Stretch!";
-  if (daysCompleted >= 15) return "Halfway Champion!";
-  if (daysCompleted >= 10) return "Building Momentum!";
-  if (daysCompleted >= 7) return "Week One Complete!";
+function getProgressMessage(daysCompleted: number, totalDays: number): string {
+  const pct = daysCompleted / totalDays;
+  if (pct >= 1) return "Challenge Complete!";
+  if (pct >= 0.83) return "Almost There!";
+  if (pct >= 0.67) return "Final Stretch!";
+  if (pct >= 0.5) return "Halfway Champion!";
+  if (pct >= 0.33) return "Building Momentum!";
+  if (pct >= 0.23) return "Week One Complete!";
   if (daysCompleted >= 3) return "Great Start!";
   return "Keep Going!";
 }
 
-function getProgressDescription(daysCompleted: number, totalPoints: number): string {
-  if (daysCompleted >= 30) {
-    return `Congratulations! You've completed all 30 days with ${totalPoints.toLocaleString()} total points. Your metabolic transformation journey is complete!`;
+function getProgressDescription(
+  daysCompleted: number,
+  totalPoints: number,
+  totalDays: number
+): string {
+  const pct = daysCompleted / totalDays;
+  const remaining = totalDays - daysCompleted;
+  if (pct >= 1) {
+    return `Congratulations! You've completed all ${totalDays} days with ${totalPoints.toLocaleString()} total points. Your metabolic transformation journey is complete!`;
   }
-  if (daysCompleted >= 25) {
-    return `You've completed ${daysCompleted} days with ${totalPoints.toLocaleString()} total points. Just ${30 - daysCompleted} more days to finish the challenge!`;
+  if (pct >= 0.83) {
+    return `You've completed ${daysCompleted} days with ${totalPoints.toLocaleString()} total points. Just ${remaining} more days to finish the challenge!`;
   }
-  if (daysCompleted >= 15) {
+  if (pct >= 0.5) {
     return `Incredible progress! You're over halfway through with ${totalPoints.toLocaleString()} points earned. Your metabolic habits are becoming second nature.`;
   }
-  if (daysCompleted >= 7) {
+  if (pct >= 0.23) {
     return `One week down! You've earned ${totalPoints.toLocaleString()} points so far. Keep this momentum going!`;
   }
   return `You've completed ${daysCompleted} day${daysCompleted === 1 ? "" : "s"} so far with ${totalPoints.toLocaleString()} points. Every day logged brings you closer to your metabolic transformation goals.`;
