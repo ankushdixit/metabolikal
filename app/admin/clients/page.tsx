@@ -9,6 +9,7 @@ import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
 import { AddClientModal } from "@/components/admin/add-client-modal";
 import { BulkNotificationModal } from "@/components/admin/bulk-notification-modal";
+import { ReactivateClientModal } from "@/components/admin/reactivate-client-modal";
 import { SelectionActionBar } from "@/components/admin/selection-action-bar";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
@@ -32,6 +33,8 @@ export default function ClientsPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [bulkNotificationModalOpen, setBulkNotificationModalOpen] = useState(false);
+  const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
+  const [reactivateClient, setReactivateClient] = useState<Profile | null>(null);
 
   // Get current admin user ID
   useEffect(() => {
@@ -202,26 +205,35 @@ export default function ClientsPage() {
   };
 
   const handleReactivateClient = async (client: Profile) => {
+    setReactivateClient(client);
+    setReactivateModalOpen(true);
+  };
+
+  const handleReactivateConfirm = async (data: {
+    plan_start_date: string;
+    plan_duration_days: number;
+  }) => {
+    if (!reactivateClient) return;
     try {
       const response = await fetch("/api/admin/reactivate-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: client.id }),
+        body: JSON.stringify({ userId: reactivateClient.id, ...data }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Failed to reactivate client:", result.error);
-        toast.error(result.error || "Failed to reactivate client");
-        return;
+        throw new Error(result.error || "Failed to reactivate client");
       }
 
-      toast.success(`${client.full_name || client.email} has been reactivated.`);
+      toast.success(
+        `${reactivateClient.full_name || reactivateClient.email} has been reactivated.`
+      );
       clientsQuery.query.refetch();
     } catch (error) {
       console.error("Error reactivating client:", error);
-      toast.error("An error occurred while reactivating the client");
+      throw error;
     }
   };
 
@@ -376,6 +388,19 @@ export default function ClientsPage() {
           isOpen={bulkNotificationModalOpen}
           onClose={() => setBulkNotificationModalOpen(false)}
           onSuccess={handleBulkNotificationSuccess}
+        />
+      )}
+
+      {/* Reactivate Client Modal */}
+      {reactivateClient && (
+        <ReactivateClientModal
+          isOpen={reactivateModalOpen}
+          onClose={() => {
+            setReactivateModalOpen(false);
+            setReactivateClient(null);
+          }}
+          onConfirm={handleReactivateConfirm}
+          client={reactivateClient}
         />
       )}
     </div>

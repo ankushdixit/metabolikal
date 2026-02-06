@@ -46,6 +46,7 @@ describe("completion-stats utilities", () => {
     completed_date: date,
     completed_at: `${date}T10:00:00Z`,
     notes: null,
+    plan_cycle: 1,
     created_at: `${date}T10:00:00Z`,
   });
 

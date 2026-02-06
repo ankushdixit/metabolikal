@@ -123,21 +123,23 @@ export function useGamification() {
   const [dailyVisitPoints, setDailyVisitPoints] = useState(0);
   const [startDate, setStartDate] = useState<string>(getDateString());
   const [totalDays, setTotalDays] = useState<number>(DEFAULT_CHALLENGE_DAYS);
+  const [planCycle, setPlanCycle] = useState<number>(1);
 
   // Memoize Supabase client to prevent recreation on every render
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   // Load data from database
   const loadChallengeData = useCallback(
-    async (userId: string) => {
+    async (userId: string, cycle: number = 1) => {
       if (!supabase) return null;
 
       try {
-        // Fetch all challenge progress for this user
+        // Fetch all challenge progress for this user and current plan cycle
         const { data: progressData, error } = await supabase
           .from("challenge_progress")
           .select("*")
           .eq("user_id", userId)
+          .eq("plan_cycle", cycle)
           .order("day_number", { ascending: true });
 
         if (error) {
@@ -165,15 +167,18 @@ export function useGamification() {
     [supabase]
   );
 
-  // Fetch profile to determine challenge duration and start date
+  // Fetch profile to determine challenge duration, start date, and plan cycle
   const loadProfileDuration = useCallback(
-    async (userId: string): Promise<{ totalDays: number; planStartDate: string }> => {
-      if (!supabase) return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: getDateString() };
+    async (
+      userId: string
+    ): Promise<{ totalDays: number; planStartDate: string; planCycle: number }> => {
+      if (!supabase)
+        return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: getDateString(), planCycle: 1 };
 
       try {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role, plan_duration_days, plan_start_date, created_at")
+          .select("role, plan_duration_days, plan_start_date, current_plan_cycle, created_at")
           .eq("id", userId)
           .single();
 
@@ -182,13 +187,14 @@ export function useGamification() {
             totalDays: profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS,
             planStartDate:
               profile.plan_start_date || profile.created_at?.split("T")[0] || getDateString(),
+            planCycle: profile.current_plan_cycle || 1,
           };
         }
       } catch (error) {
         console.error("Error loading profile duration:", error);
       }
 
-      return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: getDateString() };
+      return { totalDays: DEFAULT_CHALLENGE_DAYS, planStartDate: getDateString(), planCycle: 1 };
     },
     [supabase]
   );
@@ -211,13 +217,13 @@ export function useGamification() {
       if (currentUser) {
         setUser(currentUser);
 
-        // Fetch profile and challenge data in parallel
-        const [profileResult, data] = await Promise.all([
-          loadProfileDuration(currentUser.id),
-          loadChallengeData(currentUser.id),
-        ]);
-
+        // Fetch profile first to get plan cycle
+        const profileResult = await loadProfileDuration(currentUser.id);
         setTotalDays(profileResult.totalDays);
+        setPlanCycle(profileResult.planCycle);
+
+        // Then fetch challenge data with the correct plan cycle
+        const data = await loadChallengeData(currentUser.id, profileResult.planCycle);
 
         if (data) {
           data.startDate = profileResult.planStartDate;
@@ -235,6 +241,7 @@ export function useGamification() {
         setUser(null);
         setChallengeData(null);
         setTotalDays(DEFAULT_CHALLENGE_DAYS);
+        setPlanCycle(1);
       }
 
       setIsLoading(false);
@@ -250,12 +257,11 @@ export function useGamification() {
         if (session?.user) {
           setUser(session.user);
 
-          const [profileResult, data] = await Promise.all([
-            loadProfileDuration(session.user.id),
-            loadChallengeData(session.user.id),
-          ]);
-
+          const profileResult = await loadProfileDuration(session.user.id);
           setTotalDays(profileResult.totalDays);
+          setPlanCycle(profileResult.planCycle);
+
+          const data = await loadChallengeData(session.user.id, profileResult.planCycle);
 
           if (data) {
             data.startDate = profileResult.planStartDate;
@@ -266,6 +272,7 @@ export function useGamification() {
           setUser(null);
           setChallengeData(null);
           setTotalDays(DEFAULT_CHALLENGE_DAYS);
+          setPlanCycle(1);
         }
       }
     );
@@ -359,9 +366,10 @@ export function useGamification() {
             feeling: metrics.feeling || null,
             tomorrow_focus: metrics.tomorrowFocus || null,
             points_earned: points,
+            plan_cycle: planCycle,
           },
           {
-            onConflict: "user_id,day_number",
+            onConflict: "user_id,day_number,plan_cycle",
           }
         );
 
@@ -396,7 +404,7 @@ export function useGamification() {
         return false;
       }
     },
-    [user, challengeData, currentDay, supabase]
+    [user, challengeData, currentDay, planCycle, supabase]
   );
 
   // Check if editing a specific day is allowed
@@ -462,8 +470,12 @@ export function useGamification() {
     if (!user || !supabase) return;
 
     try {
-      // Delete all progress for this user
-      await supabase.from("challenge_progress").delete().eq("user_id", user.id);
+      // Delete progress for this user's current plan cycle
+      await supabase
+        .from("challenge_progress")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("plan_cycle", planCycle);
 
       // Reset local state
       setChallengeData({
@@ -480,7 +492,7 @@ export function useGamification() {
     } catch (error) {
       console.error("Error resetting challenge:", error);
     }
-  }, [user, supabase]);
+  }, [user, planCycle, supabase]);
 
   const state: GamificationState = {
     isLoading,

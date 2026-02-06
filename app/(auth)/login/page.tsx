@@ -20,9 +20,14 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
+  const errorParam = searchParams.get("error");
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    errorParam === "account_deactivated"
+      ? "Your account has been deactivated. Please contact your administrator."
+      : null
+  );
 
   const {
     register,
@@ -62,12 +67,20 @@ export default function LoginPage() {
         console.error("Failed to migrate localStorage data:", err);
       });
 
-      // Get user role for redirect
+      // Get user role and deactivation status for redirect
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, is_deactivated")
         .eq("id", authData.user.id)
         .single();
+
+      // Block deactivated non-admin users from logging in
+      if (profile?.is_deactivated && profile?.role !== "admin") {
+        await supabase.auth.signOut();
+        setError("Your account has been deactivated. Please contact your administrator.");
+        setIsLoading(false);
+        return;
+      }
 
       const role = profile?.role ?? "client";
       const redirectTo = role === "admin" ? "/admin" : "/dashboard";

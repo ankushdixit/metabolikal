@@ -46,6 +46,7 @@ describe("ProgressCharts Component", () => {
       flagged_for_followup: false,
       reviewed_at: null,
       reviewed_by: null,
+      plan_cycle: 1,
       created_at: "2025-01-01T00:00:00Z",
     },
     {
@@ -75,6 +76,7 @@ describe("ProgressCharts Component", () => {
       flagged_for_followup: false,
       reviewed_at: null,
       reviewed_by: null,
+      plan_cycle: 1,
       created_at: "2025-01-15T00:00:00Z",
     },
   ];

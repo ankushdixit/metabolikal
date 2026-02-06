@@ -45,10 +45,10 @@ let mockQueryData: { data: typeof mockProgressRows } | undefined;
 let mockIsLoading: boolean;
 
 jest.mock("@refinedev/core", () => ({
-  useList: () => ({
+  useList: (opts?: { resource?: string }) => ({
     query: {
-      data: mockQueryData,
-      isLoading: mockIsLoading,
+      data: opts?.resource === "challenge_progress" ? mockQueryData : { data: [] },
+      isLoading: opts?.resource === "challenge_progress" ? mockIsLoading : false,
     },
   }),
 }));
@@ -79,6 +79,7 @@ const makeProfile = (overrides: Partial<Profile> = {}): Profile => ({
   deactivation_reason: null,
   plan_start_date: "2026-01-01",
   plan_duration_days: 60,
+  current_plan_cycle: 1,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
   ...overrides,

@@ -210,6 +210,7 @@ export function useClientTimeline({
     profile?.plan_start_date || profile?.created_at?.split("T")[0]
   );
   const planDurationDays = profile?.plan_duration_days ?? 7;
+  const currentPlanCycle = profile?.current_plan_cycle ?? 1;
 
   // Calculate current date based on dayNumberOverride or selectedDate
   const currentDate = useMemo(() => {
@@ -324,12 +325,13 @@ export function useClientTimeline({
     };
   }, [currentLimits]);
 
-  // Fetch completions for the date
+  // Fetch completions for the date (scoped to current plan cycle)
   const completionsQuery = useList<PlanCompletion>({
     resource: "plan_completions",
     filters: [
       { field: "client_id", operator: "eq", value: userId },
       { field: "completed_date", operator: "eq", value: dateStr },
+      { field: "plan_cycle", operator: "eq", value: currentPlanCycle },
     ],
     queryOptions: {
       enabled: !!userId,
@@ -426,6 +428,7 @@ export function useClientTimeline({
             plan_type: planType,
             plan_item_id: sourceId,
             completed_date: dateStr,
+            plan_cycle: currentPlanCycle,
           },
         });
       }
@@ -436,7 +439,7 @@ export function useClientTimeline({
         invalidates: ["list"],
       });
     },
-    [userId, dateStr, completions, createCompletion, invalidate]
+    [userId, dateStr, currentPlanCycle, completions, createCompletion, invalidate]
   );
 
   // Mark item as uncomplete
@@ -481,6 +484,7 @@ export function useClientTimeline({
           plan_type: planType,
           plan_item_id: sourceId,
           completed_date: dateStr,
+          plan_cycle: currentPlanCycle,
         },
       });
 
@@ -490,7 +494,7 @@ export function useClientTimeline({
         invalidates: ["list"],
       });
     },
-    [userId, dateStr, completions, createCompletion, invalidate]
+    [userId, dateStr, currentPlanCycle, completions, createCompletion, invalidate]
   );
 
   // Mark a single source item as uncomplete
