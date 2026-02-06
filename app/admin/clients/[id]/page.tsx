@@ -18,6 +18,7 @@ import {
   Pencil,
   Cake,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { CheckInReview } from "@/components/admin/checkin-review";
@@ -26,6 +27,7 @@ import { PhotosGallery } from "@/components/admin/photos-gallery";
 import { PlansSummary } from "@/components/admin/plans-summary";
 import { ChallengeProgressTab } from "@/components/admin/challenge-progress-tab";
 import { EditClientModal } from "@/components/admin/edit-client-modal";
+import { PlanCycleSelector } from "@/components/shared/plan-cycle-selector";
 import { cn } from "@/lib/utils";
 import type {
   Profile,
@@ -109,10 +111,26 @@ export default function ClientReviewPage() {
     },
   });
 
-  // Fetch client's check-ins
+  const clientPlanCycle = profileQuery.query.data?.data?.current_plan_cycle ?? 1;
+  const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
+
+  // Initialize selectedCycle when profile loads
+  useEffect(() => {
+    if (profileQuery.query.data?.data && selectedCycle === null) {
+      setSelectedCycle(clientPlanCycle);
+    }
+  }, [profileQuery.query.data, clientPlanCycle, selectedCycle]);
+
+  const effectiveCycle = selectedCycle ?? clientPlanCycle;
+  const isViewingHistory = effectiveCycle !== clientPlanCycle;
+
+  // Fetch client's check-ins (scoped to selected plan cycle)
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
-    filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    filters: [
+      { field: "client_id", operator: "eq", value: clientId },
+      { field: "plan_cycle", operator: "eq", value: effectiveCycle },
+    ],
     sorters: [{ field: "submitted_at", order: "desc" }],
     queryOptions: {
       enabled: !!clientId,
@@ -367,6 +385,38 @@ export default function ClientReviewPage() {
         </div>
       </div>
 
+      {/* Plan Cycle Selector */}
+      <div className="space-y-2">
+        <PlanCycleSelector
+          clientId={clientId}
+          currentCycle={clientPlanCycle}
+          selectedCycle={effectiveCycle}
+          onCycleChange={(cycle) => setSelectedCycle(cycle)}
+          currentCycleProfile={
+            profile?.plan_start_date
+              ? {
+                  startDate: profile.plan_start_date,
+                  durationDays: profile.plan_duration_days || 30,
+                }
+              : undefined
+          }
+        />
+        {isViewingHistory && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/30">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            <p className="text-sm font-bold text-amber-500">
+              Viewing historical data — Plan {effectiveCycle}
+            </p>
+            <button
+              onClick={() => setSelectedCycle(clientPlanCycle)}
+              className="ml-auto text-sm font-bold text-primary hover:underline shrink-0"
+            >
+              Return to Current
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className="athletic-card p-4 pl-8">
         <div className="flex flex-wrap gap-2">
@@ -419,11 +469,22 @@ export default function ClientReviewPage() {
       {activeTab === "photos" && <PhotosGallery checkIns={checkIns} />}
 
       {activeTab === "plans" && (
-        <PlansSummary clientId={clientId} dietPlans={dietPlans} workoutPlans={workoutPlans} />
+        <PlansSummary
+          clientId={clientId}
+          dietPlans={dietPlans}
+          workoutPlans={workoutPlans}
+          selectedCycle={effectiveCycle}
+          currentCycle={clientPlanCycle}
+        />
       )}
 
       {activeTab === "challenge" && profile && (
-        <ChallengeProgressTab clientId={clientId} profile={profile} />
+        <ChallengeProgressTab
+          clientId={clientId}
+          profile={profile}
+          selectedCycle={effectiveCycle}
+          onCycleChange={(cycle) => setSelectedCycle(cycle)}
+        />
       )}
 
       {/* Edit Client Modal */}

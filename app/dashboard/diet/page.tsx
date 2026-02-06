@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useList, useUpdate, useCreate, useDelete } from "@refinedev/core";
 import { Calendar, Flame, Plus, AlertCircle } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import { MealCard } from "@/components/dashboard/meal-card";
 import { FoodAlternativesDrawer } from "@/components/dashboard/food-alternatives-drawer";
 import { FoodLogForm } from "@/components/dashboard/food-log-form";
@@ -69,6 +70,7 @@ interface FoodLog {
 interface Profile {
   full_name?: string;
   created_at?: string;
+  current_plan_cycle?: number;
 }
 
 /**
@@ -76,8 +78,14 @@ interface Profile {
  * Displays daily diet plan with meal cards, alternatives, and food logging
  */
 export default function DietPlanPage() {
+  const { currentCycle, setSelectedCycle } = usePlanCycle();
   const [userId, setUserId] = useState<string | null>(null);
   const [dayNumber, setDayNumber] = useState(1);
+
+  // Force-reset to current cycle on mount (diet page always uses current data)
+  useEffect(() => {
+    setSelectedCycle(currentCycle);
+  }, [currentCycle, setSelectedCycle]);
 
   // Modal states
   const [selectedMealForAlternatives, setSelectedMealForAlternatives] =
@@ -119,6 +127,8 @@ export default function DietPlanPage() {
     }
   }, [profileQuery.query.data]);
 
+  const currentPlanCycle = profileQuery.query.data?.data?.[0]?.current_plan_cycle ?? 1;
+
   // Fetch diet plan for current day
   const dietPlanQuery = useList<DietPlanEntry>({
     resource: "diet_plans",
@@ -156,13 +166,14 @@ export default function DietPlanPage() {
   const startOfTomorrow = new Date(startOfToday);
   startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-  // Fetch today's food logs
+  // Fetch today's food logs (scoped to current plan cycle)
   const foodLogsQuery = useList<FoodLog>({
     resource: "food_logs",
     filters: [
       { field: "client_id", operator: "eq", value: userId },
       { field: "logged_at", operator: "gte", value: startOfToday.toISOString() },
       { field: "logged_at", operator: "lt", value: startOfTomorrow.toISOString() },
+      { field: "plan_cycle", operator: "eq", value: currentPlanCycle },
     ],
     meta: {
       select: "*, food_items(name)",
@@ -231,6 +242,7 @@ export default function DietPlanPage() {
             protein: data.protein,
             serving_multiplier: data.serving_multiplier,
             meal_category: data.meal_category,
+            plan_cycle: currentPlanCycle,
           },
         },
         {
@@ -241,7 +253,7 @@ export default function DietPlanPage() {
         }
       );
     },
-    [userId, createMutation, foodLogsQuery.query]
+    [userId, currentPlanCycle, createMutation, foodLogsQuery.query]
   );
 
   const handleLogCustomFood = useCallback(
@@ -259,6 +271,7 @@ export default function DietPlanPage() {
             protein: data.protein,
             serving_multiplier: 1,
             meal_category: data.meal_category,
+            plan_cycle: currentPlanCycle,
           },
         },
         {
@@ -270,7 +283,7 @@ export default function DietPlanPage() {
         }
       );
     },
-    [userId, createMutation, foodLogsQuery.query]
+    [userId, currentPlanCycle, createMutation, foodLogsQuery.query]
   );
 
   const handleSelectSearchedFood = useCallback(
@@ -287,6 +300,7 @@ export default function DietPlanPage() {
             protein: foodItem.protein,
             serving_multiplier: 1,
             meal_category: mealCategory,
+            plan_cycle: currentPlanCycle,
           },
         },
         {
@@ -298,7 +312,7 @@ export default function DietPlanPage() {
         }
       );
     },
-    [userId, createMutation, foodLogsQuery.query]
+    [userId, currentPlanCycle, createMutation, foodLogsQuery.query]
   );
 
   const handleDeleteLog = useCallback(

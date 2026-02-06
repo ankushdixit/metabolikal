@@ -46,6 +46,8 @@ export interface UseTimelineHistoryOptions {
   planStartDate: Date | null;
   /** Total plan days */
   totalDays: number;
+  /** Current plan cycle number */
+  planCycle?: number;
   /** Timeline items for the current view */
   timelineItems: ExtendedTimelineItem[];
   /** Whether to sync with URL params */
@@ -105,6 +107,7 @@ export function useTimelineHistory({
   userId,
   planStartDate,
   totalDays,
+  planCycle = 1,
   timelineItems,
   syncWithUrl = true,
 }: UseTimelineHistoryOptions): UseTimelineHistoryReturn {
@@ -306,6 +309,7 @@ export function useTimelineHistory({
       { field: "client_id", operator: "eq", value: userId },
       { field: "completed_date", operator: "gte", value: twoWeeksAgo },
       { field: "completed_date", operator: "lte", value: todayStr },
+      { field: "plan_cycle", operator: "eq", value: planCycle },
     ],
     pagination: { pageSize: 500 },
     queryOptions: {

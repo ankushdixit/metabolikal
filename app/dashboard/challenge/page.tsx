@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { getDaysSinceStart, getDateString } from "@/lib/challenge-utils";
+import { getDaysSinceStart } from "@/lib/challenge-utils";
 import { getDateForDay } from "@/lib/challenge-utils";
+import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
+import { usePlanCycle } from "@/contexts/plan-cycle-context";
 
 interface ChallengeProgressRow {
   id: string;
@@ -66,55 +68,34 @@ const DEFAULT_TOTAL_DAYS = 30;
  * Displays the user's challenge progress in the client portal
  */
 export default function ChallengeHistoryPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId, selectedCycle, cycleDetails } = usePlanCycle();
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<number, DayProgress>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [totalDays, setTotalDays] = useState<number>(DEFAULT_TOTAL_DAYS);
-  const [startDate, setStartDate] = useState<string>("");
+
+  const totalDays = cycleDetails?.durationDays || DEFAULT_TOTAL_DAYS;
+  const startDate = cycleDetails?.startDate || "";
 
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
-  // Get current user ID
+  // Fetch challenge progress for the selected cycle
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, [supabase]);
-
-  // Fetch challenge progress and profile duration
-  useEffect(() => {
-    if (!userId) return;
+    if (!userId || !selectedCycle) return;
 
     const fetchProgress = async () => {
       setIsLoading(true);
       setError(null);
+      setSelectedDay(null);
 
       try {
-        // Fetch profile and challenge progress in parallel
-        const [profileResult, progressResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("role, plan_duration_days, plan_start_date, created_at")
-            .eq("id", userId)
-            .single(),
-          supabase
-            .from("challenge_progress")
-            .select("*")
-            .eq("user_id", userId)
-            .order("day_number", { ascending: true }),
-        ]);
-
-        // Determine total days and start date from profile
-        setTotalDays(profileResult.data?.plan_duration_days || DEFAULT_TOTAL_DAYS);
-        setStartDate(
-          profileResult.data?.plan_start_date ||
-            profileResult.data?.created_at?.split("T")[0] ||
-            getDateString()
-        );
+        const progressResult = await supabase
+          .from("challenge_progress")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("plan_cycle", selectedCycle)
+          .order("day_number", { ascending: true });
 
         if (progressResult.error) {
           throw progressResult.error;
@@ -152,7 +133,7 @@ export default function ChallengeHistoryPage() {
     };
 
     fetchProgress();
-  }, [userId, supabase]);
+  }, [userId, selectedCycle, supabase]);
 
   // Calculate cumulative stats
   const cumulativeStats = useMemo((): CumulativeStats => {
@@ -283,17 +264,22 @@ export default function ChallengeHistoryPage() {
             </p>
           </div>
 
-          {/* Completion Badge */}
-          {cumulativeStats.daysCompleted > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-secondary">
-              <Trophy className="h-4 w-4 text-primary" />
-              <span className="font-bold text-sm">
-                {cumulativeStats.daysCompleted} days completed
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Completion Badge */}
+            {cumulativeStats.daysCompleted > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-secondary">
+                <Trophy className="h-4 w-4 text-primary" />
+                <span className="font-bold text-sm">
+                  {cumulativeStats.daysCompleted} days completed
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Plan Cycle Selector + Historical Banner */}
+      <HistoricalCycleBanner />
 
       {/* Loading State */}
       {isLoading && (

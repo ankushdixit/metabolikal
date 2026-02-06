@@ -42,6 +42,7 @@ const mockCheckIn: CheckIn = {
   flagged_for_followup: false,
   reviewed_at: null,
   reviewed_by: null,
+  plan_cycle: 1,
   created_at: "2026-01-20T10:00:00Z",
 };
 
@@ -185,6 +186,7 @@ describe("CheckInHistoryItem with minimal data", () => {
     flagged_for_followup: false,
     reviewed_at: null,
     reviewed_by: null,
+    plan_cycle: 1,
     created_at: "2026-01-15T10:00:00Z",
   };
 

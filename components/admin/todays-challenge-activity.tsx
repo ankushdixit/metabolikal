@@ -71,8 +71,10 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
       const totalDays = client.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
       const startDate = client.plan_start_date || client.created_at?.split("T")[0] || "";
       const currentDay = getDaysSinceStart(startDate, totalDays);
+      const clientPlanCycle = client.current_plan_cycle ?? 1;
 
-      const rows = byUser[client.id] || [];
+      // Only include rows from the client's current plan cycle
+      const rows = (byUser[client.id] || []).filter((r) => r.plan_cycle === clientPlanCycle);
       const progress = buildDayProgressMap(rows);
 
       const todayEntry = progress[currentDay];

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useList } from "@refinedev/core";
 import { ClipboardList, Plus, History, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { CheckInHistoryItem } from "@/components/dashboard/checkin-history-item";
+import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
+import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import type { CheckIn } from "@/lib/database.types";
 
 /**
@@ -13,22 +13,15 @@ import type { CheckIn } from "@/lib/database.types";
  * Lists all past check-ins with expandable details
  */
 export default function CheckInHistoryPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId, selectedCycle } = usePlanCycle();
 
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
-
-  // Fetch check-in history
+  // Fetch check-in history (scoped to selected plan cycle)
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
-    filters: [{ field: "client_id", operator: "eq", value: userId || "" }],
+    filters: [
+      { field: "client_id", operator: "eq", value: userId || "" },
+      { field: "plan_cycle", operator: "eq", value: selectedCycle },
+    ],
     sorters: [{ field: "submitted_at", order: "desc" }],
     queryOptions: {
       enabled: !!userId,
@@ -67,6 +60,9 @@ export default function CheckInHistoryPage() {
           </Link>
         </div>
       </div>
+
+      {/* Plan Cycle Selector + Historical Banner */}
+      <HistoricalCycleBanner />
 
       {/* Loading State */}
       {isLoading && (

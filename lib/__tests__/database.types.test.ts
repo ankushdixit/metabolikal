@@ -64,6 +64,7 @@ describe("Database Types", () => {
         deactivation_reason: null,
         plan_start_date: null,
         plan_duration_days: 7,
+        current_plan_cycle: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -108,6 +109,7 @@ describe("Database Types", () => {
         deactivation_reason: null,
         plan_start_date: null,
         plan_duration_days: 7,
+        current_plan_cycle: 1,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };
@@ -296,6 +298,7 @@ describe("Database Types", () => {
         quantity_grams: null,
         quantity_type: null,
         quantity_note: null,
+        plan_cycle: 1,
         created_at: "2026-01-19T12:00:00Z",
       };
       expect(foodLog.calories).toBe(165);
@@ -364,6 +367,7 @@ describe("Database Types", () => {
         flagged_for_followup: false,
         reviewed_at: "2026-01-19T12:00:00Z",
         reviewed_by: "admin-123",
+        plan_cycle: 1,
         created_at: "2026-01-19T00:00:00Z",
       };
       expect(checkIn.weight).toBe(75.5);
@@ -395,6 +399,7 @@ describe("Database Types", () => {
         feeling: "energized",
         tomorrow_focus: "Hit 12k steps",
         points_earned: 50,
+        plan_cycle: 1,
         created_at: "2026-01-19T00:00:00Z",
         updated_at: "2026-01-19T00:00:00Z",
       };

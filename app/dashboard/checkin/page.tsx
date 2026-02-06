@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import { checkInSchema, type CheckInFormData } from "@/lib/validations";
 import {
   MeasurementsStep,
@@ -35,6 +36,7 @@ import {
 interface Profile {
   full_name?: string;
   created_at?: string;
+  current_plan_cycle?: number;
 }
 
 interface CheckIn {
@@ -50,6 +52,7 @@ const STEPS = ["Measurements", "Photos", "Ratings", "Notes"];
  */
 export default function CheckInPage() {
   const router = useRouter();
+  const { currentCycle, setSelectedCycle } = usePlanCycle();
   const [userId, setUserId] = useState<string | null>(null);
   const [dayNumber, setDayNumber] = useState(1);
   const [currentStep, setCurrentStep] = useState(0);
@@ -78,6 +81,11 @@ export default function CheckInPage() {
       photo_back: null,
     },
   });
+
+  // Force-reset to current cycle on mount (check-in form always uses current data)
+  useEffect(() => {
+    setSelectedCycle(currentCycle);
+  }, [currentCycle, setSelectedCycle]);
 
   // Get current user ID
   useEffect(() => {
@@ -115,11 +123,14 @@ export default function CheckInPage() {
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
 
+  const checkinPlanCycle = profileQuery.query.data?.data?.[0]?.current_plan_cycle ?? 1;
+
   const existingCheckInQuery = useList<CheckIn>({
     resource: "check_ins",
     filters: [
       { field: "client_id", operator: "eq", value: userId || "" },
       { field: "submitted_at", operator: "gte", value: startOfWeek.toISOString() },
+      { field: "plan_cycle", operator: "eq", value: checkinPlanCycle },
     ],
     queryOptions: {
       enabled: !!userId,
@@ -174,6 +185,8 @@ export default function CheckInPage() {
       // Close warning dialog if open
       setShowDuplicateWarning(false);
 
+      const currentPlanCycle = profileQuery.query.data?.data?.[0]?.current_plan_cycle ?? 1;
+
       createMutation.mutate(
         {
           resource: "check_ins",
@@ -198,6 +211,7 @@ export default function CheckInPage() {
             challenges: data.challenges || null,
             progress_notes: data.progress_notes || null,
             questions: data.questions || null,
+            plan_cycle: currentPlanCycle,
           },
         },
         {

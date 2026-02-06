@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useList } from "@refinedev/core";
 import { LineChart, Image as ImageIcon, AlertCircle, ClipboardList, Plus } from "lucide-react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
+import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
+import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import { cn } from "@/lib/utils";
 import type { CheckIn } from "@/lib/database.types";
 
@@ -17,29 +18,22 @@ type Tab = "charts" | "photos";
  * Displays progress charts and photos for the logged-in client
  */
 export default function ProgressPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId, selectedCycle } = usePlanCycle();
   const [activeTab, setActiveTab] = useState<Tab>("charts");
 
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
-
-  // Fetch check-ins for the logged-in client
+  // Fetch check-ins for the logged-in client (scoped to selected plan cycle)
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
-    filters: [{ field: "client_id", operator: "eq", value: userId || "" }],
+    filters: [
+      { field: "client_id", operator: "eq", value: userId || "" },
+      { field: "plan_cycle", operator: "eq", value: selectedCycle },
+    ],
     sorters: [{ field: "submitted_at", order: "desc" }],
     queryOptions: {
       enabled: !!userId,
     },
     pagination: {
-      pageSize: 100, // Get all check-ins for comprehensive charting
+      pageSize: 100,
     },
   });
 
@@ -75,6 +69,9 @@ export default function ProgressPage() {
           )}
         </div>
       </div>
+
+      {/* Plan Cycle Selector + Historical Banner */}
+      <HistoricalCycleBanner />
 
       {/* Loading State */}
       {isLoading && (

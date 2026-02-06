@@ -26,20 +26,40 @@ import {
   DEFAULT_CHALLENGE_DAYS,
 } from "@/lib/challenge-utils";
 import type { DayProgress } from "@/lib/challenge-utils";
-import type { Profile, ChallengeProgress } from "@/lib/database.types";
+import type { Profile, ChallengeProgress, PlanCycle } from "@/lib/database.types";
+import { PlanCycleSelector } from "@/components/shared/plan-cycle-selector";
 
 interface ChallengeProgressTabProps {
   clientId: string;
   profile: Profile;
+  /** When provided, use external cycle state instead of internal state */
+  selectedCycle?: number;
+  onCycleChange?: (cycle: number) => void;
 }
 
-export function ChallengeProgressTab({ clientId, profile }: ChallengeProgressTabProps) {
+export function ChallengeProgressTab({
+  clientId,
+  profile,
+  selectedCycle: externalSelectedCycle,
+  onCycleChange,
+}: ChallengeProgressTabProps) {
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
-  // Fetch all challenge progress for this client
+  const currentPlanCycle = profile.current_plan_cycle ?? 1;
+  const [internalSelectedCycle, setInternalSelectedCycle] = useState<number>(currentPlanCycle);
+
+  // Use external state when provided, otherwise internal
+  const isExternallyControlled = externalSelectedCycle !== undefined && onCycleChange !== undefined;
+  const selectedCycle = isExternallyControlled ? externalSelectedCycle : internalSelectedCycle;
+  const setSelectedCycle = isExternallyControlled ? onCycleChange : setInternalSelectedCycle;
+
+  // Fetch all challenge progress for the selected plan cycle
   const progressQuery = useList<ChallengeProgress>({
     resource: "challenge_progress",
-    filters: [{ field: "user_id", operator: "eq", value: clientId }],
+    filters: [
+      { field: "user_id", operator: "eq", value: clientId },
+      { field: "plan_cycle", operator: "eq", value: selectedCycle },
+    ],
     sorters: [{ field: "day_number", order: "desc" }],
     pagination: { mode: "off" },
     queryOptions: {
@@ -47,12 +67,32 @@ export function ChallengeProgressTab({ clientId, profile }: ChallengeProgressTab
     },
   });
 
+  // Fetch selected cycle details for historical views
+  const cycleQuery = useList<PlanCycle>({
+    resource: "plan_cycles",
+    filters: [
+      { field: "client_id", operator: "eq", value: clientId },
+      { field: "cycle_number", operator: "eq", value: selectedCycle },
+    ],
+    pagination: { pageSize: 1 },
+    queryOptions: {
+      enabled: !!clientId && selectedCycle !== currentPlanCycle,
+    },
+  });
+
   const progressRows = progressQuery.query.data?.data || [];
   const isLoading = progressQuery.query.isLoading;
 
-  // Compute challenge parameters from profile
-  const totalDays = profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
-  const startDate = profile.plan_start_date || profile.created_at?.split("T")[0] || "";
+  // Compute challenge parameters — use cycle data for historical, profile for current
+  const selectedCycleData = cycleQuery.query.data?.data?.[0];
+  const totalDays =
+    selectedCycle !== currentPlanCycle && selectedCycleData
+      ? selectedCycleData.duration_days
+      : profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
+  const startDate =
+    selectedCycle !== currentPlanCycle && selectedCycleData
+      ? selectedCycleData.start_date
+      : profile.plan_start_date || profile.created_at?.split("T")[0] || "";
 
   // Build day progress map and compute stats
   const progress = useMemo(() => buildDayProgressMap(progressRows), [progressRows]);
@@ -142,6 +182,24 @@ export function ChallengeProgressTab({ clientId, profile }: ChallengeProgressTab
 
   return (
     <div className="space-y-4">
+      {/* Plan Cycle Selector — only show when not externally controlled */}
+      {!isExternallyControlled && (
+        <PlanCycleSelector
+          clientId={clientId}
+          currentCycle={currentPlanCycle}
+          selectedCycle={selectedCycle}
+          onCycleChange={setSelectedCycle}
+          currentCycleProfile={
+            profile.plan_start_date
+              ? {
+                  startDate: profile.plan_start_date,
+                  durationDays: profile.plan_duration_days || 30,
+                }
+              : undefined
+          }
+        />
+      )}
+
       {/* Summary Stats */}
       <div className="athletic-card p-6 pl-8">
         <h2 className="text-lg font-black uppercase tracking-tight mb-4">

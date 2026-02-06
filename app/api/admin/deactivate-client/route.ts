@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     // Verify the user exists and is a client
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, role, is_deactivated, full_name, email")
+      .select("id, role, is_deactivated, full_name, email, current_plan_cycle")
       .eq("id", userId)
       .single();
 
@@ -69,6 +69,15 @@ export async function POST(request: Request) {
         { success: false, error: "User is already deactivated" },
         { status: 400 }
       );
+    }
+
+    // Mark current plan cycle as completed
+    if (profile.current_plan_cycle) {
+      await supabase
+        .from("plan_cycles")
+        .update({ status: "completed" })
+        .eq("client_id", userId)
+        .eq("cycle_number", profile.current_plan_cycle);
     }
 
     // Deactivate the user

@@ -181,6 +181,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Create initial plan cycle (cycle 1)
+    const effectiveStartDate = plan_start_date || new Date().toISOString().split("T")[0];
+    const effectiveDuration = plan_duration_days ?? 7;
+    const { error: cycleError } = await supabaseAdmin.from("plan_cycles").insert({
+      client_id: authData.user.id,
+      cycle_number: 1,
+      start_date: effectiveStartDate,
+      duration_days: effectiveDuration,
+      status: "active",
+    });
+
+    if (cycleError) {
+      console.error("Error creating initial plan cycle:", cycleError);
+      // Non-fatal — the client is already created
+    }
+
     // Insert client conditions if any were provided
     if (condition_ids && condition_ids.length > 0) {
       // Get the current admin user to track who assigned the conditions

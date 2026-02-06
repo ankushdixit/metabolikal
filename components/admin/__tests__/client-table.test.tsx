@@ -27,6 +27,7 @@ describe("ClientTable Component", () => {
       deactivation_reason: null,
       plan_start_date: null,
       plan_duration_days: 7,
+      current_plan_cycle: 1,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -56,6 +57,7 @@ describe("ClientTable Component", () => {
         flagged_for_followup: false,
         reviewed_at: "2025-01-16T00:00:00Z",
         reviewed_by: null,
+        plan_cycle: 1,
         created_at: "2025-01-15T00:00:00Z",
       },
     },
@@ -76,6 +78,7 @@ describe("ClientTable Component", () => {
       deactivation_reason: null,
       plan_start_date: null,
       plan_duration_days: 7,
+      current_plan_cycle: 1,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -105,6 +108,7 @@ describe("ClientTable Component", () => {
         flagged_for_followup: true,
         reviewed_at: null,
         reviewed_by: null,
+        plan_cycle: 1,
         created_at: "2025-01-14T00:00:00Z",
       },
     },
@@ -125,6 +129,7 @@ describe("ClientTable Component", () => {
       deactivation_reason: null,
       plan_start_date: null,
       plan_duration_days: 7,
+      current_plan_cycle: 1,
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
       lastCheckIn: {
@@ -154,6 +159,7 @@ describe("ClientTable Component", () => {
         flagged_for_followup: false,
         reviewed_at: null,
         reviewed_by: null,
+        plan_cycle: 1,
         created_at: "2025-01-13T00:00:00Z",
       },
     },

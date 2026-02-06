@@ -108,7 +108,9 @@ describe("POST /api/admin/invite-client", () => {
               }),
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -219,7 +221,9 @@ describe("POST /api/admin/invite-client", () => {
               }),
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -280,7 +284,9 @@ describe("POST /api/admin/invite-client", () => {
               }),
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -404,7 +410,9 @@ describe("POST /api/admin/invite-client", () => {
               }),
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -472,7 +480,9 @@ describe("POST /api/admin/invite-client", () => {
               update: updateMock,
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);
@@ -557,7 +567,9 @@ describe("POST /api/admin/invite-client", () => {
               }),
             };
           }
-          return {};
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
         }),
       };
       mockCreateSupabaseClient.mockReturnValue(mockAdminClient as any);

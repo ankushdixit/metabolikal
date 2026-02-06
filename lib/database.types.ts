@@ -240,6 +240,7 @@ export interface Database {
           deactivation_reason: string | null;
           plan_start_date: string | null;
           plan_duration_days: number;
+          current_plan_cycle: number;
           created_at: string;
           updated_at: string;
         };
@@ -260,6 +261,7 @@ export interface Database {
           deactivation_reason?: string | null;
           plan_start_date?: string | null;
           plan_duration_days?: number;
+          current_plan_cycle?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -280,6 +282,7 @@ export interface Database {
           deactivation_reason?: string | null;
           plan_start_date?: string | null;
           plan_duration_days?: number;
+          current_plan_cycle?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -755,6 +758,7 @@ export interface Database {
           quantity_grams: number | null;
           quantity_type: QuantityType | null;
           quantity_note: string | null;
+          plan_cycle: number;
           created_at: string;
         };
         Insert: {
@@ -771,6 +775,7 @@ export interface Database {
           quantity_grams?: number | null;
           quantity_type?: QuantityType | null;
           quantity_note?: string | null;
+          plan_cycle?: number;
           created_at?: string;
         };
         Update: {
@@ -787,6 +792,7 @@ export interface Database {
           quantity_grams?: number | null;
           quantity_type?: QuantityType | null;
           quantity_note?: string | null;
+          plan_cycle?: number;
           created_at?: string;
         };
         Relationships: [
@@ -869,6 +875,7 @@ export interface Database {
           flagged_for_followup: boolean;
           reviewed_at: string | null;
           reviewed_by: string | null;
+          plan_cycle: number;
           created_at: string;
         };
         Insert: {
@@ -898,6 +905,7 @@ export interface Database {
           flagged_for_followup?: boolean;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          plan_cycle?: number;
           created_at?: string;
         };
         Update: {
@@ -927,6 +935,7 @@ export interface Database {
           flagged_for_followup?: boolean;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          plan_cycle?: number;
           created_at?: string;
         };
         Relationships: [
@@ -959,6 +968,7 @@ export interface Database {
           feeling: string | null;
           tomorrow_focus: string | null;
           points_earned: number;
+          plan_cycle: number;
           created_at: string;
           updated_at: string;
         };
@@ -976,6 +986,7 @@ export interface Database {
           feeling?: string | null;
           tomorrow_focus?: string | null;
           points_earned?: number;
+          plan_cycle?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -993,6 +1004,7 @@ export interface Database {
           feeling?: string | null;
           tomorrow_focus?: string | null;
           points_earned?: number;
+          plan_cycle?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -1780,6 +1792,7 @@ export interface PlanCompletion {
   completed_date: string;
   completed_at: string;
   notes: string | null;
+  plan_cycle: number;
   created_at: string;
 }
 
@@ -1791,6 +1804,7 @@ export interface PlanCompletionInsert {
   completed_date?: string;
   completed_at?: string;
   notes?: string | null;
+  plan_cycle?: number;
   created_at?: string;
 }
 
@@ -1802,6 +1816,7 @@ export interface PlanCompletionUpdate {
   completed_date?: string;
   completed_at?: string;
   notes?: string | null;
+  plan_cycle?: number;
   created_at?: string;
 }
 
@@ -2454,4 +2469,44 @@ export interface CalculatorSettingsUpdate {
   // Audit
   updated_by?: string | null;
   updated_at?: string;
+}
+
+// =============================================================================
+// PLAN CYCLING TYPES
+// =============================================================================
+
+export type PlanCycleStatus = "active" | "completed" | "cancelled";
+
+export interface PlanCycle {
+  id: string;
+  client_id: string;
+  cycle_number: number;
+  start_date: string;
+  duration_days: number;
+  end_date: string;
+  status: PlanCycleStatus;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface PlanCycleInsert {
+  id?: string;
+  client_id: string;
+  cycle_number: number;
+  start_date: string;
+  duration_days: number;
+  status?: PlanCycleStatus;
+  notes?: string | null;
+  created_at?: string;
+}
+
+export interface PlanCycleUpdate {
+  id?: string;
+  client_id?: string;
+  cycle_number?: number;
+  start_date?: string;
+  duration_days?: number;
+  status?: PlanCycleStatus;
+  notes?: string | null;
+  created_at?: string;
 }

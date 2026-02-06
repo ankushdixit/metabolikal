@@ -27,6 +27,8 @@ export interface QueuedCompletion {
   planType: PlanCompletionType;
   /** The date for the completion */
   completedDate: string;
+  /** Plan cycle number */
+  planCycle: number;
   /** Action to perform */
   action: "complete" | "uncomplete";
   /** When the item was queued */
@@ -47,7 +49,8 @@ export interface OfflineCompletionsReturn {
     sourceId: string,
     planType: PlanCompletionType,
     completedDate: string,
-    action: "complete" | "uncomplete"
+    action: "complete" | "uncomplete",
+    planCycle?: number
   ) => void;
   /** Check if an item has a pending action */
   getPendingAction: (sourceId: string) => "complete" | "uncomplete" | null;
@@ -245,6 +248,7 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
               plan_type: item.planType,
               plan_item_id: item.sourceId,
               completed_date: item.completedDate,
+              plan_cycle: item.planCycle,
             });
 
             if (error) {
@@ -307,7 +311,8 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
       sourceId: string,
       planType: PlanCompletionType,
       completedDate: string,
-      action: "complete" | "uncomplete"
+      action: "complete" | "uncomplete",
+      planCycle: number = 1
     ) => {
       setQueue((prevQueue) => {
         // Check if there's already a pending action for this item
@@ -333,6 +338,7 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
           sourceId,
           planType,
           completedDate,
+          planCycle,
           action,
           queuedAt: Date.now(),
           attempts: 0,
