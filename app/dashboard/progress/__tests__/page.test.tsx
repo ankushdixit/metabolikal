@@ -1,14 +1,22 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ProgressPage from "../page";
 
-// Mock Supabase auth
-const mockGetUser = jest.fn();
-jest.mock("@/lib/auth", () => ({
-  createBrowserSupabaseClient: () => ({
-    auth: {
-      getUser: mockGetUser,
-    },
+// Mock plan cycle context
+jest.mock("@/contexts/plan-cycle-context", () => ({
+  usePlanCycle: () => ({
+    userId: "user-123",
+    currentCycle: 1,
+    selectedCycle: 1,
+    isViewingHistory: false,
+    cycleDetails: null,
+    setSelectedCycle: jest.fn(),
+    isLoading: false,
   }),
+}));
+
+// Mock HistoricalCycleBanner
+jest.mock("@/components/shared/historical-cycle-banner", () => ({
+  HistoricalCycleBanner: () => <div data-testid="historical-cycle-banner" />,
 }));
 
 // Mock Refine useList hook
@@ -102,7 +110,6 @@ describe("ProgressPage", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetUser.mockResolvedValue({ data: { user: { id: "user-123" } } });
   });
 
   it("renders page header with title", () => {
@@ -289,7 +296,7 @@ describe("ProgressPage", () => {
     expect(container.querySelectorAll(".athletic-card").length).toBeGreaterThan(0);
   });
 
-  it("fetches check-ins for the logged-in user", async () => {
+  it("fetches check-ins for the logged-in user", () => {
     mockUseList.mockReturnValue({
       query: {
         data: { data: mockCheckIns },
@@ -300,9 +307,9 @@ describe("ProgressPage", () => {
 
     render(<ProgressPage />);
 
-    await waitFor(() => {
-      expect(mockGetUser).toHaveBeenCalled();
-    });
+    // The page should use userId from the plan cycle context
+    // and display check-in data
+    expect(screen.getByText("2 check-ins recorded")).toBeInTheDocument();
   });
 
   it("highlights active tab with gradient-electric class", () => {

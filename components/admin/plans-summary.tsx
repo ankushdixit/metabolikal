@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Settings, Edit, Loader2, Check } from "lucide-react";
-import { useOne, useUpdate } from "@refinedev/core";
+import { useOne, useList, useUpdate } from "@refinedev/core";
 import { toast } from "sonner";
-import type { Profile } from "@/lib/database.types";
+import type { Profile, PlanCycle } from "@/lib/database.types";
 import { parsePlanDate } from "@/lib/utils/plan-dates";
 import { cn } from "@/lib/utils";
 import { PlanLimitsManager } from "./plan-limits-manager";
@@ -15,6 +15,9 @@ interface PlansSummaryProps {
   // Legacy props - kept for backward compatibility but no longer used
   dietPlans?: unknown[];
   workoutPlans?: unknown[];
+  /** When provided, show plan settings for this cycle instead of the current one */
+  selectedCycle?: number;
+  currentCycle?: number;
 }
 
 // Predefined duration options
@@ -26,12 +29,15 @@ const DURATION_OPTIONS = [7, 14, 21, 28, 30, 60, 90];
  * Displays plan settings, macro limits, and the daily plan view.
  * Shows all 4 plan types (Diet, Supplements, Workout, Lifestyle) in a 2x2 grid.
  */
-export function PlansSummary({ clientId }: PlansSummaryProps) {
+export function PlansSummary({ clientId, selectedCycle, currentCycle }: PlansSummaryProps) {
   // Plan settings state
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [editStartDate, setEditStartDate] = useState<string>("");
   const [editDuration, setEditDuration] = useState<number>(7);
   const [isSaving, setIsSaving] = useState(false);
+
+  const isViewingHistory =
+    selectedCycle !== undefined && currentCycle !== undefined && selectedCycle !== currentCycle;
 
   // Fetch client profile for plan settings
   const profileQuery = useOne<Profile>({
@@ -42,11 +48,33 @@ export function PlansSummary({ clientId }: PlansSummaryProps) {
     },
   });
 
+  // Fetch historical cycle data when viewing history
+  const historicalCycleQuery = useList<PlanCycle>({
+    resource: "plan_cycles",
+    filters: [
+      { field: "client_id", operator: "eq", value: clientId },
+      { field: "cycle_number", operator: "eq", value: selectedCycle ?? 0 },
+    ],
+    pagination: { pageSize: 1 },
+    queryOptions: {
+      enabled: !!clientId && isViewingHistory,
+    },
+  });
+
   const { mutateAsync: updateProfile } = useUpdate();
 
   const profile = profileQuery.query.data?.data;
-  const planStartDate = parsePlanDate(profile?.plan_start_date);
-  const planDuration = profile?.plan_duration_days ?? 7;
+  const historicalCycle = historicalCycleQuery.query.data?.data?.[0];
+
+  // Use historical cycle data when viewing history, otherwise profile data
+  const planStartDate =
+    isViewingHistory && historicalCycle
+      ? parsePlanDate(historicalCycle.start_date)
+      : parsePlanDate(profile?.plan_start_date);
+  const planDuration =
+    isViewingHistory && historicalCycle
+      ? historicalCycle.duration_days
+      : (profile?.plan_duration_days ?? 7);
 
   // Initialize edit state when entering edit mode
   const handleStartEditing = () => {
@@ -94,7 +122,7 @@ export function PlansSummary({ clientId }: PlansSummaryProps) {
               Plan <span className="gradient-athletic">Settings</span>
             </h2>
           </div>
-          {!isEditingSettings && (
+          {!isEditingSettings && !isViewingHistory && (
             <button
               onClick={handleStartEditing}
               className="btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"

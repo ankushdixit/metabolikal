@@ -196,7 +196,28 @@ export function EditClientModal({
         },
       });
 
-      // 2. Sync conditions
+      // 2. Sync plan_cycles row if plan dates changed
+      if (data.plan_start_date || data.plan_duration_days) {
+        const supabase = createBrowserSupabaseClient();
+        const currentCycle = client.current_plan_cycle ?? 1;
+        const startDate = data.plan_start_date || client.plan_start_date;
+        const durationDays = data.plan_duration_days ?? client.plan_duration_days ?? 30;
+        if (startDate) {
+          const { error: cycleError } = await supabase
+            .from("plan_cycles")
+            .update({
+              start_date: startDate,
+              duration_days: durationDays,
+            })
+            .eq("client_id", client.id)
+            .eq("cycle_number", currentCycle);
+          if (cycleError) {
+            console.error("Error syncing plan_cycles:", cycleError);
+          }
+        }
+      }
+
+      // 3. Sync conditions
       const newConditionIds = data.condition_ids ?? [];
       const conditionsToAdd = newConditionIds.filter((id) => !currentConditionIds.includes(id));
       const conditionsToRemove = currentConditionIds.filter((id) => !newConditionIds.includes(id));
