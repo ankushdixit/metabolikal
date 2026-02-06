@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Challenge Views**: Per-client `ChallengeProgressTab` (stats + daily log) and `TodaysChallengeActivity` dashboard overview with 5th "Challenge" tab on client detail page and `?tab=challenge` deep linking
+- **Shared Challenge Utils** (`lib/challenge-utils.ts`): Extracted pure calculation functions (`getDaysSinceStart`, `calculateStreak`, `buildDayProgressMap`, `getDateForDay`, etc.) and shared types (`DayProgress`, `DailyMetrics`, `CumulativeStats`) from gamification hook
+- **`GamificationState.startDate`**: Exposed `startDate` on the gamification hook return type so components can use it for calendar alignment
+- **Migration `20260207000000`**: Backfills NULL `plan_start_date` (using earliest challenge progress date or `created_at`), updates `handle_new_user()` trigger to always set `plan_start_date`, and fixes corrupted `day_number` values in `challenge_progress`
+
 - **Dynamic Challenge Duration for Clients**: Clients with `plan_start_date` and `plan_duration_days` now see their custom challenge duration instead of the hardcoded 30-day default:
   - **Gamification Hook**: `useGamification()` now fetches user profile to determine `totalDays` (parallelized with challenge data fetch); clients with `plan_start_date` use it as challenge start date
   - **Database Migration**: Relaxed `challenge_progress.day_number` constraint from `BETWEEN 1 AND 30` to `>= 1` to support plans longer than 30 days
@@ -94,6 +99,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hero Variant C**: Updated coach experience text to "2+ years coaching + 13 years fitness experience"
 
 ### Fixed
+
+- **Day-Number Discrepancy Across Platform**: All day numbers now derived from single source of truth (`profiles.plan_start_date`) consistently across client, admin, and database:
+  - **Gamification Hook**: Removed `calculateStartDateFromProgress` that computed start date from progress data; now always uses `plan_start_date` with `created_at` fallback
+  - **Dashboard Challenge Page**: Added proper `startDate` state and `currentDay` computation from profile
+  - **Calendar Grids**: Day 1 now aligns to its actual weekday with leading padding cells; each cell shows its calendar date (e.g., "Feb 6")
+  - **Invite Flow**: `plan_start_date` is now always set when creating a client, falling back to today
+  - **Resend Invite Flow**: Backfills `plan_start_date` to today if previously null
+  - **Daily Plan Data Hook**: `planConfig.startDate` now falls back to `created_at` when `plan_start_date` is null
+  - **Client Timeline Hook**: Replaced inconsistent 7-day cycling fallback with proper `created_at`-based start date
+  - **Admin Components**: Added null guards on `created_at.split("T")` in `ChallengeProgressTab` and `TodaysChallengeActivity`
+  - **Consolidated `calculateCurrentDay`**: Now a thin wrapper around `getDaysSinceStart` instead of a duplicate implementation
 
 - **Resend Invite Status Bug**: Fixed client status remaining "INVITED" after completing password setup via resend invite:
   - **Root Cause**: Resend invite uses password reset flow (`type=recovery`), but auth callback didn't check if user was invited before redirecting

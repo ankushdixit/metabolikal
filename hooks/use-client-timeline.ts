@@ -206,7 +206,9 @@ export function useClientTimeline({
   });
 
   const profile = profileQuery.query.data?.data;
-  const planStartDate = parsePlanDate(profile?.plan_start_date);
+  const planStartDate = parsePlanDate(
+    profile?.plan_start_date || profile?.created_at?.split("T")[0]
+  );
   const planDurationDays = profile?.plan_duration_days ?? 7;
 
   // Calculate current date based on dayNumberOverride or selectedDate
@@ -242,12 +244,8 @@ export function useClientTimeline({
     }
 
     if (!planStartDate) {
-      // Fallback to cycling through 7 days if no plan start date
-      const today = new Date();
-      const profileCreated = profile?.created_at ? new Date(profile.created_at) : today;
-      const totalDays =
-        Math.floor((currentDate.getTime() - profileCreated.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return ((totalDays - 1) % 7) + 1;
+      // Profile not loaded yet — default to day 1
+      return 1;
     }
 
     const todaysDayNumber = getTodaysDayNumber(planStartDate);
@@ -263,14 +261,7 @@ export function useClientTimeline({
 
     // Cycle through plan duration if extended
     return ((todaysDayNumber - 1) % planDurationDays) + 1;
-  }, [
-    planStartDate,
-    planDurationDays,
-    currentDate,
-    selectedDate,
-    dayNumberOverride,
-    profile?.created_at,
-  ]);
+  }, [planStartDate, planDurationDays, currentDate, selectedDate, dayNumberOverride]);
 
   // Day label for display
   const dayLabel = useMemo(() => {

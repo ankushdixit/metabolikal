@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Users, ClipboardCheck, Calendar } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { StatsCards } from "@/components/admin/stats-cards";
+import { TodaysChallengeActivity } from "@/components/admin/todays-challenge-activity";
 import type { Profile, CheckIn } from "@/lib/database.types";
 
 /**
@@ -124,6 +125,9 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Today's Challenge Activity */}
+      <TodaysChallengeActivity clients={activeClients} isLoading={isLoading} />
 
       {/* Recent Activity Preview */}
       {pendingReviews > 0 && (

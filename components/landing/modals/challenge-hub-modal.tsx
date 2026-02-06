@@ -36,6 +36,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
   const {
     currentDay,
     totalDays,
+    startDate,
     totalPoints,
     weekUnlocked,
     completionPercent,
@@ -166,6 +167,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
                 <CalendarTab
                   currentDay={currentDay}
                   totalDays={totalDays}
+                  startDate={startDate}
                   weekUnlocked={weekUnlocked}
                   allProgress={allProgress}
                   isDayUnlocked={isDayUnlocked}

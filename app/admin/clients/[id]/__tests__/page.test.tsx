@@ -5,6 +5,7 @@ import ClientReviewPage from "../page";
 // Mock modules
 jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({ id: "test-client-id" })),
+  useSearchParams: jest.fn(() => ({ get: jest.fn(() => null) })),
 }));
 
 jest.mock("@/lib/auth", () => ({

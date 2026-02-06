@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { getDaysSinceStart, getDateString } from "@/lib/challenge-utils";
+import { getDateForDay } from "@/lib/challenge-utils";
 
 interface ChallengeProgressRow {
   id: string;
@@ -70,6 +72,7 @@ export default function ChallengeHistoryPage() {
   const [progress, setProgress] = useState<Record<number, DayProgress>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [totalDays, setTotalDays] = useState<number>(DEFAULT_TOTAL_DAYS);
+  const [startDate, setStartDate] = useState<string>("");
 
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
@@ -95,7 +98,7 @@ export default function ChallengeHistoryPage() {
         const [profileResult, progressResult] = await Promise.all([
           supabase
             .from("profiles")
-            .select("role, plan_duration_days, plan_start_date")
+            .select("role, plan_duration_days, plan_start_date, created_at")
             .eq("id", userId)
             .single(),
           supabase
@@ -105,12 +108,13 @@ export default function ChallengeHistoryPage() {
             .order("day_number", { ascending: true }),
         ]);
 
-        // Determine total days from profile
-        if (profileResult.data?.plan_start_date && profileResult.data?.plan_duration_days) {
-          setTotalDays(profileResult.data.plan_duration_days);
-        } else {
-          setTotalDays(DEFAULT_TOTAL_DAYS);
-        }
+        // Determine total days and start date from profile
+        setTotalDays(profileResult.data?.plan_duration_days || DEFAULT_TOTAL_DAYS);
+        setStartDate(
+          profileResult.data?.plan_start_date ||
+            profileResult.data?.created_at?.split("T")[0] ||
+            getDateString()
+        );
 
         if (progressResult.error) {
           throw progressResult.error;
@@ -182,6 +186,12 @@ export default function ChallengeHistoryPage() {
       daysCompleted,
     };
   }, [progress]);
+
+  // Calculate current day from start date
+  const currentDay = useMemo(() => {
+    if (!startDate) return 1;
+    return getDaysSinceStart(startDate, totalDays);
+  }, [startDate, totalDays]);
 
   // Calculate completion percentage
   const completionPercent = Math.round((cumulativeStats.daysCompleted / totalDays) * 100);
@@ -375,10 +385,23 @@ export default function ChallengeHistoryPage() {
 
               {/* Days Grid */}
               <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {/* Leading padding cells for weekday alignment */}
+                {startDate &&
+                  (() => {
+                    const day1Weekday = new Date(startDate + "T00:00:00").getDay();
+                    return Array.from({ length: day1Weekday }, (_, i) => (
+                      <div key={`pad-${i}`} className="aspect-square" />
+                    ));
+                  })()}
+
                 {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
                   const dayProgress = progress[day];
                   const hasData = dayProgress?.hasData || false;
                   const isSelected = selectedDay === day;
+                  const dayDate = startDate ? getDateForDay(startDate, day) : null;
+                  const dateLabel = dayDate
+                    ? dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                    : null;
 
                   return (
                     <button
@@ -386,23 +409,33 @@ export default function ChallengeHistoryPage() {
                       onClick={() => handleDayClick(day)}
                       disabled={!hasData}
                       className={cn(
-                        "aspect-square flex items-center justify-center relative",
+                        "aspect-square flex flex-col items-center justify-center relative",
                         "text-sm font-black transition-all",
                         hasData
                           ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90"
-                          : "bg-secondary text-muted-foreground cursor-default",
+                          : day === currentDay
+                            ? "ring-2 ring-primary bg-secondary"
+                            : "bg-secondary text-muted-foreground cursor-default",
                         isSelected && "ring-2 ring-accent"
                       )}
                     >
                       {hasData ? <Check className="h-4 w-4" /> : day}
+                      {dateLabel && (
+                        <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>
+                      )}
                     </button>
                   );
                 })}
 
                 {/* Fill remaining cells for visual consistency */}
-                {Array.from({ length: (7 - (totalDays % 7)) % 7 }, (_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
-                ))}
+                {(() => {
+                  const day1Weekday = startDate ? new Date(startDate + "T00:00:00").getDay() : 0;
+                  const totalCells = day1Weekday + totalDays;
+                  const trailing = (7 - (totalCells % 7)) % 7;
+                  return Array.from({ length: trailing }, (_, i) => (
+                    <div key={`empty-${i}`} className="aspect-square" />
+                  ));
+                })()}
               </div>
 
               {/* Legend */}

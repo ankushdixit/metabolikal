@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Check, Lock, Calendar } from "lucide-react";
 import { DayProgress } from "@/hooks/use-gamification";
+import { getDateForDay } from "@/lib/challenge-utils";
 
 interface CalendarTabProps {
   currentDay: number;
   totalDays: number;
+  startDate: string;
   weekUnlocked: number;
   allProgress: Record<number, DayProgress>;
   isDayUnlocked: (day: number) => boolean;
@@ -18,6 +20,7 @@ const DAYS_PER_WEEK = 7;
 export function CalendarTab({
   currentDay,
   totalDays,
+  startDate,
   weekUnlocked,
   allProgress,
   isDayUnlocked,
@@ -26,6 +29,7 @@ export function CalendarTab({
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const calendarDays = Array.from({ length: totalDays }, (_, i) => i + 1);
+  const day1Weekday = startDate ? new Date(startDate + "T00:00:00").getDay() : 0;
 
   const handleDayClick = (day: number) => {
     const unlocked = isDayUnlocked(day);
@@ -86,9 +90,18 @@ export function CalendarTab({
 
         {/* Days Grid */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          {/* Leading padding cells for weekday alignment */}
+          {Array.from({ length: day1Weekday }, (_, i) => (
+            <div key={`pad-${i}`} className="aspect-square" />
+          ))}
+
           {calendarDays.map((day) => {
             const status = getDayStatus(day);
             const isSelected = selectedDay === day;
+            const dayDate = startDate ? getDateForDay(startDate, day) : null;
+            const dateLabel = dayDate
+              ? dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              : null;
 
             return (
               <button
@@ -96,7 +109,7 @@ export function CalendarTab({
                 onClick={() => handleDayClick(day)}
                 disabled={status === "locked"}
                 className={`
-                  aspect-square flex items-center justify-center relative
+                  aspect-square flex flex-col items-center justify-center relative
                   text-sm font-black transition-all
                   ${status === "completed" ? "bg-primary text-primary-foreground" : ""}
                   ${status === "current" ? "ring-2 ring-primary bg-secondary" : ""}
@@ -108,17 +121,21 @@ export function CalendarTab({
                 {status === "completed" && <Check className="h-4 w-4" />}
                 {status === "locked" && <Lock className="h-3 w-3" />}
                 {(status === "current" || status === "future") && day}
+                {dateLabel && (
+                  <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>
+                )}
               </button>
             );
           })}
 
           {/* Fill remaining cells with empty space for visual consistency */}
-          {Array.from(
-            { length: (DAYS_PER_WEEK - (totalDays % DAYS_PER_WEEK)) % DAYS_PER_WEEK },
-            (_, i) => (
+          {(() => {
+            const totalCells = day1Weekday + totalDays;
+            const trailing = (DAYS_PER_WEEK - (totalCells % DAYS_PER_WEEK)) % DAYS_PER_WEEK;
+            return Array.from({ length: trailing }, (_, i) => (
               <div key={`empty-${i}`} className="aspect-square" />
-            )
-          )}
+            ));
+          })()}
         </div>
 
         {/* Legend */}
