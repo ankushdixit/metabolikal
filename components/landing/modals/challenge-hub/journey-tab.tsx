@@ -4,6 +4,7 @@ import { Flame, Trophy, Footprints, Droplets, Building2, Beef, Moon, Calendar } 
 
 interface JourneyTabProps {
   dayStreak: number;
+  totalDays: number;
   totalPoints: number;
   cumulativeStats: {
     totalSteps: number;
@@ -15,7 +16,12 @@ interface JourneyTabProps {
   };
 }
 
-export function JourneyTab({ dayStreak, totalPoints, cumulativeStats }: JourneyTabProps) {
+export function JourneyTab({
+  dayStreak,
+  totalDays,
+  totalPoints,
+  cumulativeStats,
+}: JourneyTabProps) {
   const isNewUser = cumulativeStats.daysCompleted === 0;
 
   const stats = [
@@ -37,7 +43,7 @@ export function JourneyTab({ dayStreak, totalPoints, cumulativeStats }: JourneyT
       icon: Calendar,
       label: "Days Completed",
       value: cumulativeStats.daysCompleted,
-      unit: "/ 30",
+      unit: `/ ${totalDays}`,
       color: "text-blue-500",
     },
   ];
@@ -161,10 +167,15 @@ export function JourneyTab({ dayStreak, totalPoints, cumulativeStats }: JourneyT
               </div>
               <div>
                 <h4 className="font-black uppercase tracking-wide mb-2">
-                  {getProgressMessage(cumulativeStats.daysCompleted, dayStreak)}
+                  {getProgressMessage(cumulativeStats.daysCompleted, dayStreak, totalDays)}
                 </h4>
                 <p className="text-sm text-muted-foreground font-bold leading-relaxed">
-                  {getProgressDescription(cumulativeStats.daysCompleted, dayStreak, totalPoints)}
+                  {getProgressDescription(
+                    cumulativeStats.daysCompleted,
+                    dayStreak,
+                    totalPoints,
+                    totalDays
+                  )}
                 </p>
               </div>
             </div>
@@ -175,26 +186,34 @@ export function JourneyTab({ dayStreak, totalPoints, cumulativeStats }: JourneyT
   );
 }
 
-function getProgressMessage(daysCompleted: number, streak: number): string {
-  if (daysCompleted >= 25) return "Almost There!";
-  if (daysCompleted >= 20) return "Final Stretch!";
-  if (daysCompleted >= 15) return "Halfway Champion!";
-  if (daysCompleted >= 10) return "Building Momentum!";
-  if (daysCompleted >= 7) return "Week One Complete!";
+function getProgressMessage(daysCompleted: number, streak: number, totalDays: number): string {
+  const pct = daysCompleted / totalDays;
+  if (pct >= 0.83) return "Almost There!";
+  if (pct >= 0.67) return "Final Stretch!";
+  if (pct >= 0.5) return "Halfway Champion!";
+  if (pct >= 0.33) return "Building Momentum!";
+  if (pct >= 0.23) return "Week One Complete!";
   if (streak >= 5) return "Streak Master!";
   if (streak >= 3) return "Consistency King!";
   if (daysCompleted >= 3) return "Great Start!";
   return "Keep Going!";
 }
 
-function getProgressDescription(daysCompleted: number, streak: number, points: number): string {
-  if (daysCompleted >= 25) {
-    return `You've completed ${daysCompleted} days with ${points.toLocaleString()} total points. Just ${30 - daysCompleted} more days to finish the challenge!`;
+function getProgressDescription(
+  daysCompleted: number,
+  streak: number,
+  points: number,
+  totalDays: number
+): string {
+  const pct = daysCompleted / totalDays;
+  const remaining = totalDays - daysCompleted;
+  if (pct >= 0.83) {
+    return `You've completed ${daysCompleted} days with ${points.toLocaleString()} total points. Just ${remaining} more days to finish the challenge!`;
   }
-  if (daysCompleted >= 15) {
+  if (pct >= 0.5) {
     return `Incredible progress! You're over halfway through with a ${streak}-day streak. Your metabolic habits are becoming second nature.`;
   }
-  if (daysCompleted >= 7) {
+  if (pct >= 0.23) {
     return `One week down! You've earned ${points.toLocaleString()} points so far. Keep this momentum going into week two.`;
   }
   if (streak >= 3) {

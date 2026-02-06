@@ -174,6 +174,7 @@ describe("PointsTray", () => {
 describe("DayCounterTray", () => {
   const defaultProps = {
     currentDay: 7,
+    totalDays: 30,
     onOpenChallengeHub: jest.fn(),
   };
 

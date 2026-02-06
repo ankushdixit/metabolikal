@@ -9,6 +9,7 @@ const createMockGamification = (
   isLoading: false,
   user: null,
   currentDay: 1,
+  totalDays: 30,
   totalPoints: 100,
   dayStreak: 3,
   weekUnlocked: 1,

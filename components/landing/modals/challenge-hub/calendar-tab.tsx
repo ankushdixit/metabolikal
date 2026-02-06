@@ -6,17 +6,18 @@ import { DayProgress } from "@/hooks/use-gamification";
 
 interface CalendarTabProps {
   currentDay: number;
+  totalDays: number;
   weekUnlocked: number;
   allProgress: Record<number, DayProgress>;
   isDayUnlocked: (day: number) => boolean;
   getDayProgress: (day: number) => DayProgress | null;
 }
 
-const TOTAL_DAYS = 30;
 const DAYS_PER_WEEK = 7;
 
 export function CalendarTab({
   currentDay,
+  totalDays,
   weekUnlocked,
   allProgress,
   isDayUnlocked,
@@ -24,8 +25,7 @@ export function CalendarTab({
 }: CalendarTabProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  // Generate calendar grid (5 rows x 7 columns = 35 cells, but only 30 days)
-  const calendarDays = Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1);
+  const calendarDays = Array.from({ length: totalDays }, (_, i) => i + 1);
 
   const handleDayClick = (day: number) => {
     const unlocked = isDayUnlocked(day);
@@ -59,7 +59,7 @@ export function CalendarTab({
       <div className="flex items-center gap-3">
         <div className="w-8 h-1 gradient-electric" />
         <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-          30-Day Calendar
+          {totalDays}-Day Calendar
         </h3>
       </div>
 
@@ -112,9 +112,9 @@ export function CalendarTab({
             );
           })}
 
-          {/* Fill remaining cells (31-35) with empty space for visual consistency */}
+          {/* Fill remaining cells with empty space for visual consistency */}
           {Array.from(
-            { length: (DAYS_PER_WEEK - (TOTAL_DAYS % DAYS_PER_WEEK)) % DAYS_PER_WEEK },
+            { length: (DAYS_PER_WEEK - (totalDays % DAYS_PER_WEEK)) % DAYS_PER_WEEK },
             (_, i) => (
               <div key={`empty-${i}`} className="aspect-square" />
             )
