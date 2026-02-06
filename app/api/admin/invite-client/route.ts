@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     if (date_of_birth) profileUpdateData.date_of_birth = date_of_birth;
     if (gender) profileUpdateData.gender = gender as ProfileGender;
     if (address) profileUpdateData.address = address;
-    if (plan_start_date) profileUpdateData.plan_start_date = plan_start_date;
+    profileUpdateData.plan_start_date = plan_start_date || new Date().toISOString().split("T")[0];
     if (plan_duration_days !== undefined) profileUpdateData.plan_duration_days = plan_duration_days;
 
     // First check if the profile was created by the trigger

@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     // Check if the user has already accepted the invitation
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("invited_at, invitation_accepted_at")
+      .select("invited_at, invitation_accepted_at, plan_start_date")
       .eq("id", userId)
       .single();
 
@@ -119,11 +119,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update invited_at timestamp
-    await supabaseAdmin
-      .from("profiles")
-      .update({ invited_at: new Date().toISOString() })
-      .eq("id", userId);
+    // Update invited_at timestamp, and backfill plan_start_date if missing
+    const updateData: Record<string, unknown> = {
+      invited_at: new Date().toISOString(),
+    };
+    if (!profile?.plan_start_date) {
+      updateData.plan_start_date = new Date().toISOString().split("T")[0];
+    }
+    await supabaseAdmin.from("profiles").update(updateData).eq("id", userId);
 
     return NextResponse.json(
       {

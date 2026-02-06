@@ -25,6 +25,7 @@ import type {
   WorkoutSection,
 } from "@/lib/database.types";
 import { parsePlanDate, getDayDate, formatPlanDateForStorage } from "@/lib/utils/plan-dates";
+import { getDaysSinceStart } from "@/lib/challenge-utils";
 
 // Extended types with joined relations
 export interface DietPlanWithFood extends DietPlan {
@@ -156,24 +157,12 @@ function checkLimitsForDay(
 }
 
 /**
- * Calculate the current day number based on plan start date
- * Returns 1 if today is before start, or last day if today is after end
+ * Calculate the current day number based on plan start date.
+ * Wrapper around getDaysSinceStart from challenge-utils for backward compatibility.
  */
 export function calculateCurrentDay(planStartDate: Date, planDurationDays: number): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const start = new Date(planStartDate);
-  start.setHours(0, 0, 0, 0);
-
-  const diffTime = today.getTime() - start.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const dayNumber = diffDays + 1;
-
-  // Clamp to valid range
-  if (dayNumber < 1) return 1;
-  if (dayNumber > planDurationDays) return planDurationDays;
-  return dayNumber;
+  const dateStr = formatPlanDateForStorage(planStartDate);
+  return getDaysSinceStart(dateStr, planDurationDays);
 }
 
 /**
@@ -198,8 +187,9 @@ export function useDailyPlanData({
   // Parse plan configuration from profile
   const planConfig = useMemo<PlanConfig>(() => {
     const profile = profileQuery.query.data?.data;
+    const dateStr = profile?.plan_start_date || profile?.created_at?.split("T")[0];
     return {
-      startDate: parsePlanDate(profile?.plan_start_date),
+      startDate: parsePlanDate(dateStr),
       durationDays: profile?.plan_duration_days ?? 7,
     };
   }, [profileQuery.query.data?.data]);

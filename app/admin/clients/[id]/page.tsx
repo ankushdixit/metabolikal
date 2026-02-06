@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useOne, useList, useInvalidate } from "@refinedev/core";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
   LineChart,
   Image as ImageIcon,
   FileText,
+  Trophy,
   Flag,
   Pencil,
   Cake,
@@ -23,6 +24,7 @@ import { CheckInReview } from "@/components/admin/checkin-review";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
 import { PlansSummary } from "@/components/admin/plans-summary";
+import { ChallengeProgressTab } from "@/components/admin/challenge-progress-tab";
 import { EditClientModal } from "@/components/admin/edit-client-modal";
 import { cn } from "@/lib/utils";
 import type {
@@ -34,7 +36,7 @@ import type {
   MedicalConditionRow,
 } from "@/lib/database.types";
 
-type Tab = "checkins" | "progress" | "photos" | "plans";
+type Tab = "checkins" | "progress" | "photos" | "plans" | "challenge";
 
 // Extended type for client conditions with joined medical condition data
 type ClientConditionWithDetails = ClientCondition & {
@@ -75,10 +77,15 @@ const GENDER_DISPLAY: Record<string, { label: string; icon: string }> = {
  */
 export default function ClientReviewPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const clientId = params.id as string;
 
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const validTabs: Tab[] = ["checkins", "progress", "photos", "plans", "challenge"];
+  const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : "checkins";
+
   const [adminId, setAdminId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("checkins");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const invalidate = useInvalidate();
@@ -200,6 +207,7 @@ export default function ClientReviewPage() {
     { label: "Progress Charts", value: "progress", icon: LineChart },
     { label: "Photos", value: "photos", icon: ImageIcon },
     { label: "Plans", value: "plans", icon: FileText },
+    { label: "Challenge", value: "challenge", icon: Trophy },
   ];
 
   if (isLoading) {
@@ -412,6 +420,10 @@ export default function ClientReviewPage() {
 
       {activeTab === "plans" && (
         <PlansSummary clientId={clientId} dietPlans={dietPlans} workoutPlans={workoutPlans} />
+      )}
+
+      {activeTab === "challenge" && profile && (
+        <ChallengeProgressTab clientId={clientId} profile={profile} />
       )}
 
       {/* Edit Client Modal */}
