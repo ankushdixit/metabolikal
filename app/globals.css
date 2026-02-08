@@ -262,4 +262,10 @@
   .pt-mobile-header {
     padding-top: calc(5rem + env(safe-area-inset-top, 0px));
   }
+
+  /* Mobile bottom padding that accounts for floating challenge tray + safe area */
+  /* Tray is ~48px tall at bottom-4 (16px), so ~80px clearance + safe area */
+  .pb-mobile-tray {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
 }
