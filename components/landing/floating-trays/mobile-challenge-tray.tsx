@@ -21,7 +21,10 @@ export function MobileChallengeTray({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 md:hidden">
+    <div
+      className="fixed left-4 right-4 z-40 md:hidden"
+      style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+    >
       {/* Collapsed View - Compact Bar */}
       {!isExpanded && (
         <button

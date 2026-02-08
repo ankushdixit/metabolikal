@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Mobile PWA submit button hidden**: Dashboard content now has bottom padding (`pb-mobile-tray`) to clear the floating challenge tray on mobile, fixing submit/navigation buttons being obscured on the check-in form and other pages
+- **Floating tray PWA safe area**: Mobile challenge tray now respects `safe-area-inset-bottom` so it doesn't overlap the home indicator on notched devices
+
+### Removed
+
+- **Check-in push notification**: Removed client-side push notification call on check-in submit that always failed with 401 (endpoint requires admin auth)
+
 ### Added
 
 - **Admin Challenge Views**: Per-client `ChallengeProgressTab` (stats + daily log) and `TodaysChallengeActivity` dashboard overview with 5th "Challenge" tab on client detail page and `?tab=challenge` deep linking
