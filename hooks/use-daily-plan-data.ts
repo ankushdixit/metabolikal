@@ -202,6 +202,7 @@ export function useDailyPlanData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, food_items(*)",
     },
@@ -218,6 +219,7 @@ export function useDailyPlanData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, supplements(*)",
     },
@@ -234,6 +236,7 @@ export function useDailyPlanData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, exercises(*)",
     },
@@ -250,6 +253,7 @@ export function useDailyPlanData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, lifestyle_activity_types(*)",
     },
@@ -263,6 +267,7 @@ export function useDailyPlanData({
     resource: "client_plan_limits",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
     sorters: [{ field: "start_date", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: enabled && !!clientId,
     },

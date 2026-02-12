@@ -167,7 +167,7 @@ export default function UnifiedTimelinePlanEditorPage() {
   const allDietPlansQuery = useList<DietPlan>({
     resource: "diet_plans",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
-    pagination: { pageSize: 1000 },
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -176,7 +176,7 @@ export default function UnifiedTimelinePlanEditorPage() {
   const allSupplementPlansQuery = useList<SupplementPlan>({
     resource: "supplement_plans",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
-    pagination: { pageSize: 1000 },
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -185,7 +185,7 @@ export default function UnifiedTimelinePlanEditorPage() {
   const allWorkoutPlansQuery = useList<WorkoutPlan>({
     resource: "workout_plans",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
-    pagination: { pageSize: 1000 },
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -194,7 +194,7 @@ export default function UnifiedTimelinePlanEditorPage() {
   const allLifestyleActivityPlansQuery = useList<LifestyleActivityPlan>({
     resource: "lifestyle_activity_plans",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
-    pagination: { pageSize: 1000 },
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },

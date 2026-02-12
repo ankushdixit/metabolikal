@@ -558,6 +558,7 @@ export function useTemplateData({
   const dietItemsQuery = useList<TemplateDietItemWithFood>({
     resource: "template_diet_items",
     filters: [{ field: "template_id", operator: "eq", value: templateId }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, food_items(*)",
     },
@@ -570,6 +571,7 @@ export function useTemplateData({
   const supplementItemsQuery = useList<TemplateSupplementItemWithSupplement>({
     resource: "template_supplement_items",
     filters: [{ field: "template_id", operator: "eq", value: templateId }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, supplements(*)",
     },
@@ -583,6 +585,7 @@ export function useTemplateData({
     resource: "template_workout_items",
     filters: [{ field: "template_id", operator: "eq", value: templateId }],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, exercises(*)",
     },
@@ -596,6 +599,7 @@ export function useTemplateData({
     resource: "template_lifestyle_items",
     filters: [{ field: "template_id", operator: "eq", value: templateId }],
     sorters: [{ field: "display_order", order: "asc" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, lifestyle_activity_types(*)",
     },
