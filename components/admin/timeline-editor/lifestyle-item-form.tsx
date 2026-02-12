@@ -29,6 +29,12 @@ import type {
   LifestyleActivityPlanInsert,
 } from "@/lib/database.types";
 
+/** Context passed when adding an activity to an existing lifestyle group */
+export interface LifestyleGroupContext {
+  timing: TimingValues;
+  existingActivityTypeIds?: string[];
+}
+
 interface LifestyleItemFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +42,8 @@ interface LifestyleItemFormProps {
   clientId: string;
   dayNumber: number;
   editItem?: LifestyleActivityPlan & { lifestyle_activity_types?: LifestyleActivityType | null };
+  /** When provided, hides timing fields (inherited from existing group) */
+  groupContext?: LifestyleGroupContext;
 }
 
 /**
@@ -48,6 +56,7 @@ export function LifestyleItemForm({
   clientId,
   dayNumber,
   editItem,
+  groupContext,
 }: LifestyleItemFormProps) {
   const isEditing = !!editItem;
 
@@ -76,14 +85,16 @@ export function LifestyleItemForm({
       );
       setCustomRationale(editItem?.custom_rationale || "");
       setNotes(editItem?.notes || "");
-      setTiming({
-        timeType: editItem?.time_type || "all_day",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || null,
-        relativeAnchor: editItem?.relative_anchor || null,
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "all_day",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || null,
+          relativeAnchor: editItem?.relative_anchor || null,
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
     }
   }, [isOpen, editItem]);
 
@@ -146,6 +157,12 @@ export function LifestyleItemForm({
       return;
     }
 
+    // Check for duplicate in group
+    if (!isEditing && groupContext?.existingActivityTypeIds?.includes(selectedActivity.id)) {
+      toast.error("This activity is already in this group");
+      return;
+    }
+
     const data: LifestyleActivityPlanInsert = {
       client_id: clientId,
       activity_type_id: selectedActivity.id,
@@ -178,7 +195,6 @@ export function LifestyleItemForm({
         toast.success("Activity added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update activity" : "Failed to add activity");
     }
@@ -204,7 +220,9 @@ export function LifestyleItemForm({
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             {isEditing
               ? "Update the lifestyle activity details below."
-              : "Add a lifestyle activity to the timeline for this day."}
+              : groupContext
+                ? "Add another activity to this group."
+                : "Add a lifestyle activity to the timeline for this day."}
           </DialogDescription>
         </DialogHeader>
 
@@ -333,13 +351,15 @@ export function LifestyleItemForm({
               </div>
             )}
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={true}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={true}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Custom Rationale */}
             <div>

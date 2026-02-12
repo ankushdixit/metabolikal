@@ -11,6 +11,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useList, useCreate, useUpdate } from "@refinedev/core";
 import { Search, Loader2, Utensils, X, AlertTriangle } from "lucide-react";
+import { useMealTypes } from "@/hooks/use-meal-types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -33,13 +34,7 @@ import { TimingSelector, type TimingValues } from "./timing-selector";
 import { FoodWarningDialog } from "./food-warning-dialog";
 import { useFoodCompatibility } from "@/hooks/use-food-compatibility";
 import type { ClientConditionWithDetails } from "@/hooks/use-timeline-data";
-import type {
-  FoodItem,
-  MealCategory,
-  DietPlan,
-  DietPlanInsert,
-  QuantityType,
-} from "@/lib/database.types";
+import type { FoodItem, DietPlan, DietPlanInsert, QuantityType } from "@/lib/database.types";
 import {
   calculateMultiplier,
   calculateQuantityFromMultiplier,
@@ -50,15 +45,12 @@ import {
   validateQuantityInput,
 } from "@/lib/utils/quantity";
 
-// Meal categories
-const MEAL_CATEGORIES: { value: MealCategory; label: string }[] = [
-  { value: "pre-workout", label: "Pre-Workout" },
-  { value: "breakfast", label: "Breakfast" },
-  { value: "lunch", label: "Lunch" },
-  { value: "evening-snack", label: "Evening Snack" },
-  { value: "post-workout", label: "Post-Workout" },
-  { value: "dinner", label: "Dinner" },
-];
+/** Context passed when adding a food item to an existing meal group */
+export interface MealGroupContext {
+  mealCategory: string;
+  timing: TimingValues;
+  existingFoodItemIds?: string[];
+}
 
 interface MealItemFormProps {
   isOpen: boolean;
@@ -68,6 +60,8 @@ interface MealItemFormProps {
   dayNumber: number;
   editItem?: DietPlan & { food_items?: FoodItem | null };
   clientConditions?: ClientConditionWithDetails[];
+  /** When provided, hides meal category & timing fields (inherited from existing group) */
+  groupContext?: MealGroupContext;
 }
 
 /**
@@ -81,13 +75,18 @@ export function MealItemForm({
   dayNumber,
   editItem,
   clientConditions = [],
+  groupContext,
 }: MealItemFormProps) {
   const isEditing = !!editItem;
+
+  // Fetch meal categories from database
+  const { mealTypes, isLoading: isLoadingMealTypes, error: mealTypesError } = useMealTypes();
+  const mealCategories = mealTypes.map((mt) => ({ value: mt.slug, label: mt.name }));
 
   // Form state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
-  const [mealCategory, setMealCategory] = useState<MealCategory>("breakfast");
+  const [mealCategory, setMealCategory] = useState<string>("breakfast");
   const [quantityGrams, setQuantityGrams] = useState<number>(100);
   const [quantityType, setQuantityType] = useState<QuantityType | null>(null);
   const [quantityNote, setQuantityNote] = useState("");
@@ -116,7 +115,12 @@ export function MealItemForm({
       setSearchQuery("");
       const food = editItem?.food_items || null;
       setSelectedFood(food);
-      setMealCategory(editItem?.meal_category || "breakfast");
+      setMealCategory(
+        groupContext?.mealCategory ||
+          editItem?.meal_category ||
+          mealCategories[0]?.value ||
+          "breakfast"
+      );
 
       // Handle quantity fields - prioritize stored quantity_grams, fall back to calculating from multiplier
       if (editItem?.quantity_grams != null) {
@@ -142,14 +146,16 @@ export function MealItemForm({
       }
 
       setNotes(editItem?.notes || "");
-      setTiming({
-        timeType: editItem?.time_type || "period",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || "morning",
-        relativeAnchor: editItem?.relative_anchor || null,
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "period",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || "morning",
+          relativeAnchor: editItem?.relative_anchor || null,
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
       setShowWarningDialog(false);
     }
   }, [isOpen, editItem]);
@@ -245,7 +251,6 @@ export function MealItemForm({
         toast.success("Meal added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update meal" : "Failed to add meal");
     }
@@ -256,6 +261,12 @@ export function MealItemForm({
 
     if (!selectedFood) {
       toast.error("Please select a food item");
+      return;
+    }
+
+    // Check for duplicate in group
+    if (!isEditing && groupContext?.existingFoodItemIds?.includes(selectedFood.id)) {
+      toast.error("This food item is already in this meal");
       return;
     }
 
@@ -302,7 +313,9 @@ export function MealItemForm({
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             {isEditing
               ? "Update the meal details below."
-              : "Add a food item to the timeline for this day."}
+              : groupContext
+                ? "Add another food item to this meal."
+                : "Add a food item to the timeline for this day."}
           </DialogDescription>
         </DialogHeader>
 
@@ -389,28 +402,42 @@ export function MealItemForm({
               )}
             </div>
 
-            {/* Meal Category */}
-            <div>
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-                Meal Category *
-              </Label>
-              <Select
-                value={mealCategory}
-                onValueChange={(value) => setMealCategory(value as MealCategory)}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEAL_CATEGORIES.map(({ value, label }) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Meal Category - hidden when adding to existing group */}
+            {!groupContext && (
+              <div>
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Meal Category *
+                </Label>
+                {isLoadingMealTypes ? (
+                  <div className="flex items-center gap-2 h-10 px-3 bg-secondary border border-border rounded-md text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Loading meal types...</span>
+                  </div>
+                ) : mealTypesError ? (
+                  <div className="flex items-center gap-2 h-10 px-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Failed to load meal types</span>
+                  </div>
+                ) : (
+                  <Select
+                    value={mealCategory}
+                    onValueChange={setMealCategory}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mealCategories.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
 
             {/* Quantity Input */}
             <div className="space-y-3">
@@ -510,13 +537,15 @@ export function MealItemForm({
               />
             </div>
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={false}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={false}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Notes */}
             <div>

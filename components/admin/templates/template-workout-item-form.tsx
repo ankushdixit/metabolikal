@@ -40,6 +40,12 @@ import type {
 } from "@/lib/database.types";
 import type { TemplateWorkoutItemWithExercise } from "@/hooks/use-template-data";
 
+/** Context passed when adding an exercise to an existing workout group */
+export interface TemplateWorkoutGroupContext {
+  timing: TimingValues;
+  existingExerciseIds?: string[];
+}
+
 // Workout sections
 const WORKOUT_SECTIONS: { value: WorkoutSection; label: string }[] = [
   { value: "warmup", label: "Warm-up" },
@@ -53,6 +59,8 @@ interface TemplateWorkoutItemFormProps {
   onSuccess: () => void;
   templateId: string;
   editItem?: TemplateWorkoutItemWithExercise;
+  /** When provided, hides timing fields (inherited from existing group) */
+  groupContext?: TemplateWorkoutGroupContext;
 }
 
 /**
@@ -64,6 +72,7 @@ export function TemplateWorkoutItemForm({
   onSuccess,
   templateId,
   editItem,
+  groupContext,
 }: TemplateWorkoutItemFormProps) {
   const isEditing = !!editItem;
 
@@ -102,14 +111,16 @@ export function TemplateWorkoutItemForm({
       setDurationMinutes(editItem?.duration_minutes || "");
       setScheduledDuration(editItem?.scheduled_duration_minutes || 30);
       setNotes(editItem?.notes || "");
-      setTiming({
-        timeType: editItem?.time_type || "period",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || "afternoon",
-        relativeAnchor: editItem?.relative_anchor || null,
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "period",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || "afternoon",
+          relativeAnchor: editItem?.relative_anchor || null,
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
     }
   }, [isOpen, editItem]);
 
@@ -164,6 +175,16 @@ export function TemplateWorkoutItemForm({
       return;
     }
 
+    // Check for duplicate in group (only for library exercises, not custom)
+    if (
+      !isEditing &&
+      selectedExercise &&
+      groupContext?.existingExerciseIds?.includes(selectedExercise.id)
+    ) {
+      toast.error("This exercise is already in this workout");
+      return;
+    }
+
     // Use a placeholder exercise_id for custom exercises (the first active exercise)
     const exerciseId = selectedExercise?.id || exercises[0]?.id;
     if (!exerciseId) {
@@ -205,7 +226,6 @@ export function TemplateWorkoutItemForm({
         toast.success("Exercise added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update exercise" : "Failed to add exercise");
     }
@@ -229,7 +249,11 @@ export function TemplateWorkoutItemForm({
             {isEditing ? "Edit" : "Add"} <span className="text-blue-400">Exercise</span>
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm">
-            {isEditing ? "Update the exercise details below." : "Add an exercise to this template."}
+            {isEditing
+              ? "Update the exercise details below."
+              : groupContext
+                ? "Add another exercise to this workout."
+                : "Add an exercise to this template."}
           </DialogDescription>
         </DialogHeader>
 
@@ -399,13 +423,15 @@ export function TemplateWorkoutItemForm({
               />
             </div>
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={false}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={false}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Notes */}
             <div>

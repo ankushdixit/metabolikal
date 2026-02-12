@@ -33,12 +33,20 @@ import type {
 } from "@/lib/database.types";
 import type { TemplateLifestyleItemWithType } from "@/hooks/use-template-data";
 
+/** Context passed when adding an activity to an existing lifestyle group */
+export interface TemplateLifestyleGroupContext {
+  timing: TimingValues;
+  existingActivityTypeIds?: string[];
+}
+
 interface TemplateLifestyleItemFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   templateId: string;
   editItem?: TemplateLifestyleItemWithType;
+  /** When provided, hides timing fields (inherited from existing group) */
+  groupContext?: TemplateLifestyleGroupContext;
 }
 
 /**
@@ -50,6 +58,7 @@ export function TemplateLifestyleItemForm({
   onSuccess,
   templateId,
   editItem,
+  groupContext,
 }: TemplateLifestyleItemFormProps) {
   const isEditing = !!editItem;
 
@@ -76,14 +85,16 @@ export function TemplateLifestyleItemForm({
         editItem?.target_value || editItem?.lifestyle_activity_types?.default_target_value || ""
       );
       setNotes(editItem?.notes || "");
-      setTiming({
-        timeType: editItem?.time_type || "all_day",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || null,
-        relativeAnchor: editItem?.relative_anchor || null,
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "all_day",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || null,
+          relativeAnchor: editItem?.relative_anchor || null,
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
     }
   }, [isOpen, editItem]);
 
@@ -135,6 +146,12 @@ export function TemplateLifestyleItemForm({
       return;
     }
 
+    // Check for duplicate in group
+    if (!isEditing && groupContext?.existingActivityTypeIds?.includes(selectedActivity.id)) {
+      toast.error("This activity is already in this group");
+      return;
+    }
+
     const data: TemplateLifestyleItemInsert = {
       template_id: templateId,
       lifestyle_activity_type_id: selectedActivity.id,
@@ -164,7 +181,6 @@ export function TemplateLifestyleItemForm({
         toast.success("Activity added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update activity" : "Failed to add activity");
     }
@@ -190,7 +206,9 @@ export function TemplateLifestyleItemForm({
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             {isEditing
               ? "Update the activity details below."
-              : "Add a lifestyle activity to this template."}
+              : groupContext
+                ? "Add another activity to this group."
+                : "Add a lifestyle activity to this template."}
           </DialogDescription>
         </DialogHeader>
 
@@ -302,13 +320,15 @@ export function TemplateLifestyleItemForm({
               </div>
             )}
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={true}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={true}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Notes */}
             <div>

@@ -24,6 +24,12 @@ import { Label } from "@/components/ui/label";
 import { TimingSelector, type TimingValues } from "./timing-selector";
 import type { Supplement, SupplementPlan, SupplementPlanInsert } from "@/lib/database.types";
 
+/** Context passed when adding a supplement to an existing group */
+export interface SupplementGroupContext {
+  timing: TimingValues;
+  existingSupplementIds?: string[];
+}
+
 interface SupplementItemFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,6 +37,8 @@ interface SupplementItemFormProps {
   clientId: string;
   dayNumber: number;
   editItem?: SupplementPlan & { supplements?: Supplement | null };
+  /** When provided, hides timing fields (inherited from existing group) */
+  groupContext?: SupplementGroupContext;
 }
 
 /**
@@ -43,6 +51,7 @@ export function SupplementItemForm({
   clientId,
   dayNumber,
   editItem,
+  groupContext,
 }: SupplementItemFormProps) {
   const isEditing = !!editItem;
 
@@ -67,14 +76,16 @@ export function SupplementItemForm({
       setSelectedSupplement(editItem?.supplements || null);
       setDosage(editItem?.dosage || editItem?.supplements?.default_dosage || 1);
       setNotes(editItem?.notes || "");
-      setTiming({
-        timeType: editItem?.time_type || "relative",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || null,
-        relativeAnchor: editItem?.relative_anchor || "breakfast",
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "relative",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || null,
+          relativeAnchor: editItem?.relative_anchor || "breakfast",
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
     }
   }, [isOpen, editItem]);
 
@@ -118,6 +129,12 @@ export function SupplementItemForm({
       return;
     }
 
+    // Check for duplicate in group
+    if (!isEditing && groupContext?.existingSupplementIds?.includes(selectedSupplement.id)) {
+      toast.error("This supplement is already in this group");
+      return;
+    }
+
     const data: SupplementPlanInsert = {
       client_id: clientId,
       supplement_id: selectedSupplement.id,
@@ -149,7 +166,6 @@ export function SupplementItemForm({
         toast.success("Supplement added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update supplement" : "Failed to add supplement");
     }
@@ -175,7 +191,9 @@ export function SupplementItemForm({
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             {isEditing
               ? "Update the supplement details below."
-              : "Add a supplement to the timeline for this day."}
+              : groupContext
+                ? "Add another supplement to this group."
+                : "Add a supplement to the timeline for this day."}
           </DialogDescription>
         </DialogHeader>
 
@@ -265,13 +283,15 @@ export function SupplementItemForm({
               </div>
             </div>
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={false}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={false}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Notes */}
             <div>
