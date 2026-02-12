@@ -22,6 +22,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { matchesScheduling } from "@/lib/utils/timeline";
 import type {
   Profile,
   DietPlan,
@@ -110,6 +111,20 @@ export default function UnifiedTimelinePlanEditorPage() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [editingItem, setEditingItem] = useState<ExtendedTimelineItem | null>(null);
   const [viewingGroupedItem, setViewingGroupedItem] = useState<ExtendedTimelineItem | null>(null);
+  const [mealGroupContext, setMealGroupContext] = useState<
+    import("@/components/admin/timeline-editor/meal-item-form").MealGroupContext | undefined
+  >(undefined);
+  const [supplementGroupContext, setSupplementGroupContext] = useState<
+    | import("@/components/admin/timeline-editor/supplement-item-form").SupplementGroupContext
+    | undefined
+  >(undefined);
+  const [workoutGroupContext, setWorkoutGroupContext] = useState<
+    import("@/components/admin/timeline-editor/workout-item-form").WorkoutGroupContext | undefined
+  >(undefined);
+  const [lifestyleGroupContext, setLifestyleGroupContext] = useState<
+    | import("@/components/admin/timeline-editor/lifestyle-item-form").LifestyleGroupContext
+    | undefined
+  >(undefined);
 
   // Fetch client profile
   const profileQuery = useOne<Profile>({
@@ -308,6 +323,10 @@ export default function UnifiedTimelinePlanEditorPage() {
   const handleSelectItemType = useCallback((type: TimelineItemType) => {
     // Clear any previous editing item so we're in "add" mode
     setEditingItem(null);
+    setMealGroupContext(undefined);
+    setSupplementGroupContext(undefined);
+    setWorkoutGroupContext(undefined);
+    setLifestyleGroupContext(undefined);
     switch (type) {
       case "meal":
         setActiveModal("addMeal");
@@ -335,6 +354,10 @@ export default function UnifiedTimelinePlanEditorPage() {
   const closeModal = useCallback(() => {
     setActiveModal(null);
     setEditingItem(null);
+    setMealGroupContext(undefined);
+    setSupplementGroupContext(undefined);
+    setWorkoutGroupContext(undefined);
+    setLifestyleGroupContext(undefined);
   }, []);
 
   const handleModalSuccess = useCallback(() => {
@@ -342,6 +365,92 @@ export default function UnifiedTimelinePlanEditorPage() {
     closeModal();
     setSelectedItemIds(new Set()); // Clear selection after copy/delete operations
   }, [refetchAll, closeModal]);
+
+  // Meal form handlers — return to grouped modal when adding to a group
+  const handleMealFormSuccess = useCallback(() => {
+    refetchAll();
+    if (mealGroupContext) {
+      // Return to the grouped meal modal so the coach can add more items
+      setMealGroupContext(undefined);
+      setActiveModal("groupedMeal");
+    } else {
+      closeModal();
+      setSelectedItemIds(new Set());
+    }
+  }, [refetchAll, mealGroupContext, closeModal]);
+
+  const handleMealFormClose = useCallback(() => {
+    if (mealGroupContext) {
+      // User cancelled — return to grouped meal modal
+      setMealGroupContext(undefined);
+      setActiveModal("groupedMeal");
+    } else {
+      closeModal();
+    }
+  }, [mealGroupContext, closeModal]);
+
+  // Supplement form handlers — return to grouped modal when adding to a group
+  const handleSupplementFormSuccess = useCallback(() => {
+    refetchAll();
+    if (supplementGroupContext) {
+      setSupplementGroupContext(undefined);
+      setActiveModal("groupedSupplement");
+    } else {
+      closeModal();
+      setSelectedItemIds(new Set());
+    }
+  }, [refetchAll, supplementGroupContext, closeModal]);
+
+  const handleSupplementFormClose = useCallback(() => {
+    if (supplementGroupContext) {
+      setSupplementGroupContext(undefined);
+      setActiveModal("groupedSupplement");
+    } else {
+      closeModal();
+    }
+  }, [supplementGroupContext, closeModal]);
+
+  // Workout form handlers — return to grouped modal when adding to a group
+  const handleWorkoutFormSuccess = useCallback(() => {
+    refetchAll();
+    if (workoutGroupContext) {
+      setWorkoutGroupContext(undefined);
+      setActiveModal("groupedWorkout");
+    } else {
+      closeModal();
+      setSelectedItemIds(new Set());
+    }
+  }, [refetchAll, workoutGroupContext, closeModal]);
+
+  const handleWorkoutFormClose = useCallback(() => {
+    if (workoutGroupContext) {
+      setWorkoutGroupContext(undefined);
+      setActiveModal("groupedWorkout");
+    } else {
+      closeModal();
+    }
+  }, [workoutGroupContext, closeModal]);
+
+  // Lifestyle form handlers — return to grouped modal when adding to a group
+  const handleLifestyleFormSuccess = useCallback(() => {
+    refetchAll();
+    if (lifestyleGroupContext) {
+      setLifestyleGroupContext(undefined);
+      setActiveModal("groupedLifestyle");
+    } else {
+      closeModal();
+      setSelectedItemIds(new Set());
+    }
+  }, [refetchAll, lifestyleGroupContext, closeModal]);
+
+  const handleLifestyleFormClose = useCallback(() => {
+    if (lifestyleGroupContext) {
+      setLifestyleGroupContext(undefined);
+      setActiveModal("groupedLifestyle");
+    } else {
+      closeModal();
+    }
+  }, [lifestyleGroupContext, closeModal]);
 
   // Item click handler - opens edit modal
   const handleItemClick = useCallback((item: ExtendedTimelineItem) => {
@@ -405,14 +514,54 @@ export default function UnifiedTimelinePlanEditorPage() {
   const handleAddItemFromGroupedMeal = useCallback(() => {
     // Clear editing item so we're in "add" mode, not "edit" mode
     setEditingItem(null);
+    // Capture timing and meal category from the grouped meal so the form can inherit them
+    if (viewingGroupedItem) {
+      const firstPlan = (viewingGroupedItem.groupedItems as DietPlanWithFood[])?.[0];
+      const existingFoodItemIds = rawDietPlans
+        .filter(
+          (p) =>
+            p.meal_category === (firstPlan?.meal_category || "breakfast") &&
+            matchesScheduling(p, viewingGroupedItem.scheduling)
+        )
+        .map((p) => p.food_item_id)
+        .filter((id): id is string => id != null);
+      setMealGroupContext({
+        mealCategory: firstPlan?.meal_category || "breakfast",
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "period",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || "morning",
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingFoodItemIds,
+      });
+    }
     setActiveModal("addMeal");
-  }, []);
+  }, [viewingGroupedItem, rawDietPlans]);
 
   const handleAddItemFromGroupedWorkout = useCallback(() => {
-    // Clear editing item so we're in "add" mode, not "edit" mode
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingExerciseIds = rawWorkoutPlans
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.exercise_id)
+        .filter((id): id is string => id != null);
+      setWorkoutGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "period",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || "afternoon",
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingExerciseIds,
+      });
+    }
     setActiveModal("addWorkout");
-  }, []);
+  }, [viewingGroupedItem, rawWorkoutPlans]);
 
   // Handlers for editing items from grouped modal
   const handleEditItemFromGroupedMeal = useCallback(
@@ -506,13 +655,47 @@ export default function UnifiedTimelinePlanEditorPage() {
   // Handlers for adding items from grouped modals
   const handleAddItemFromGroupedSupplement = useCallback(() => {
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingSupplementIds = rawSupplementPlans
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.supplement_id)
+        .filter((id): id is string => id != null);
+      setSupplementGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "relative",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || null,
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || "breakfast",
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingSupplementIds,
+      });
+    }
     setActiveModal("addSupplement");
-  }, []);
+  }, [viewingGroupedItem, rawSupplementPlans]);
 
   const handleAddItemFromGroupedLifestyle = useCallback(() => {
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingActivityTypeIds = rawLifestyleActivityPlans
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.activity_type_id)
+        .filter((id): id is string => id != null);
+      setLifestyleGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "all_day",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || null,
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingActivityTypeIds,
+      });
+    }
     setActiveModal("addLifestyle");
-  }, []);
+  }, [viewingGroupedItem, rawLifestyleActivityPlans]);
 
   // Copy selected items
   const handleCopySelected = useCallback(() => {
@@ -793,39 +976,43 @@ export default function UnifiedTimelinePlanEditorPage() {
 
       <MealItemForm
         isOpen={activeModal === "addMeal" || activeModal === "editMeal"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleMealFormClose}
+        onSuccess={handleMealFormSuccess}
         clientId={clientId}
         dayNumber={selectedDay}
         editItem={editDietPlan}
         clientConditions={clientConditions}
+        groupContext={mealGroupContext}
       />
 
       <SupplementItemForm
         isOpen={activeModal === "addSupplement" || activeModal === "editSupplement"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleSupplementFormClose}
+        onSuccess={handleSupplementFormSuccess}
         clientId={clientId}
         dayNumber={selectedDay}
         editItem={editSupplementPlan}
+        groupContext={supplementGroupContext}
       />
 
       <WorkoutItemForm
         isOpen={activeModal === "addWorkout" || activeModal === "editWorkout"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleWorkoutFormClose}
+        onSuccess={handleWorkoutFormSuccess}
         clientId={clientId}
         dayNumber={selectedDay}
         editItem={editWorkoutPlan}
+        groupContext={workoutGroupContext}
       />
 
       <LifestyleItemForm
         isOpen={activeModal === "addLifestyle" || activeModal === "editLifestyle"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleLifestyleFormClose}
+        onSuccess={handleLifestyleFormSuccess}
         clientId={clientId}
         dayNumber={selectedDay}
         editItem={editLifestylePlan}
+        groupContext={lifestyleGroupContext}
       />
 
       {/* Grouped Item Modals */}
@@ -835,6 +1022,7 @@ export default function UnifiedTimelinePlanEditorPage() {
         onAddItem={handleAddItemFromGroupedMeal}
         onEditItem={handleEditItemFromGroupedMeal}
         item={viewingGroupedItem}
+        rawDietPlans={rawDietPlans}
       />
 
       <GroupedWorkoutModal
@@ -843,6 +1031,7 @@ export default function UnifiedTimelinePlanEditorPage() {
         onAddItem={handleAddItemFromGroupedWorkout}
         onEditItem={handleEditItemFromGroupedWorkout}
         item={viewingGroupedItem}
+        rawWorkoutPlans={rawWorkoutPlans}
       />
 
       <GroupedSupplementModal
@@ -851,6 +1040,7 @@ export default function UnifiedTimelinePlanEditorPage() {
         onAddItem={handleAddItemFromGroupedSupplement}
         onEditItem={handleEditItemFromGroupedSupplement}
         item={viewingGroupedItem}
+        rawSupplementPlans={rawSupplementPlans}
       />
 
       <GroupedLifestyleModal
@@ -859,6 +1049,7 @@ export default function UnifiedTimelinePlanEditorPage() {
         onAddItem={handleAddItemFromGroupedLifestyle}
         onEditItem={handleEditItemFromGroupedLifestyle}
         item={viewingGroupedItem}
+        rawLifestyleActivityPlans={rawLifestyleActivityPlans}
       />
 
       <CopyDayModal

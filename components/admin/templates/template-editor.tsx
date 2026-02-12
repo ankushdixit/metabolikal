@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { matchesScheduling } from "@/lib/utils/timeline";
 import { TimelineGrid } from "@/components/admin/timeline-editor/timeline-grid";
 import { AddItemModal } from "@/components/admin/timeline-editor/add-item-modal";
 import {
@@ -73,6 +74,18 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [viewingGroupedItem, setViewingGroupedItem] = useState<ExtendedTemplateTimelineItem | null>(
     null
   );
+  const [mealGroupContext, setMealGroupContext] = useState<
+    import("./template-meal-item-form").TemplateMealGroupContext | undefined
+  >(undefined);
+  const [supplementGroupContext, setSupplementGroupContext] = useState<
+    import("./template-supplement-item-form").TemplateSupplementGroupContext | undefined
+  >(undefined);
+  const [workoutGroupContext, setWorkoutGroupContext] = useState<
+    import("./template-workout-item-form").TemplateWorkoutGroupContext | undefined
+  >(undefined);
+  const [lifestyleGroupContext, setLifestyleGroupContext] = useState<
+    import("./template-lifestyle-item-form").TemplateLifestyleGroupContext | undefined
+  >(undefined);
 
   // Fetch template data
   const {
@@ -109,6 +122,10 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   const handleSelectItemType = useCallback((type: TimelineItemType) => {
     setEditingItem(null);
+    setMealGroupContext(undefined);
+    setSupplementGroupContext(undefined);
+    setWorkoutGroupContext(undefined);
+    setLifestyleGroupContext(undefined);
     switch (type) {
       case "meal":
         setActiveModal("addMeal");
@@ -129,12 +146,91 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
     setActiveModal(null);
     setEditingItem(null);
     setViewingGroupedItem(null);
+    setMealGroupContext(undefined);
+    setSupplementGroupContext(undefined);
+    setWorkoutGroupContext(undefined);
+    setLifestyleGroupContext(undefined);
   }, []);
 
-  const handleModalSuccess = useCallback(() => {
+  // Meal form handlers — return to grouped modal when adding to a group
+  const handleMealFormSuccess = useCallback(() => {
     refetchAll();
-    closeModal();
-  }, [refetchAll, closeModal]);
+    if (mealGroupContext) {
+      setMealGroupContext(undefined);
+      setActiveModal("groupedMeal");
+    } else {
+      closeModal();
+    }
+  }, [refetchAll, mealGroupContext, closeModal]);
+
+  const handleMealFormClose = useCallback(() => {
+    if (mealGroupContext) {
+      setMealGroupContext(undefined);
+      setActiveModal("groupedMeal");
+    } else {
+      closeModal();
+    }
+  }, [mealGroupContext, closeModal]);
+
+  // Supplement form handlers — return to grouped modal when adding to a group
+  const handleSupplementFormSuccess = useCallback(() => {
+    refetchAll();
+    if (supplementGroupContext) {
+      setSupplementGroupContext(undefined);
+      setActiveModal("groupedSupplement");
+    } else {
+      closeModal();
+    }
+  }, [refetchAll, supplementGroupContext, closeModal]);
+
+  const handleSupplementFormClose = useCallback(() => {
+    if (supplementGroupContext) {
+      setSupplementGroupContext(undefined);
+      setActiveModal("groupedSupplement");
+    } else {
+      closeModal();
+    }
+  }, [supplementGroupContext, closeModal]);
+
+  // Workout form handlers — return to grouped modal when adding to a group
+  const handleWorkoutFormSuccess = useCallback(() => {
+    refetchAll();
+    if (workoutGroupContext) {
+      setWorkoutGroupContext(undefined);
+      setActiveModal("groupedWorkout");
+    } else {
+      closeModal();
+    }
+  }, [refetchAll, workoutGroupContext, closeModal]);
+
+  const handleWorkoutFormClose = useCallback(() => {
+    if (workoutGroupContext) {
+      setWorkoutGroupContext(undefined);
+      setActiveModal("groupedWorkout");
+    } else {
+      closeModal();
+    }
+  }, [workoutGroupContext, closeModal]);
+
+  // Lifestyle form handlers — return to grouped modal when adding to a group
+  const handleLifestyleFormSuccess = useCallback(() => {
+    refetchAll();
+    if (lifestyleGroupContext) {
+      setLifestyleGroupContext(undefined);
+      setActiveModal("groupedLifestyle");
+    } else {
+      closeModal();
+    }
+  }, [refetchAll, lifestyleGroupContext, closeModal]);
+
+  const handleLifestyleFormClose = useCallback(() => {
+    if (lifestyleGroupContext) {
+      setLifestyleGroupContext(undefined);
+      setActiveModal("groupedLifestyle");
+    } else {
+      closeModal();
+    }
+  }, [lifestyleGroupContext, closeModal]);
 
   // Item click handler - opens edit modal
   const handleItemClick = useCallback((item: ExtendedTemplateTimelineItem) => {
@@ -179,23 +275,98 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
   // Handlers for adding items from grouped modals
   const handleAddItemFromGroupedMeal = useCallback(() => {
     setEditingItem(null);
+    // Capture timing and meal category from the grouped meal so the form can inherit them
+    if (viewingGroupedItem) {
+      const firstItem = (viewingGroupedItem.groupedItems as TemplateDietItemWithFood[])?.[0];
+      const existingFoodItemIds = rawDietItems
+        .filter(
+          (p) =>
+            p.meal_category === (firstItem?.meal_category || "breakfast") &&
+            matchesScheduling(p, viewingGroupedItem.scheduling)
+        )
+        .map((p) => p.food_item_id)
+        .filter((id): id is string => id != null);
+      setMealGroupContext({
+        mealCategory: firstItem?.meal_category || "breakfast",
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "period",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || "morning",
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingFoodItemIds,
+      });
+    }
     setActiveModal("addMeal");
-  }, []);
+  }, [viewingGroupedItem, rawDietItems]);
 
   const handleAddItemFromGroupedWorkout = useCallback(() => {
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingExerciseIds = rawWorkoutItems
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.exercise_id)
+        .filter((id): id is string => id != null);
+      setWorkoutGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "period",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || "afternoon",
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingExerciseIds,
+      });
+    }
     setActiveModal("addWorkout");
-  }, []);
+  }, [viewingGroupedItem, rawWorkoutItems]);
 
   const handleAddItemFromGroupedSupplement = useCallback(() => {
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingSupplementIds = rawSupplementItems
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.supplement_id)
+        .filter((id): id is string => id != null);
+      setSupplementGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "relative",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || null,
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || "breakfast",
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingSupplementIds,
+      });
+    }
     setActiveModal("addSupplement");
-  }, []);
+  }, [viewingGroupedItem, rawSupplementItems]);
 
   const handleAddItemFromGroupedLifestyle = useCallback(() => {
     setEditingItem(null);
+    if (viewingGroupedItem) {
+      const existingActivityTypeIds = rawLifestyleItems
+        .filter((p) => matchesScheduling(p, viewingGroupedItem.scheduling))
+        .map((p) => p.lifestyle_activity_type_id)
+        .filter((id): id is string => id != null);
+      setLifestyleGroupContext({
+        timing: {
+          timeType: viewingGroupedItem.scheduling.time_type || "all_day",
+          timeStart: viewingGroupedItem.scheduling.time_start || null,
+          timeEnd: viewingGroupedItem.scheduling.time_end || null,
+          timePeriod: viewingGroupedItem.scheduling.time_period || null,
+          relativeAnchor: viewingGroupedItem.scheduling.relative_anchor || null,
+          relativeOffsetMinutes: viewingGroupedItem.scheduling.relative_offset_minutes || 0,
+        },
+        existingActivityTypeIds,
+      });
+    }
     setActiveModal("addLifestyle");
-  }, []);
+  }, [viewingGroupedItem, rawLifestyleItems]);
 
   // Handlers for editing items from grouped modal
   const handleEditItemFromGroupedMeal = useCallback(
@@ -416,34 +587,38 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
       {/* Item Forms */}
       <TemplateMealItemForm
         isOpen={activeModal === "addMeal" || activeModal === "editMeal"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleMealFormClose}
+        onSuccess={handleMealFormSuccess}
         templateId={templateId}
         editItem={editDietItem}
+        groupContext={mealGroupContext}
       />
 
       <TemplateSupplementItemForm
         isOpen={activeModal === "addSupplement" || activeModal === "editSupplement"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleSupplementFormClose}
+        onSuccess={handleSupplementFormSuccess}
         templateId={templateId}
         editItem={editSupplementItem}
+        groupContext={supplementGroupContext}
       />
 
       <TemplateWorkoutItemForm
         isOpen={activeModal === "addWorkout" || activeModal === "editWorkout"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleWorkoutFormClose}
+        onSuccess={handleWorkoutFormSuccess}
         templateId={templateId}
         editItem={editWorkoutItem}
+        groupContext={workoutGroupContext}
       />
 
       <TemplateLifestyleItemForm
         isOpen={activeModal === "addLifestyle" || activeModal === "editLifestyle"}
-        onClose={closeModal}
-        onSuccess={handleModalSuccess}
+        onClose={handleLifestyleFormClose}
+        onSuccess={handleLifestyleFormSuccess}
         templateId={templateId}
         editItem={editLifestyleItem}
+        groupContext={lifestyleGroupContext}
       />
 
       {/* Grouped Modals */}
@@ -453,6 +628,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
         onAddItem={handleAddItemFromGroupedMeal}
         onEditItem={handleEditItemFromGroupedMeal}
         item={viewingGroupedItem}
+        rawDietItems={rawDietItems}
       />
 
       <TemplateGroupedWorkoutModal
@@ -461,6 +637,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
         onAddItem={handleAddItemFromGroupedWorkout}
         onEditItem={handleEditItemFromGroupedWorkout}
         item={viewingGroupedItem}
+        rawWorkoutItems={rawWorkoutItems}
       />
 
       <TemplateGroupedSupplementModal
@@ -469,6 +646,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
         onAddItem={handleAddItemFromGroupedSupplement}
         onEditItem={handleEditItemFromGroupedSupplement}
         item={viewingGroupedItem}
+        rawSupplementItems={rawSupplementItems}
       />
 
       <TemplateGroupedLifestyleModal
@@ -477,6 +655,7 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
         onAddItem={handleAddItemFromGroupedLifestyle}
         onEditItem={handleEditItemFromGroupedLifestyle}
         item={viewingGroupedItem}
+        rawLifestyleItems={rawLifestyleItems}
       />
     </div>
   );

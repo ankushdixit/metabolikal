@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete, useInvalidate } from "@refinedev/core";
 import { Activity, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,12 +19,41 @@ import type {
 } from "@/hooks/use-template-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
 
+/**
+ * Check if a template lifestyle item matches the group criteria (timing)
+ */
+function itemMatchesGroup(
+  plan: TemplateLifestyleItemWithType,
+  item: ExtendedTemplateTimelineItem
+): boolean {
+  const s = item.scheduling;
+  if (plan.time_type !== s.time_type) return false;
+
+  switch (s.time_type) {
+    case "period":
+      return plan.time_period === s.time_period;
+    case "fixed":
+      return plan.time_start === s.time_start;
+    case "relative":
+      return (
+        plan.relative_anchor === s.relative_anchor &&
+        (plan.relative_offset_minutes || 0) === (s.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
 interface TemplateGroupedLifestyleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: () => void;
   onEditItem: (item: TemplateLifestyleItemWithType) => void;
   item: ExtendedTemplateTimelineItem | null;
+  /** Live lifestyle items from the hook — used to keep the list fresh after add/delete */
+  rawLifestyleItems?: TemplateLifestyleItemWithType[];
 }
 
 /**
@@ -50,12 +79,28 @@ export function TemplateGroupedLifestyleModal({
   onAddItem,
   onEditItem,
   item,
+  rawLifestyleItems,
 }: TemplateGroupedLifestyleModalProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const invalidate = useInvalidate();
   const { mutateAsync: deleteItem } = useDelete();
 
-  const groupedItems = (item?.groupedItems as TemplateLifestyleItemWithType[]) || [];
+  useEffect(() => {
+    if (isOpen) setDeletedIds(new Set());
+  }, [isOpen, item?.id]);
+
+  // Derive items from live data when available, fall back to stale prop
+  const groupedItems = useMemo(() => {
+    if (rawLifestyleItems && item) {
+      return rawLifestyleItems
+        .filter((p) => itemMatchesGroup(p, item) && !deletedIds.has(p.id))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
+    return ((item?.groupedItems as TemplateLifestyleItemWithType[]) || []).filter(
+      (p) => !deletedIds.has(p.id)
+    );
+  }, [rawLifestyleItems, item, deletedIds]);
 
   const handleDelete = async (itemId: string) => {
     setDeletingId(itemId);
@@ -70,7 +115,10 @@ export function TemplateGroupedLifestyleModal({
       });
       toast.success("Activity removed");
 
-      // Close modal if this was the last item
+      const newDeletedIds = new Set(deletedIds);
+      newDeletedIds.add(itemId);
+      setDeletedIds(newDeletedIds);
+
       if (groupedItems.length <= 1) {
         onClose();
       }
@@ -98,7 +146,7 @@ export function TemplateGroupedLifestyleModal({
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
             <span>
-              {item.itemCount} activit{item.itemCount !== 1 ? "ies" : "y"}
+              {groupedItems.length} activit{groupedItems.length !== 1 ? "ies" : "y"}
             </span>
             <span>{timeText}</span>
           </div>

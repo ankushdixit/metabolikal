@@ -43,6 +43,12 @@ const WORKOUT_SECTIONS: { value: WorkoutSection; label: string }[] = [
   { value: "cooldown", label: "Cool-down" },
 ];
 
+/** Context passed when adding an exercise to an existing workout group */
+export interface WorkoutGroupContext {
+  timing: TimingValues;
+  existingExerciseIds?: string[];
+}
+
 interface WorkoutItemFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,6 +56,8 @@ interface WorkoutItemFormProps {
   clientId: string;
   dayNumber: number;
   editItem?: WorkoutPlan & { exercises?: Exercise | null };
+  /** When provided, hides timing fields (inherited from existing group) */
+  groupContext?: WorkoutGroupContext;
 }
 
 /**
@@ -62,6 +70,7 @@ export function WorkoutItemForm({
   clientId,
   dayNumber,
   editItem,
+  groupContext,
 }: WorkoutItemFormProps) {
   const isEditing = !!editItem;
 
@@ -100,14 +109,16 @@ export function WorkoutItemForm({
       setDurationMinutes(editItem?.duration_minutes || "");
       setScheduledDuration(editItem?.scheduled_duration_minutes || 30);
       setInstructions(editItem?.instructions || "");
-      setTiming({
-        timeType: editItem?.time_type || "period",
-        timeStart: editItem?.time_start || null,
-        timeEnd: editItem?.time_end || null,
-        timePeriod: editItem?.time_period || "afternoon",
-        relativeAnchor: editItem?.relative_anchor || null,
-        relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
-      });
+      setTiming(
+        groupContext?.timing || {
+          timeType: editItem?.time_type || "period",
+          timeStart: editItem?.time_start || null,
+          timeEnd: editItem?.time_end || null,
+          timePeriod: editItem?.time_period || "afternoon",
+          relativeAnchor: editItem?.relative_anchor || null,
+          relativeOffsetMinutes: editItem?.relative_offset_minutes || 0,
+        }
+      );
     }
   }, [isOpen, editItem]);
 
@@ -164,6 +175,16 @@ export function WorkoutItemForm({
       return;
     }
 
+    // Check for duplicate in group (only for library exercises, not custom)
+    if (
+      !isEditing &&
+      selectedExercise &&
+      groupContext?.existingExerciseIds?.includes(selectedExercise.id)
+    ) {
+      toast.error("This exercise is already in this workout");
+      return;
+    }
+
     const data: WorkoutPlanInsert = {
       client_id: clientId,
       day_number: dayNumber,
@@ -200,7 +221,6 @@ export function WorkoutItemForm({
         toast.success("Exercise added successfully");
       }
       onSuccess();
-      onClose();
     } catch {
       toast.error(isEditing ? "Failed to update exercise" : "Failed to add exercise");
     }
@@ -226,7 +246,9 @@ export function WorkoutItemForm({
           <DialogDescription className="text-muted-foreground font-bold text-sm">
             {isEditing
               ? "Update the exercise details below."
-              : "Add an exercise to the timeline for this day."}
+              : groupContext
+                ? "Add another exercise to this workout."
+                : "Add an exercise to the timeline for this day."}
           </DialogDescription>
         </DialogHeader>
 
@@ -417,13 +439,15 @@ export function WorkoutItemForm({
               </p>
             </div>
 
-            {/* Timing */}
-            <TimingSelector
-              values={timing}
-              onChange={setTiming}
-              showAllDay={false}
-              disabled={isSubmitting}
-            />
+            {/* Timing - hidden when adding to existing group */}
+            {!groupContext && (
+              <TimingSelector
+                values={timing}
+                onChange={setTiming}
+                showAllDay={false}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Instructions */}
             <div>

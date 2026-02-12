@@ -403,6 +403,49 @@ export function getTimePeriodIcon(period: TimePeriod): string {
 }
 
 // =============================================================================
+// SCHEDULING MATCHING
+// =============================================================================
+
+/**
+ * Check if an item's scheduling fields match a given scheduling object.
+ * Used to determine group membership (e.g., which items belong to the same meal group).
+ */
+export function matchesScheduling(
+  item: {
+    time_type?: string | null;
+    time_period?: string | null;
+    time_start?: string | null;
+    relative_anchor?: string | null;
+    relative_offset_minutes?: number | null;
+  },
+  scheduling: {
+    time_type?: string | null;
+    time_period?: string | null;
+    time_start?: string | null;
+    relative_anchor?: string | null;
+    relative_offset_minutes?: number | null;
+  }
+): boolean {
+  if (item.time_type !== scheduling.time_type) return false;
+
+  switch (scheduling.time_type) {
+    case "period":
+      return item.time_period === scheduling.time_period;
+    case "fixed":
+      return item.time_start === scheduling.time_start;
+    case "relative":
+      return (
+        item.relative_anchor === scheduling.relative_anchor &&
+        (item.relative_offset_minutes || 0) === (scheduling.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
+// =============================================================================
 // VALIDATION HELPERS
 // =============================================================================
 

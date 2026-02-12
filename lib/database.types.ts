@@ -12,13 +12,9 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type UserRole = "admin" | "client" | "challenger";
 
-export type MealCategory =
-  | "pre-workout"
-  | "post-workout"
-  | "breakfast"
-  | "lunch"
-  | "evening-snack"
-  | "dinner";
+// MealCategory is now dynamic — values come from the meal_types table.
+// Using `string` allows any database-configured meal type to be used.
+export type MealCategory = string;
 
 export type WorkoutSection = "warmup" | "main" | "cooldown";
 

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete, useInvalidate } from "@refinedev/core";
 import { Utensils, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,12 +19,44 @@ import type {
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
 import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
 
+/**
+ * Check if a template diet item matches the group criteria (meal category + timing)
+ */
+function itemMatchesGroup(
+  plan: TemplateDietItemWithFood,
+  item: ExtendedTemplateTimelineItem
+): boolean {
+  const targetCategory = (item.groupedItems as TemplateDietItemWithFood[])?.[0]?.meal_category;
+  if (plan.meal_category !== targetCategory) return false;
+
+  const s = item.scheduling;
+  if (plan.time_type !== s.time_type) return false;
+
+  switch (s.time_type) {
+    case "period":
+      return plan.time_period === s.time_period;
+    case "fixed":
+      return plan.time_start === s.time_start;
+    case "relative":
+      return (
+        plan.relative_anchor === s.relative_anchor &&
+        (plan.relative_offset_minutes || 0) === (s.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
 interface TemplateGroupedMealModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: () => void;
   onEditItem: (item: TemplateDietItemWithFood) => void;
   item: ExtendedTemplateTimelineItem | null;
+  /** Live diet items from the hook — used to keep the list fresh after add/delete */
+  rawDietItems?: TemplateDietItemWithFood[];
 }
 
 /**
@@ -36,12 +68,31 @@ export function TemplateGroupedMealModal({
   onAddItem,
   onEditItem,
   item,
+  rawDietItems,
 }: TemplateGroupedMealModalProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const invalidate = useInvalidate();
   const { mutateAsync: deleteItem } = useDelete();
 
-  const groupedItems = (item?.groupedItems as TemplateDietItemWithFood[]) || [];
+  // Reset deleted IDs when the modal opens with a new item
+  useEffect(() => {
+    if (isOpen) {
+      setDeletedIds(new Set());
+    }
+  }, [isOpen, item?.id]);
+
+  // Derive items from live data when available, fall back to stale prop
+  const groupedItems = useMemo(() => {
+    if (rawDietItems && item) {
+      return rawDietItems
+        .filter((p) => itemMatchesGroup(p, item) && !deletedIds.has(p.id))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
+    return ((item?.groupedItems as TemplateDietItemWithFood[]) || []).filter(
+      (p) => !deletedIds.has(p.id)
+    );
+  }, [rawDietItems, item, deletedIds]);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -82,7 +133,12 @@ export function TemplateGroupedMealModal({
       });
       toast.success("Food item removed");
 
-      // Close modal if this was the last item
+      // Track deletion locally for immediate UI update
+      const newDeletedIds = new Set(deletedIds);
+      newDeletedIds.add(itemId);
+      setDeletedIds(newDeletedIds);
+
+      // Close modal if this was the last visible item
       if (groupedItems.length <= 1) {
         onClose();
       }
@@ -109,7 +165,9 @@ export function TemplateGroupedMealModal({
             {item.title}
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-            <span>{item.itemCount} items</span>
+            <span>
+              {groupedItems.length} {groupedItems.length === 1 ? "item" : "items"}
+            </span>
             <span>{timeText}</span>
           </div>
         </DialogHeader>

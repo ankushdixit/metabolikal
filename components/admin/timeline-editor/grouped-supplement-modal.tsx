@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete, useInvalidate } from "@refinedev/core";
 import { Pill, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,12 +15,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { SupplementPlanWithSupplement, ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
 
+/**
+ * Check if a supplement plan matches the group criteria (timing)
+ */
+function planMatchesGroup(plan: SupplementPlanWithSupplement, item: ExtendedTimelineItem): boolean {
+  const s = item.scheduling;
+  if (plan.time_type !== s.time_type) return false;
+
+  switch (s.time_type) {
+    case "period":
+      return plan.time_period === s.time_period;
+    case "fixed":
+      return plan.time_start === s.time_start;
+    case "relative":
+      return (
+        plan.relative_anchor === s.relative_anchor &&
+        (plan.relative_offset_minutes || 0) === (s.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
 interface GroupedSupplementModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: () => void;
   onEditItem: (plan: SupplementPlanWithSupplement) => void;
   item: ExtendedTimelineItem | null;
+  /** Live supplement plans from the hook — used to keep the list fresh after add/delete */
+  rawSupplementPlans?: SupplementPlanWithSupplement[];
 }
 
 /**
@@ -41,12 +67,28 @@ export function GroupedSupplementModal({
   onAddItem,
   onEditItem,
   item,
+  rawSupplementPlans,
 }: GroupedSupplementModalProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const invalidate = useInvalidate();
   const { mutateAsync: deletePlan } = useDelete();
 
-  const groupedPlans = (item?.groupedItems as SupplementPlanWithSupplement[]) || [];
+  useEffect(() => {
+    if (isOpen) setDeletedIds(new Set());
+  }, [isOpen, item?.id]);
+
+  // Derive items from live data when available, fall back to stale prop
+  const groupedPlans = useMemo(() => {
+    if (rawSupplementPlans && item) {
+      return rawSupplementPlans
+        .filter((p) => planMatchesGroup(p, item) && !deletedIds.has(p.id))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
+    return ((item?.groupedItems as SupplementPlanWithSupplement[]) || []).filter(
+      (p) => !deletedIds.has(p.id)
+    );
+  }, [rawSupplementPlans, item, deletedIds]);
 
   const handleDelete = async (planId: string) => {
     setDeletingId(planId);
@@ -61,7 +103,10 @@ export function GroupedSupplementModal({
       });
       toast.success("Supplement removed");
 
-      // Close modal if this was the last item
+      const newDeletedIds = new Set(deletedIds);
+      newDeletedIds.add(planId);
+      setDeletedIds(newDeletedIds);
+
       if (groupedPlans.length <= 1) {
         onClose();
       }
@@ -89,7 +134,7 @@ export function GroupedSupplementModal({
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
             <span>
-              {item.itemCount} supplement{item.itemCount !== 1 ? "s" : ""}
+              {groupedPlans.length} supplement{groupedPlans.length !== 1 ? "s" : ""}
             </span>
             <span>{timeText}</span>
           </div>

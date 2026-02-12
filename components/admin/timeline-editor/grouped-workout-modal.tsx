@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete, useInvalidate } from "@refinedev/core";
 import { Dumbbell, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,12 +16,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { WorkoutPlanWithExercise, ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
 
+/**
+ * Check if a workout plan matches the group criteria (timing)
+ */
+function planMatchesGroup(plan: WorkoutPlanWithExercise, item: ExtendedTimelineItem): boolean {
+  const s = item.scheduling;
+  if (plan.time_type !== s.time_type) return false;
+
+  switch (s.time_type) {
+    case "period":
+      return plan.time_period === s.time_period;
+    case "fixed":
+      return plan.time_start === s.time_start;
+    case "relative":
+      return (
+        plan.relative_anchor === s.relative_anchor &&
+        (plan.relative_offset_minutes || 0) === (s.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
 interface GroupedWorkoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: () => void;
   onEditItem: (plan: WorkoutPlanWithExercise) => void;
   item: ExtendedTimelineItem | null;
+  /** Live workout plans from the hook — used to keep the list fresh after add/delete */
+  rawWorkoutPlans?: WorkoutPlanWithExercise[];
 }
 
 /**
@@ -54,12 +80,28 @@ export function GroupedWorkoutModal({
   onAddItem,
   onEditItem,
   item,
+  rawWorkoutPlans,
 }: GroupedWorkoutModalProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const invalidate = useInvalidate();
   const { mutateAsync: deletePlan } = useDelete();
 
-  const groupedPlans = (item?.groupedItems as WorkoutPlanWithExercise[]) || [];
+  useEffect(() => {
+    if (isOpen) setDeletedIds(new Set());
+  }, [isOpen, item?.id]);
+
+  // Derive items from live data when available, fall back to stale prop
+  const groupedPlans = useMemo(() => {
+    if (rawWorkoutPlans && item) {
+      return rawWorkoutPlans
+        .filter((p) => planMatchesGroup(p, item) && !deletedIds.has(p.id))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
+    return ((item?.groupedItems as WorkoutPlanWithExercise[]) || []).filter(
+      (p) => !deletedIds.has(p.id)
+    );
+  }, [rawWorkoutPlans, item, deletedIds]);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -110,7 +152,10 @@ export function GroupedWorkoutModal({
       });
       toast.success("Exercise removed");
 
-      // Close modal if this was the last item
+      const newDeletedIds = new Set(deletedIds);
+      newDeletedIds.add(planId);
+      setDeletedIds(newDeletedIds);
+
       if (groupedPlans.length <= 1) {
         onClose();
       }

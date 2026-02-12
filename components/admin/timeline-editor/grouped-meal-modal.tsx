@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete, useInvalidate } from "@refinedev/core";
 import { Utensils, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,12 +16,42 @@ import type { DietPlanWithFood, ExtendedTimelineItem } from "@/hooks/use-timelin
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
 import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
 
+/**
+ * Check if a diet plan matches the group criteria (meal category + timing)
+ */
+function planMatchesGroup(plan: DietPlanWithFood, item: ExtendedTimelineItem): boolean {
+  // Match meal category from the first grouped item
+  const targetCategory = (item.groupedItems as DietPlanWithFood[])?.[0]?.meal_category;
+  if (plan.meal_category !== targetCategory) return false;
+
+  const s = item.scheduling;
+  if (plan.time_type !== s.time_type) return false;
+
+  switch (s.time_type) {
+    case "period":
+      return plan.time_period === s.time_period;
+    case "fixed":
+      return plan.time_start === s.time_start;
+    case "relative":
+      return (
+        plan.relative_anchor === s.relative_anchor &&
+        (plan.relative_offset_minutes || 0) === (s.relative_offset_minutes || 0)
+      );
+    case "all_day":
+      return true;
+    default:
+      return true;
+  }
+}
+
 interface GroupedMealModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddItem: () => void;
   onEditItem: (plan: DietPlanWithFood) => void;
   item: ExtendedTimelineItem | null;
+  /** Live diet plans from the hook — used to keep the list fresh after add/delete */
+  rawDietPlans?: DietPlanWithFood[];
 }
 
 /**
@@ -33,12 +63,29 @@ export function GroupedMealModal({
   onAddItem,
   onEditItem,
   item,
+  rawDietPlans,
 }: GroupedMealModalProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const invalidate = useInvalidate();
   const { mutateAsync: deletePlan } = useDelete();
 
-  const groupedPlans = (item?.groupedItems as DietPlanWithFood[]) || [];
+  // Reset deleted IDs when the modal opens with a new item
+  useEffect(() => {
+    if (isOpen) {
+      setDeletedIds(new Set());
+    }
+  }, [isOpen, item?.id]);
+
+  // Derive items from live data when available, fall back to stale prop
+  const groupedPlans = useMemo(() => {
+    if (rawDietPlans && item) {
+      return rawDietPlans
+        .filter((p) => planMatchesGroup(p, item) && !deletedIds.has(p.id))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
+    return ((item?.groupedItems as DietPlanWithFood[]) || []).filter((p) => !deletedIds.has(p.id));
+  }, [rawDietPlans, item, deletedIds]);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -79,7 +126,12 @@ export function GroupedMealModal({
       });
       toast.success("Food item removed");
 
-      // Close modal if this was the last item
+      // Track deletion locally for immediate UI update
+      const newDeletedIds = new Set(deletedIds);
+      newDeletedIds.add(planId);
+      setDeletedIds(newDeletedIds);
+
+      // Close modal if this was the last visible item
       if (groupedPlans.length <= 1) {
         onClose();
       }
@@ -106,7 +158,9 @@ export function GroupedMealModal({
             {item.title}
           </DialogTitle>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-            <span>{item.itemCount} items</span>
+            <span>
+              {groupedPlans.length} {groupedPlans.length === 1 ? "item" : "items"}
+            </span>
             <span>{timeText}</span>
           </div>
         </DialogHeader>
