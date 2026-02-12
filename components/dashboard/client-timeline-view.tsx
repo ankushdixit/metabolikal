@@ -161,6 +161,7 @@ function ClientTimelineViewInner() {
     filters: selectedDietPlanForSwap
       ? [{ field: "food_item_id", operator: "eq", value: selectedDietPlanForSwap.foodItemId }]
       : [],
+    pagination: { mode: "off" },
     meta: {
       // Join with food_items using the alternative_food_id to get the alternative food details
       select:
