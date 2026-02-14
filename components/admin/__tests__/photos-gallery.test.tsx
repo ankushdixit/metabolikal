@@ -1,5 +1,20 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { PhotosGallery } from "../photos-gallery";
+
+// Mock Supabase client for signed URL resolution
+jest.mock("@/lib/auth", () => ({
+  createBrowserSupabaseClient: () => ({
+    storage: {
+      from: () => ({
+        createSignedUrl: (path: string) =>
+          Promise.resolve({
+            data: { signedUrl: `https://signed.example.com/${path}` },
+            error: null,
+          }),
+      }),
+    },
+  }),
+}));
 
 // Mock Radix Dialog
 jest.mock("@/components/ui/dialog", () => ({
@@ -134,15 +149,19 @@ describe("PhotosGallery Component", () => {
     expect(screen.getByText("No progress photos available")).toBeInTheDocument();
   });
 
-  it("renders photo thumbnails", () => {
+  it("renders photo thumbnails", async () => {
     render(<PhotosGallery checkIns={mockCheckIns} />);
-    const images = screen.getAllByRole("img");
-    expect(images.length).toBeGreaterThan(0);
+    await waitFor(() => {
+      const images = screen.getAllByRole("img");
+      expect(images.length).toBeGreaterThan(0);
+    });
   });
 
-  it("renders photo view labels", () => {
+  it("renders photo view labels", async () => {
     render(<PhotosGallery checkIns={mockCheckIns} />);
-    expect(screen.getAllByText("front").length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.getAllByText("front").length).toBeGreaterThan(0);
+    });
     expect(screen.getAllByText("back").length).toBeGreaterThan(0);
   });
 

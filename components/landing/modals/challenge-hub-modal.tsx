@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Trophy, ClipboardList, Map, Calendar } from "lucide-react";
+import { Trophy, ClipboardList, Map, Calendar, ArrowLeft } from "lucide-react";
 import { TodaysTasks } from "./challenge-hub/todays-tasks";
 import { JourneyTab } from "./challenge-hub/journey-tab";
 import { CalendarTab } from "./challenge-hub/calendar-tab";
@@ -32,6 +32,7 @@ function getTabs(totalDays: number): { id: TabId; label: string; icon: typeof Cl
 
 export function ChallengeHubModal({ open, onOpenChange, gamification }: ChallengeHubModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tasks");
+  const [editingDay, setEditingDay] = useState<number | null>(null);
 
   const {
     currentDay,
@@ -45,6 +46,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
     allProgress,
     cumulativeStats,
     saveTodayProgress,
+    saveDayProgress,
     canEditDay,
     isDayUnlocked,
     getDayProgress,
@@ -52,12 +54,41 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
 
   const TABS = getTabs(totalDays);
 
+  const handleEditDay = (day: number) => {
+    setEditingDay(day);
+    setActiveTab("tasks");
+  };
+
+  const handleBackToToday = () => {
+    setEditingDay(null);
+  };
+
+  const handleTabChange = (tab: TabId) => {
+    if (tab !== "tasks") {
+      setEditingDay(null);
+    }
+    setActiveTab(tab);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setEditingDay(null);
+    }
+    onOpenChange(isOpen);
+  };
+
   const handleSaveProgress = async (metrics: DailyMetrics): Promise<boolean> => {
+    if (editingDay !== null) {
+      return saveDayProgress(editingDay, metrics);
+    }
     return saveTodayProgress(metrics);
   };
 
+  const effectiveDay = editingDay ?? currentDay;
+  const effectiveProgress = editingDay !== null ? getDayProgress(editingDay) : todayProgress;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-4xl bg-card p-0 flex flex-col overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 bg-card border-b border-border flex-shrink-0">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
@@ -126,7 +157,7 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`
                   btn-athletic flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap flex-shrink-0
                   ${
@@ -146,12 +177,28 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
             {/* Tab Content */}
             <div className="min-h-[400px]">
               {activeTab === "tasks" && (
-                <TodaysTasks
-                  currentDay={currentDay}
-                  todayProgress={todayProgress}
-                  onSave={handleSaveProgress}
-                  canEdit={canEditDay(currentDay)}
-                />
+                <>
+                  {editingDay !== null && (
+                    <div className="flex items-center justify-between mb-4 p-3 bg-secondary border border-border">
+                      <span className="text-sm font-black uppercase tracking-wider">
+                        Editing Day {editingDay}
+                      </span>
+                      <button
+                        onClick={handleBackToToday}
+                        className="btn-athletic flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                        Back to Today
+                      </button>
+                    </div>
+                  )}
+                  <TodaysTasks
+                    currentDay={effectiveDay}
+                    todayProgress={effectiveProgress}
+                    onSave={handleSaveProgress}
+                    canEdit={canEditDay(effectiveDay)}
+                  />
+                </>
               )}
 
               {activeTab === "journey" && (
@@ -172,6 +219,8 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
                   allProgress={allProgress}
                   isDayUnlocked={isDayUnlocked}
                   getDayProgress={getDayProgress}
+                  canEditDay={canEditDay}
+                  onEditDay={handleEditDay}
                 />
               )}
             </div>

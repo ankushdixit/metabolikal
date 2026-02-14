@@ -407,22 +407,85 @@ export function useGamification() {
     [user, challengeData, currentDay, planCycle, supabase]
   );
 
-  // Check if editing a specific day is allowed
+  // Check if editing a specific day is allowed (week-lock: can edit any day in unlocked weeks)
   const canEditDay = useCallback(
     (dayNumber: number): boolean => {
-      // Can only edit current day or earlier days on the same date
-      if (dayNumber > currentDay) return false;
-      if (dayNumber === currentDay) return true;
-
-      // For previous days, check if we're still on that day (before midnight)
-      const progress = challengeData?.dailyProgress[dayNumber];
-      if (!progress) return dayNumber === currentDay;
-
-      const progressDate = progress.loggedDate;
-      const today = getDateString();
-      return progressDate === today;
+      if (dayNumber < 1 || dayNumber > currentDay) return false;
+      const weekForDay = Math.ceil(dayNumber / DAYS_IN_WEEK);
+      return weekForDay <= weekUnlocked;
     },
-    [challengeData, currentDay]
+    [currentDay, weekUnlocked]
+  );
+
+  // Save progress for any editable day
+  const saveDayProgress = useCallback(
+    async (dayNumber: number, metrics: DailyMetrics): Promise<boolean> => {
+      if (!user || !supabase) return false;
+
+      try {
+        const points = calculateDailyPoints(metrics, true);
+
+        // Compute logged_date in pure UTC to avoid local-time drift
+        let loggedDate: string;
+        if (startDate) {
+          const startMs = new Date(startDate + "T00:00:00Z").getTime();
+          loggedDate = new Date(startMs + (dayNumber - 1) * 86_400_000).toISOString().split("T")[0];
+        } else {
+          loggedDate = getDateString();
+        }
+
+        const { error } = await supabase.from("challenge_progress").upsert(
+          {
+            user_id: user.id,
+            visitor_id: user.id,
+            day_number: dayNumber,
+            logged_date: loggedDate,
+            steps: metrics.steps,
+            water_liters: metrics.waterLiters,
+            floors_climbed: metrics.floorsClimbed,
+            protein_grams: metrics.proteinGrams,
+            sleep_hours: metrics.sleepHours,
+            feeling: metrics.feeling || null,
+            tomorrow_focus: metrics.tomorrowFocus || null,
+            points_earned: points,
+            plan_cycle: planCycle,
+          },
+          {
+            onConflict: "user_id,day_number,plan_cycle",
+          }
+        );
+
+        if (error) {
+          console.error("Error saving day progress:", error);
+          return false;
+        }
+
+        const newProgress: DayProgress = {
+          dayNumber,
+          loggedDate,
+          metrics,
+          pointsEarned: points,
+          hasData: true,
+        };
+
+        setChallengeData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            dailyProgress: {
+              ...prev.dailyProgress,
+              [dayNumber]: newProgress,
+            },
+          };
+        });
+
+        return true;
+      } catch (error) {
+        console.error("Error saving day progress:", error);
+        return false;
+      }
+    },
+    [user, supabase, startDate, planCycle]
   );
 
   // Award assessment points
@@ -515,6 +578,7 @@ export function useGamification() {
   return {
     ...state,
     saveTodayProgress,
+    saveDayProgress,
     canEditDay,
     awardAssessmentPoints,
     awardCalculatorPoints,
