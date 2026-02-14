@@ -10,7 +10,7 @@ import {
   ReactNode,
 } from "react";
 import { useList } from "@refinedev/core";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import type { Profile, PlanCycle } from "@/lib/database.types";
 
 export interface PlanCycleContextValue {
@@ -35,18 +35,8 @@ export interface PlanCycleContextValue {
 const PlanCycleContext = createContext<PlanCycleContextValue | undefined>(undefined);
 
 export function PlanCycleProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
   const [selectedCycle, setSelectedCycleRaw] = useState<number | null>(null);
-
-  // Fetch user ID once
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch profile
   const profileQuery = useList<Profile>({

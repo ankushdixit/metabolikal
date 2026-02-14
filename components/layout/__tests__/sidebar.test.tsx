@@ -15,26 +15,22 @@ jest.mock("next/image", () => ({
   default: (props: { alt: string }) => <img alt={props.alt} />,
 }));
 
-// Mock Supabase auth
-jest.mock("@/lib/auth", () => ({
-  createBrowserSupabaseClient: jest.fn(() => ({
-    auth: {
-      signOut: jest.fn().mockResolvedValue({}),
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn().mockResolvedValue({
-            data: { avatar_url: null, full_name: "Test User" },
-          }),
-        })),
-      })),
-    })),
-  })),
+// Mock auth context
+const mockSignOut = jest.fn();
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "user-123",
+    profile: { avatar_url: null, full_name: "Test User", role: "client" },
+    isLoading: false,
+    signOut: mockSignOut,
+  }),
 }));
 
 describe("Sidebar Component", () => {
+  beforeEach(() => {
+    mockSignOut.mockClear();
+  });
+
   it("renders sidebar navigation", () => {
     const { container } = render(<Sidebar />);
     expect(container.querySelector("aside")).toBeInTheDocument();
@@ -106,24 +102,6 @@ describe("Sidebar Component", () => {
   });
 
   it("calls signOut when logout button is clicked", async () => {
-    const { createBrowserSupabaseClient } = require("@/lib/auth");
-    const mockSignOut = jest.fn().mockResolvedValue({});
-    createBrowserSupabaseClient.mockReturnValue({
-      auth: {
-        signOut: mockSignOut,
-        getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
-      },
-      from: jest.fn(() => ({
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            single: jest.fn().mockResolvedValue({
-              data: { avatar_url: null, full_name: "Test User" },
-            }),
-          })),
-        })),
-      })),
-    });
-
     render(<Sidebar />);
     const logoutButton = screen.getByText("Logout");
     fireEvent.click(logoutButton);

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Menu,
@@ -15,8 +15,8 @@ import {
   LogOut,
   Trophy,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { NotificationsDropdown } from "./notifications-dropdown";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Mobile navigation component
@@ -48,42 +48,14 @@ const navItems = [
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
+  const { userId, profile, signOut } = useAuth();
 
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-
-        // Fetch profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_url, full_name")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profile) {
-          setAvatarUrl(profile.avatar_url);
-          setUserName(profile.full_name);
-        }
-      }
-    });
-  }, [supabase]);
+  const avatarUrl = profile?.avatar_url ?? null;
+  const userName = profile?.full_name ?? null;
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
-
-  const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
 
   return (
     <>
@@ -230,7 +202,7 @@ export function MobileNav() {
           <button
             onClick={() => {
               closeMenu();
-              handleLogout();
+              signOut();
             }}
             className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
           >

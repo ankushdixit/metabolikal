@@ -6,8 +6,11 @@ import { useEffect, type ReactNode } from "react";
 
 export function PostHogProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY && !posthog.__loaded) {
-      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_POSTHOG_KEY || posthog.__loaded)
+      return;
+
+    const init = () => {
+      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
         // Use reverse proxy to avoid ad blockers
         api_host: "/ingest",
         ui_host: "https://us.posthog.com",
@@ -30,6 +33,13 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
           }
         },
       });
+    };
+
+    // Defer init to avoid blocking hydration
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(init);
+    } else {
+      setTimeout(init, 1);
     }
   }, []);
 

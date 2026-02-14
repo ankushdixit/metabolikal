@@ -15,16 +15,22 @@ jest.mock("next/image", () => ({
   default: (props: { alt: string }) => <img alt={props.alt} />,
 }));
 
-// Mock Supabase auth
-jest.mock("@/lib/auth", () => ({
-  createBrowserSupabaseClient: jest.fn(() => ({
-    auth: {
-      signOut: jest.fn().mockResolvedValue({}),
-    },
-  })),
+// Mock auth context
+const mockSignOut = jest.fn();
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "admin-123",
+    profile: { avatar_url: null, full_name: "Admin User", role: "admin" },
+    isLoading: false,
+    signOut: mockSignOut,
+  }),
 }));
 
 describe("AdminSidebar Component", () => {
+  beforeEach(() => {
+    mockSignOut.mockClear();
+  });
+
   it("renders sidebar navigation", () => {
     const { container } = render(<AdminSidebar />);
     expect(container.querySelector("aside")).toBeInTheDocument();
@@ -105,12 +111,6 @@ describe("AdminSidebar Component", () => {
   });
 
   it("calls signOut when logout button is clicked", async () => {
-    const { createBrowserSupabaseClient } = require("@/lib/auth");
-    const mockSignOut = jest.fn().mockResolvedValue({});
-    createBrowserSupabaseClient.mockReturnValue({
-      auth: { signOut: mockSignOut },
-    });
-
     render(<AdminSidebar />);
     const logoutButton = screen.getByText("Logout");
     fireEvent.click(logoutButton);

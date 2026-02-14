@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -22,7 +22,7 @@ import {
   ImageIcon,
   Calculator,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Admin sidebar navigation
@@ -128,13 +128,7 @@ const navItems: NavItem[] = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  const { signOut } = useAuth();
 
   return (
     <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border fixed top-0 left-0 h-screen z-40">
@@ -205,7 +199,7 @@ export function AdminSidebar() {
       {/* Logout Button */}
       <div className="p-4 border-t border-border shrink-0">
         <button
-          onClick={handleLogout}
+          onClick={signOut}
           className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
         >
           <div className="p-2">

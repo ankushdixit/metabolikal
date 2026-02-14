@@ -1,41 +1,19 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import { User } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { NotificationsDropdown } from "./notifications-dropdown";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Dashboard header component (desktop only)
  * Athletic-styled header with notifications and profile photo
  */
 export function Header() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { userId, profile } = useAuth();
 
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-
-  useEffect(() => {
-    // Get user and profile
-    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-
-        // Fetch profile for avatar
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_url")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profile?.avatar_url) {
-          setAvatarUrl(profile.avatar_url);
-        }
-      }
-    });
-  }, [supabase]);
+  const avatarUrl = profile?.avatar_url ?? null;
 
   return (
     <header className="hidden lg:block sticky top-0 z-40 bg-card border-b border-border">

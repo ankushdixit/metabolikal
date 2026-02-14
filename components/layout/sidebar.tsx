@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, ClipboardList, LineChart, User, LogOut, Trophy } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Dashboard sidebar navigation
@@ -38,35 +37,10 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
+  const { profile, signOut } = useAuth();
 
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-
-  useEffect(() => {
-    // Get user profile
-    supabase.auth.getUser().then(async ({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_url, full_name")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profile) {
-          setAvatarUrl(profile.avatar_url);
-          setUserName(profile.full_name);
-        }
-      }
-    });
-  }, [supabase]);
-
-  const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  const avatarUrl = profile?.avatar_url ?? null;
+  const userName = profile?.full_name ?? null;
 
   return (
     <aside className="hidden lg:flex w-64 flex-col bg-card border-r border-border fixed top-0 left-0 h-screen z-40">
@@ -142,7 +116,7 @@ export function Sidebar() {
       {/* Logout Button */}
       <div className="p-4 border-t border-border shrink-0">
         <button
-          onClick={handleLogout}
+          onClick={signOut}
           className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
         >
           <div className="p-2">
