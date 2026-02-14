@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Image as ImageIcon, ArrowLeftRight } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Image as ImageIcon, ArrowLeftRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import type { CheckIn } from "@/lib/database.types";
 
 interface PhotosGalleryProps {
@@ -11,6 +12,9 @@ interface PhotosGalleryProps {
 }
 
 type PhotoView = "front" | "side" | "back";
+
+// Map from check-in ID to resolved signed URLs
+type ResolvedPhotos = Record<string, { front?: string; side?: string; back?: string }>;
 
 /**
  * Photos gallery component
@@ -21,6 +25,8 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState<[string | null, string | null]>([null, null]);
   const [compareView, setCompareView] = useState<PhotoView>("front");
+  const [resolvedUrls, setResolvedUrls] = useState<ResolvedPhotos>({});
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
 
   // Filter check-ins with photos and prepare data
   const checkInsWithPhotos = useMemo(() => {
@@ -37,6 +43,49 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
       }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [checkIns]);
+
+  // Resolve storage paths to signed URLs
+  const resolvePhotoUrls = useCallback(async () => {
+    if (checkInsWithPhotos.length === 0) return;
+
+    setIsLoadingPhotos(true);
+    const supabase = createBrowserSupabaseClient();
+    const urls: ResolvedPhotos = {};
+
+    // Batch all paths that need signing
+    const signRequests: { checkInId: string; view: PhotoView; path: string }[] = [];
+    for (const checkIn of checkInsWithPhotos) {
+      for (const view of ["front", "side", "back"] as PhotoView[]) {
+        const path = checkIn.photos[view];
+        if (path) {
+          signRequests.push({ checkInId: checkIn.id, view, path });
+        }
+      }
+    }
+
+    // Sign all URLs in parallel
+    const results = await Promise.allSettled(
+      signRequests.map(async ({ checkInId, view, path }) => {
+        const { data } = await supabase.storage.from("checkin-photos").createSignedUrl(path, 3600);
+        return { checkInId, view, signedUrl: data?.signedUrl };
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.signedUrl) {
+        const { checkInId, view, signedUrl } = result.value;
+        if (!urls[checkInId]) urls[checkInId] = {};
+        urls[checkInId][view] = signedUrl;
+      }
+    }
+
+    setResolvedUrls(urls);
+    setIsLoadingPhotos(false);
+  }, [checkInsWithPhotos]);
+
+  useEffect(() => {
+    resolvePhotoUrls();
+  }, [resolvePhotoUrls]);
 
   // Format date
   const formatDate = (date: string) => {
@@ -161,11 +210,12 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
                 {comparePhotos.date1 ? formatDate(comparePhotos.date1.date) : "—"}
               </p>
               <div className="aspect-[3/4] bg-secondary relative overflow-hidden">
-                {comparePhotos.date1?.photos[compareView] ? (
+                {comparePhotos.date1 && resolvedUrls[comparePhotos.date1.id]?.[compareView] ? (
                   <img
-                    src={comparePhotos.date1.photos[compareView]!}
+                    src={resolvedUrls[comparePhotos.date1.id][compareView]}
                     alt={`${compareView} view`}
                     className="w-full h-full object-cover"
+                    loading="eager"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -181,11 +231,12 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
                 {comparePhotos.date2 ? formatDate(comparePhotos.date2.date) : "—"}
               </p>
               <div className="aspect-[3/4] bg-secondary relative overflow-hidden">
-                {comparePhotos.date2?.photos[compareView] ? (
+                {comparePhotos.date2 && resolvedUrls[comparePhotos.date2.id]?.[compareView] ? (
                   <img
-                    src={comparePhotos.date2.photos[compareView]!}
+                    src={resolvedUrls[comparePhotos.date2.id][compareView]}
                     alt={`${compareView} view`}
                     className="w-full h-full object-cover"
+                    loading="eager"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -198,73 +249,90 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
         </div>
       )}
 
-      {/* Photo Gallery */}
-      {checkInsWithPhotos.map((checkIn) => (
-        <div
-          key={checkIn.id}
-          className={cn(
-            "athletic-card p-6 pl-8",
-            compareMode && "cursor-pointer hover:border-primary transition-colors",
-            compareMode &&
-              (selectedDates[0] === checkIn.date || selectedDates[1] === checkIn.date) &&
-              "border-primary ring-2 ring-primary/30"
-          )}
-          onClick={() => handleDateSelect(checkIn.date)}
-        >
-          {/* Date Header */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-black text-sm uppercase tracking-wider">
-              {formatDate(checkIn.date)}
-            </p>
-            {compareMode &&
-              (selectedDates[0] === checkIn.date || selectedDates[1] === checkIn.date) && (
-                <span className="px-2 py-1 bg-primary/20 text-primary text-xs font-bold uppercase">
-                  Selected
-                </span>
-              )}
-          </div>
-
-          {/* Photos Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            {(["front", "side", "back"] as PhotoView[]).map((view) => {
-              const photo = checkIn.photos[view];
-              return (
-                <div
-                  key={view}
-                  className={cn(
-                    "aspect-[3/4] bg-secondary relative overflow-hidden",
-                    photo && !compareMode && "cursor-pointer hover:opacity-90"
-                  )}
-                  onClick={(e) => {
-                    if (photo && !compareMode) {
-                      e.stopPropagation();
-                      setSelectedPhoto(photo);
-                    }
-                  }}
-                >
-                  {photo ? (
-                    <>
-                      <img
-                        src={photo}
-                        alt={`${view} view`}
-                        className="w-full h-full object-cover"
-                      />
-                      <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
-                        {view}
-                      </span>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center flex-col gap-2">
-                      <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
-                      <span className="text-xs text-muted-foreground/50 uppercase">{view}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      {/* Loading indicator for photos */}
+      {isLoadingPhotos && (
+        <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm font-bold">Loading photos...</span>
         </div>
-      ))}
+      )}
+
+      {/* Photo Gallery */}
+      {checkInsWithPhotos.map((checkIn) => {
+        const urls = resolvedUrls[checkIn.id];
+
+        return (
+          <div
+            key={checkIn.id}
+            className={cn(
+              "athletic-card p-6 pl-8",
+              compareMode && "cursor-pointer hover:border-primary transition-colors",
+              compareMode &&
+                (selectedDates[0] === checkIn.date || selectedDates[1] === checkIn.date) &&
+                "border-primary ring-2 ring-primary/30"
+            )}
+            onClick={() => handleDateSelect(checkIn.date)}
+          >
+            {/* Date Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-black text-sm uppercase tracking-wider">
+                {formatDate(checkIn.date)}
+              </p>
+              {compareMode &&
+                (selectedDates[0] === checkIn.date || selectedDates[1] === checkIn.date) && (
+                  <span className="px-2 py-1 bg-primary/20 text-primary text-xs font-bold uppercase">
+                    Selected
+                  </span>
+                )}
+            </div>
+
+            {/* Photos Grid */}
+            <div className="grid grid-cols-3 gap-4">
+              {(["front", "side", "back"] as PhotoView[]).map((view) => {
+                const hasPhoto = checkIn.photos[view];
+                const signedUrl = urls?.[view];
+                return (
+                  <div
+                    key={view}
+                    className={cn(
+                      "aspect-[3/4] bg-secondary relative overflow-hidden",
+                      signedUrl && !compareMode && "cursor-pointer hover:opacity-90"
+                    )}
+                    onClick={(e) => {
+                      if (signedUrl && !compareMode) {
+                        e.stopPropagation();
+                        setSelectedPhoto(signedUrl);
+                      }
+                    }}
+                  >
+                    {signedUrl ? (
+                      <>
+                        <img
+                          src={signedUrl}
+                          alt={`${view} view`}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
+                          {view}
+                        </span>
+                      </>
+                    ) : hasPhoto && isLoadingPhotos ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 text-muted-foreground/50 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center flex-col gap-2">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                        <span className="text-xs text-muted-foreground/50 uppercase">{view}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       {/* Photo Lightbox */}
       <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
@@ -280,6 +348,7 @@ export function PhotosGallery({ checkIns }: PhotosGalleryProps) {
                 src={selectedPhoto}
                 alt="Progress photo"
                 className="w-full h-full object-contain"
+                loading="eager"
               />
             )}
           </div>

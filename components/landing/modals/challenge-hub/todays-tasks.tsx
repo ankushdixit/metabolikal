@@ -10,6 +10,7 @@ import {
   Save,
   CheckCircle2,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,8 +44,7 @@ export function TodaysTasks({ currentDay, todayProgress, onSave, canEdit }: Toda
     feeling: "",
     tomorrowFocus: "",
   });
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">("idle");
 
   // Initialize with existing progress if available
   useEffect(() => {
@@ -79,24 +79,25 @@ export function TodaysTasks({ currentDay, todayProgress, onSave, canEdit }: Toda
       const numValue = parseFloat(value) || 0;
       setMetrics((prev) => ({ ...prev, [field]: numValue }));
     }
-    setSaveSuccess(false);
-    setSaveError(false);
+    if (saveState === "success" || saveState === "error") setSaveState("idle");
   };
 
   const handleSave = async () => {
     if (!canEdit) {
-      setSaveError(true);
-      setTimeout(() => setSaveError(false), 3000);
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 3000);
       return;
     }
 
-    const success = await onSave(metrics);
-    if (success) {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } else {
-      setSaveError(true);
-      setTimeout(() => setSaveError(false), 3000);
+    setSaveState("saving");
+
+    try {
+      const success = await onSave(metrics);
+      setSaveState(success ? "success" : "error");
+      setTimeout(() => setSaveState("idle"), 3000);
+    } catch {
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 3000);
     }
   };
 
@@ -281,35 +282,29 @@ export function TodaysTasks({ currentDay, todayProgress, onSave, canEdit }: Toda
       <div className="space-y-3">
         <button
           onClick={handleSave}
-          disabled={!canEdit}
-          className={`btn-athletic w-full group flex items-center justify-center gap-3 px-8 py-4 ${
-            canEdit
-              ? "gradient-electric text-black glow-power"
-              : "bg-secondary text-muted-foreground cursor-not-allowed"
+          disabled={!canEdit || saveState === "saving"}
+          className={`btn-athletic w-full group flex items-center justify-center gap-3 px-8 py-4 transition-all duration-300 ${
+            saveState === "success"
+              ? "bg-green-500 text-white"
+              : saveState === "error"
+                ? "bg-red-500 text-white"
+                : saveState === "saving"
+                  ? "bg-secondary text-muted-foreground cursor-wait"
+                  : canEdit
+                    ? "gradient-electric text-black glow-power"
+                    : "bg-secondary text-muted-foreground cursor-not-allowed"
           }`}
         >
-          <Save className="h-5 w-5" />
-          Save Today&apos;s Progress
+          {saveState === "saving" && <Loader2 className="h-5 w-5 animate-spin" />}
+          {saveState === "success" && <CheckCircle2 className="h-5 w-5" />}
+          {saveState === "error" && <AlertCircle className="h-5 w-5" />}
+          {saveState === "idle" && <Save className="h-5 w-5" />}
+
+          {saveState === "saving" && "Saving..."}
+          {saveState === "success" && "Progress Saved!"}
+          {saveState === "error" && (canEdit ? "Error — Try Again" : "Cannot Edit Past Days")}
+          {saveState === "idle" && "Save Today\u2019s Progress"}
         </button>
-
-        {/* Success/Error Messages */}
-        {saveSuccess && (
-          <div className="flex items-center gap-2 text-green-500 justify-center">
-            <CheckCircle2 className="h-5 w-5" />
-            <span className="font-bold text-sm">Progress saved successfully!</span>
-          </div>
-        )}
-
-        {saveError && (
-          <div className="flex items-center gap-2 text-red-500 justify-center">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-bold text-sm">
-              {canEdit
-                ? "Error saving progress. Please try again."
-                : "Cannot edit previous days after midnight."}
-            </span>
-          </div>
-        )}
 
         {!canEdit && (
           <p className="text-xs text-muted-foreground font-bold text-center">

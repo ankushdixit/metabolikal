@@ -535,49 +535,51 @@ export function TimelineItemExpanded({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={cn("sticky top-0 p-4 border-b", style.bgColor, style.borderColor)}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <Icon className={cn("h-6 w-6", style.textColor)} />
-              <div>
-                <h2 className="font-black text-lg">{item.title}</h2>
-                <p className="text-sm text-muted-foreground">{item.subtitle}</p>
+        <div className="sticky top-0 z-10 bg-background rounded-t-xl">
+          <div className={cn("p-4 border-b", style.bgColor, style.borderColor)}>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <Icon className={cn("h-6 w-6", style.textColor)} />
+                <div>
+                  <h2 className="font-black text-lg">{item.title}</h2>
+                  <p className="text-sm text-muted-foreground">{item.subtitle}</p>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-secondary rounded-full transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Time and completion status */}
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>{timeText}</span>
-            </div>
-            {hasMultipleItems ? (
-              <span
-                className={cn(
-                  "flex items-center gap-1 text-sm font-bold",
-                  isCompleted
-                    ? "text-green-500"
-                    : isPartiallyCompleted
-                      ? "text-yellow-500"
-                      : "text-muted-foreground"
-                )}
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-secondary rounded-full transition-colors"
               >
-                <Check className="h-4 w-4" />
-                {completionStatus.completed}/{completionStatus.total} done
-              </span>
-            ) : isCompleted ? (
-              <span className="flex items-center gap-1 text-sm font-bold text-green-500">
-                <Check className="h-4 w-4" />
-                Completed
-              </span>
-            ) : null}
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Time and completion status */}
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>{timeText}</span>
+              </div>
+              {hasMultipleItems ? (
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-sm font-bold",
+                    isCompleted
+                      ? "text-green-500"
+                      : isPartiallyCompleted
+                        ? "text-yellow-500"
+                        : "text-muted-foreground"
+                  )}
+                >
+                  <Check className="h-4 w-4" />
+                  {completionStatus.completed}/{completionStatus.total} done
+                </span>
+              ) : isCompleted ? (
+                <span className="flex items-center gap-1 text-sm font-bold text-green-500">
+                  <Check className="h-4 w-4" />
+                  Completed
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 
