@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Lock, Calendar } from "lucide-react";
+import { Check, Lock, Calendar, Pencil } from "lucide-react";
 import { DayProgress } from "@/hooks/use-gamification";
 import { getDateForDay } from "@/lib/challenge-utils";
 
@@ -13,6 +13,8 @@ interface CalendarTabProps {
   allProgress: Record<number, DayProgress>;
   isDayUnlocked: (day: number) => boolean;
   getDayProgress: (day: number) => DayProgress | null;
+  canEditDay?: (day: number) => boolean;
+  onEditDay?: (day: number) => void;
 }
 
 const DAYS_PER_WEEK = 7;
@@ -25,6 +27,8 @@ export function CalendarTab({
   allProgress,
   isDayUnlocked,
   getDayProgress,
+  canEditDay,
+  onEditDay,
 }: CalendarTabProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
@@ -34,24 +38,35 @@ export function CalendarTab({
   const handleDayClick = (day: number) => {
     const unlocked = isDayUnlocked(day);
     const progress = getDayProgress(day);
+    const editable = canEditDay?.(day) ?? false;
 
-    if (unlocked && progress?.hasData) {
-      setSelectedDay(selectedDay === day ? null : day);
-    } else if (!unlocked) {
-      // Show tooltip or do nothing for locked days
+    if (!unlocked) {
       setSelectedDay(null);
+      return;
+    }
+
+    // Missed day (past, unlocked, no data) — go directly to edit
+    if (editable && !progress?.hasData && day < currentDay) {
+      onEditDay?.(day);
+      return;
+    }
+
+    // Completed or current day — toggle details panel
+    if (progress?.hasData) {
+      setSelectedDay(selectedDay === day ? null : day);
     } else {
       setSelectedDay(null);
     }
   };
 
-  const getDayStatus = (day: number): "completed" | "current" | "future" | "locked" => {
+  const getDayStatus = (day: number): "completed" | "current" | "future" | "locked" | "missed" => {
     const unlocked = isDayUnlocked(day);
     const progress = allProgress[day];
 
     if (!unlocked) return "locked";
     if (day === currentDay) return "current";
     if (progress?.hasData) return "completed";
+    if (day < currentDay) return "missed";
     return "future";
   };
 
@@ -114,13 +129,14 @@ export function CalendarTab({
                   ${status === "completed" ? "bg-primary text-primary-foreground" : ""}
                   ${status === "current" ? "ring-2 ring-primary bg-secondary" : ""}
                   ${status === "future" ? "bg-secondary text-muted-foreground hover:bg-secondary/80" : ""}
+                  ${status === "missed" ? "bg-secondary border-2 border-dashed border-primary/40 text-muted-foreground hover:border-primary/70 cursor-pointer" : ""}
                   ${status === "locked" ? "bg-muted text-muted-foreground/50 cursor-not-allowed" : ""}
                   ${isSelected ? "ring-2 ring-accent" : ""}
                 `}
               >
                 {status === "completed" && <Check className="h-4 w-4" />}
                 {status === "locked" && <Lock className="h-3 w-3" />}
-                {(status === "current" || status === "future") && day}
+                {(status === "current" || status === "future" || status === "missed") && day}
                 {dateLabel && (
                   <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>
                 )}
@@ -147,6 +163,10 @@ export function CalendarTab({
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-secondary ring-2 ring-primary flex-shrink-0" />
             <span className="text-xs font-bold text-muted-foreground">Current</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-secondary border-2 border-dashed border-primary/40 flex-shrink-0" />
+            <span className="text-xs font-bold text-muted-foreground">Missed</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-secondary flex-shrink-0" />
@@ -211,9 +231,20 @@ export function CalendarTab({
 
           <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
             <span className="text-sm font-black uppercase tracking-wide">Points Earned</span>
-            <span className="px-4 py-2 gradient-electric text-black font-black">
-              {selectedDayProgress.pointsEarned} pts
-            </span>
+            <div className="flex items-center gap-2">
+              {selectedDay && canEditDay?.(selectedDay) && onEditDay && (
+                <button
+                  onClick={() => onEditDay(selectedDay)}
+                  className="btn-athletic flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-wider bg-secondary hover:bg-secondary/80 text-foreground"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit Day {selectedDay}
+                </button>
+              )}
+              <span className="px-4 py-2 gradient-electric text-black font-black">
+                {selectedDayProgress.pointsEarned} pts
+              </span>
+            </div>
           </div>
 
           {selectedDayProgress.metrics.feeling && (

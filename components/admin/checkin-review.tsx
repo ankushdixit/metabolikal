@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUpdate, useCreate } from "@refinedev/core";
 import {
   ChevronDown,
@@ -11,8 +11,10 @@ import {
   Activity,
   MessageSquare,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import type { CheckIn } from "@/lib/database.types";
 
 /**
@@ -59,8 +61,57 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
   const [isFlagged, setIsFlagged] = useState(checkIn.flagged_for_followup);
   const [notesSaved, setNotesSaved] = useState(false);
 
+  const [photoUrls, setPhotoUrls] = useState<{ front?: string; side?: string; back?: string }>({});
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+
   const updateMutation = useUpdate();
   const createNotification = useCreate();
+
+  // Fetch signed URLs for photos when expanded
+  const fetchPhotoUrls = useCallback(async () => {
+    if (!checkIn.photo_front && !checkIn.photo_side && !checkIn.photo_back) return;
+
+    setIsLoadingPhotos(true);
+    const supabase = createBrowserSupabaseClient();
+    const urls: { front?: string; side?: string; back?: string } = {};
+
+    const requests = [
+      checkIn.photo_front
+        ? supabase.storage
+            .from("checkin-photos")
+            .createSignedUrl(checkIn.photo_front, 3600)
+            .then(({ data }: { data: { signedUrl: string } | null }) => {
+              if (data?.signedUrl) urls.front = data.signedUrl;
+            })
+        : null,
+      checkIn.photo_side
+        ? supabase.storage
+            .from("checkin-photos")
+            .createSignedUrl(checkIn.photo_side, 3600)
+            .then(({ data }: { data: { signedUrl: string } | null }) => {
+              if (data?.signedUrl) urls.side = data.signedUrl;
+            })
+        : null,
+      checkIn.photo_back
+        ? supabase.storage
+            .from("checkin-photos")
+            .createSignedUrl(checkIn.photo_back, 3600)
+            .then(({ data }: { data: { signedUrl: string } | null }) => {
+              if (data?.signedUrl) urls.back = data.signedUrl;
+            })
+        : null,
+    ].filter(Boolean);
+
+    await Promise.allSettled(requests as Promise<void>[]);
+    setPhotoUrls(urls);
+    setIsLoadingPhotos(false);
+  }, [checkIn.photo_front, checkIn.photo_side, checkIn.photo_back]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      fetchPhotoUrls();
+    }
+  }, [isExpanded, fetchPhotoUrls]);
 
   const handleSaveNotes = () => {
     const trimmedNotes = adminNotes.trim();
@@ -296,42 +347,36 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
                 <h4 className="text-sm font-black uppercase tracking-wider">Progress Photos</h4>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                {checkIn.photo_front && (
-                  <div className="aspect-[3/4] bg-secondary relative overflow-hidden">
-                    <img
-                      src={checkIn.photo_front}
-                      alt="Front view"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
-                      Front
-                    </span>
-                  </div>
-                )}
-                {checkIn.photo_side && (
-                  <div className="aspect-[3/4] bg-secondary relative overflow-hidden">
-                    <img
-                      src={checkIn.photo_side}
-                      alt="Side view"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
-                      Side
-                    </span>
-                  </div>
-                )}
-                {checkIn.photo_back && (
-                  <div className="aspect-[3/4] bg-secondary relative overflow-hidden">
-                    <img
-                      src={checkIn.photo_back}
-                      alt="Back view"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
-                      Back
-                    </span>
-                  </div>
-                )}
+                {(["front", "side", "back"] as const).map((view) => {
+                  const hasPhoto = checkIn[`photo_${view}` as keyof CheckIn];
+                  const signedUrl = photoUrls[view];
+                  if (!hasPhoto) return null;
+                  return (
+                    <div key={view} className="aspect-[3/4] bg-secondary relative overflow-hidden">
+                      {signedUrl ? (
+                        <>
+                          <img
+                            src={signedUrl}
+                            alt={`${view} view`}
+                            className="w-full h-full object-cover"
+                            loading="eager"
+                          />
+                          <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold uppercase">
+                            {view}
+                          </span>
+                        </>
+                      ) : isLoadingPhotos ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 text-muted-foreground/50 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

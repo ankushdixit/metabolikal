@@ -29,6 +29,7 @@ const createMockGamification = (
     daysCompleted: 3,
   },
   saveTodayProgress: jest.fn(() => Promise.resolve(true)),
+  saveDayProgress: jest.fn(() => Promise.resolve(true)),
   canEditDay: jest.fn(() => true),
   awardAssessmentPoints: jest.fn(),
   awardCalculatorPoints: jest.fn(),

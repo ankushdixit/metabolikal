@@ -214,6 +214,7 @@ export function CheckInHistoryItem({ checkIn }: CheckInHistoryItemProps) {
                         src={photoUrls.front}
                         alt="Front view"
                         className="w-full h-full object-cover"
+                        loading="eager"
                       />
                     </button>
                   )}
@@ -226,6 +227,7 @@ export function CheckInHistoryItem({ checkIn }: CheckInHistoryItemProps) {
                         src={photoUrls.side}
                         alt="Side view"
                         className="w-full h-full object-cover"
+                        loading="eager"
                       />
                     </button>
                   )}
@@ -238,6 +240,7 @@ export function CheckInHistoryItem({ checkIn }: CheckInHistoryItemProps) {
                         src={photoUrls.back}
                         alt="Back view"
                         className="w-full h-full object-cover"
+                        loading="eager"
                       />
                     </button>
                   )}
@@ -407,6 +410,7 @@ export function CheckInHistoryItem({ checkIn }: CheckInHistoryItemProps) {
             src={lightboxImage}
             alt="Full size progress photo"
             className="max-w-full max-h-full object-contain"
+            loading="eager"
           />
         </div>
       )}
