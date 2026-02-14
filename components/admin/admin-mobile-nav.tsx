@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Menu,
@@ -25,7 +25,7 @@ import {
   Video,
   ImageIcon,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Admin mobile navigation component
@@ -132,16 +132,10 @@ const navItems: NavItem[] = [
 export function AdminMobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  const { signOut } = useAuth();
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
-
-  const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
 
   return (
     <>
@@ -267,7 +261,7 @@ export function AdminMobileNav() {
           <button
             onClick={() => {
               closeMenu();
-              handleLogout();
+              signOut();
             }}
             className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
           >

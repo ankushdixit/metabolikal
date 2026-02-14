@@ -1,16 +1,24 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Header } from "../header";
 
-// Mock the auth module
+// Mock the auth context
+const mockUseAuth = jest.fn(() => ({
+  userId: "test-user-id",
+  profile: { avatar_url: null, full_name: "Test User", role: "client" },
+  isLoading: false,
+  signOut: jest.fn(),
+}));
+
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
+// Mock the auth module (still needed for NotificationsDropdown)
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: () => ({
-    auth: {
-      getUser: () => Promise.resolve({ data: { user: { id: "test-user-id" } } }),
-    },
     from: () => ({
       select: () => ({
         eq: () => ({
-          single: () => Promise.resolve({ data: { avatar_url: null } }),
           order: () => ({
             limit: () => Promise.resolve({ data: [], error: null }),
           }),
@@ -34,9 +42,7 @@ describe("Header Component", () => {
 
   it("renders notifications button after user loads", async () => {
     render(<Header />);
-    await waitFor(() => {
-      expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    });
+    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
   });
 
   it("renders profile link", () => {

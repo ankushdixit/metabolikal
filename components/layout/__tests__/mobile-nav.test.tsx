@@ -15,29 +15,35 @@ jest.mock("next/image", () => ({
   default: (props: { alt: string }) => <img alt={props.alt} />,
 }));
 
-// Mock Supabase auth
+// Mock auth context
+const mockSignOut = jest.fn();
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "test-user-id",
+    profile: { avatar_url: null, full_name: "Test User", role: "client" },
+    isLoading: false,
+    signOut: mockSignOut,
+  }),
+}));
+
+// Mock Supabase auth (still needed for NotificationsDropdown)
+const mockLimit = jest.fn().mockResolvedValue({ data: [], error: null });
+const mockOrder = jest.fn(() => ({ limit: mockLimit }));
+const mockEq = jest.fn(() => ({ order: mockOrder }));
+const mockSelect = jest.fn(() => ({ eq: mockEq }));
+const mockFrom = jest.fn(() => ({ select: mockSelect }));
+
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: jest.fn(() => ({
-    auth: {
-      signOut: jest.fn().mockResolvedValue({}),
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: "test-user-id" } } }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn().mockResolvedValue({
-            data: { avatar_url: null, full_name: "Test User" },
-          }),
-          order: jest.fn(() => ({
-            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
-          })),
-        })),
-      })),
-    })),
+    from: mockFrom,
   })),
 }));
 
 describe("MobileNav Component", () => {
+  beforeEach(() => {
+    mockSignOut.mockClear();
+  });
+
   it("renders mobile header", () => {
     render(<MobileNav />);
     expect(screen.getByLabelText("Open menu")).toBeInTheDocument();

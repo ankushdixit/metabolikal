@@ -81,15 +81,41 @@ export async function middleware(request: NextRequest) {
   );
 
   // For protected routes that require specific roles, fetch user profile
+  // Use cached role from cookie to avoid DB query on every navigation
   if ((isAdminRoute || isClientRoute) && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, is_deactivated")
-      .eq("id", user.id)
-      .single();
+    const cachedUserId = request.cookies.get("user_role_id")?.value;
+    const cachedRole = request.cookies.get("user_role")?.value;
+    const cachedDeactivated = request.cookies.get("user_deactivated")?.value;
 
-    const role = profile?.role ?? "challenger";
-    const isDeactivated = profile?.is_deactivated ?? false;
+    let role: string;
+    let isDeactivated: boolean;
+
+    // Only use cache if it belongs to the current user
+    if (cachedRole && cachedUserId === user.id) {
+      role = cachedRole;
+      isDeactivated = cachedDeactivated === "true";
+    } else {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, is_deactivated")
+        .eq("id", user.id)
+        .single();
+
+      role = profile?.role ?? "challenger";
+      isDeactivated = profile?.is_deactivated ?? false;
+
+      const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax" as const,
+        maxAge: 300,
+      };
+
+      // Cache role in a short-lived cookie (5 minutes), keyed to user ID
+      supabaseResponse.cookies.set("user_role_id", user.id, cookieOptions);
+      supabaseResponse.cookies.set("user_role", role, cookieOptions);
+      supabaseResponse.cookies.set("user_deactivated", String(isDeactivated), cookieOptions);
+    }
 
     // Block deactivated users from all protected routes (except admins)
     if (isDeactivated && role !== "admin") {
