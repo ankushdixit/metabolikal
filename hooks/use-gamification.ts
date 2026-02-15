@@ -408,9 +408,11 @@ export function useGamification() {
   );
 
   // Check if editing a specific day is allowed (week-lock: can edit any day in unlocked weeks)
+  // Current day is always editable — week-lock only gates past days
   const canEditDay = useCallback(
     (dayNumber: number): boolean => {
       if (dayNumber < 1 || dayNumber > currentDay) return false;
+      if (dayNumber === currentDay) return true;
       const weekForDay = Math.ceil(dayNumber / DAYS_IN_WEEK);
       return weekForDay <= weekUnlocked;
     },
