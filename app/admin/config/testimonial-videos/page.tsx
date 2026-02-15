@@ -15,7 +15,7 @@ import {
   ArrowDown,
   ExternalLink,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Table,
   TableBody,
@@ -43,23 +43,13 @@ import type { TestimonialVideo } from "@/lib/database.types";
  * Lists all YouTube testimonial videos with search, filter, reorder, and CRUD operations
  */
 export default function TestimonialVideosPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<TestimonialVideo | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Reset to page 1 when search or filter changes
   useEffect(() => {

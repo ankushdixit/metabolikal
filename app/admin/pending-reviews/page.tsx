@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import { ClipboardCheck, Eye, Flag, Calendar } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Table,
   TableBody,
@@ -20,17 +20,7 @@ import type { Profile, CheckIn } from "@/lib/database.types";
  * Lists all check-ins that haven't been reviewed yet
  */
 export default function PendingReviewsPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
+  const { userId: adminId } = useAuth();
 
   // Fetch all clients
   const clientsQuery = useList<Profile>({

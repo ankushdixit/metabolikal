@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useList, useUpdate, useCreate, useDelete } from "@refinedev/core";
 import { Calendar, Flame, Plus, AlertCircle } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import { MealCard } from "@/components/dashboard/meal-card";
 import { FoodAlternativesDrawer } from "@/components/dashboard/food-alternatives-drawer";
@@ -79,7 +79,7 @@ interface Profile {
  */
 export default function DietPlanPage() {
   const { currentCycle, setSelectedCycle } = usePlanCycle();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
   const [dayNumber, setDayNumber] = useState(1);
 
   // Force-reset to current cycle on mount (diet page always uses current data)
@@ -93,16 +93,6 @@ export default function DietPlanPage() {
   const [selectedMealForLogging, setSelectedMealForLogging] = useState<DietPlanEntry | null>(null);
   const [isCustomFoodOpen, setIsCustomFoodOpen] = useState(false);
   const [foodSearchQuery, setFoodSearchQuery] = useState("");
-
-  // Get current user ID and calculate day number
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch profile to calculate day number
   const profileQuery = useList<Profile>({

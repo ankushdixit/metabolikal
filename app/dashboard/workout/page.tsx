@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useList, useCreate, useDelete } from "@refinedev/core";
 import { Calendar, Flame, Coffee, History } from "lucide-react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { WorkoutProgress, WorkoutSection } from "@/components/dashboard";
 import type { WorkoutSection as WorkoutSectionType } from "@/lib/database.types";
 
@@ -44,22 +44,12 @@ const SECTION_ORDER: WorkoutSectionType[] = ["warmup", "main", "cooldown"];
  * Displays daily workout with exercises grouped by section
  */
 export default function WorkoutPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
   const [dayNumber, setDayNumber] = useState(1);
 
   // Track optimistic updates for completion state
   const [optimisticCompletedIds, setOptimisticCompletedIds] = useState<Set<string>>(new Set());
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set());
-
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch profile to calculate day number
   const profileQuery = useList<Profile>({

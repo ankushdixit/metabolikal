@@ -7,7 +7,7 @@ import { useOne, useUpdate } from "@refinedev/core";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { TemplateFormHeader } from "@/components/admin/templates/template-form-header";
 import { TemplateEditor } from "@/components/admin/templates/template-editor";
 import type { PlanTemplate, PlanTemplateUpdate } from "@/lib/database.types";
@@ -20,21 +20,11 @@ export default function EditTemplatePage() {
   const params = useParams();
   const templateId = params.id as string;
 
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
 
   // Local form state for metadata
   const [localTemplate, setLocalTemplate] = useState<Partial<PlanTemplate> | null>(null);
   const [hasMetadataChanges, setHasMetadataChanges] = useState(false);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch template
   const templateQuery = useOne<PlanTemplate>({

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import { ArrowLeft, Download, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { CSVUpload } from "@/components/admin/csv-upload";
 import { CSVPreviewTable } from "@/components/admin/csv-preview-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +20,7 @@ type ImportStep = "upload" | "preview" | "importing" | "complete";
  * Upload and import multiple food items via CSV
  */
 export default function CSVImportPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [step, setStep] = useState<ImportStep>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
@@ -32,16 +33,6 @@ export default function CSVImportPage() {
     failed: number;
     errors: string[];
   } | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch existing food items for duplicate detection
   const existingFoodItemsQuery = useList<FoodItem>({

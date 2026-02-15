@@ -10,9 +10,9 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useList, useOne, useCreate, useDelete, useInvalidate } from "@refinedev/core";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { useTimelineData, type ExtendedTimelineItem } from "./use-timeline-data";
 import type {
   Profile,
@@ -183,18 +183,8 @@ export function useClientTimeline({
   selectedDate,
   dayNumberOverride,
 }: UseClientTimelineOptions = {}): UseClientTimelineReturn {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
   const invalidate = useInvalidate();
-
-  // Get current user ID from Supabase auth
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch user profile for plan configuration
   const profileQuery = useOne<Profile>({

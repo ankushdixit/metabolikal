@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { updateClientSchema, type UpdateClientFormData } from "@/lib/validations";
 import { useMedicalConditions } from "@/hooks/use-medical-conditions";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import type { Profile, ClientCondition } from "@/lib/database.types";
 import {
   Dialog,
@@ -61,19 +62,9 @@ export function EditClientModal({
   const [serverError, setServerError] = useState<string | null>(null);
   const [customDuration, setCustomDuration] = useState<string>("");
   const [showConditionsDropdown, setShowConditionsDropdown] = useState(false);
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
 
   const { conditions, isLoading: conditionsLoading } = useMedicalConditions();
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Extract current condition IDs from the client's conditions
   const currentConditionIds = useMemo(

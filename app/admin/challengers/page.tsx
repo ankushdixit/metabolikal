@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useList, useUpdate } from "@refinedev/core";
 import { Search, Trophy, UserPlus, Calendar, Target, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type {
@@ -27,22 +27,10 @@ interface ChallengerWithStats extends Profile {
  * View and manage challenger users (30-day challenge participants)
  */
 export default function ChallengersPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [upgradingId, setUpgradingId] = useState<string | null>(null);
-
-  // Memoize Supabase client to prevent recreation on every render
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-
-  // Get current admin user ID
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, [supabase]);
 
   // Reset to page 1 when search changes
   useEffect(() => {

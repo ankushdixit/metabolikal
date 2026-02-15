@@ -6,13 +6,12 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { useClientTimeline } from "../use-client-timeline";
 
 // Mock dependencies
-jest.mock("@/lib/auth", () => ({
-  createBrowserSupabaseClient: () => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: "test-user-id" } },
-      }),
-    },
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "test-user-id",
+    isLoading: false,
+    profile: null,
+    signOut: jest.fn(),
   }),
 }));
 
