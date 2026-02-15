@@ -163,3 +163,22 @@ export function getDateForDay(startDate: string, dayNumber: number): Date {
   date.setDate(date.getDate() + (dayNumber - 1));
   return date;
 }
+
+/**
+ * Pure helper: is a given day number editable?
+ * All past days and the current day are editable. Future days are not.
+ */
+export function isEditableDay(dayNumber: number, currentDay: number): boolean {
+  return dayNumber >= 1 && dayNumber <= currentDay;
+}
+
+/**
+ * Calculate the number of days between two date strings (YYYY-MM-DD).
+ * Returns 0 if dateB <= dateA.
+ */
+export function daysBetween(dateA: string, dateB: string): number {
+  const a = new Date(dateA + "T00:00:00Z").getTime();
+  const b = new Date(dateB + "T00:00:00Z").getTime();
+  const diff = b - a;
+  return diff > 0 ? Math.floor(diff / (1000 * 60 * 60 * 24)) : 0;
+}

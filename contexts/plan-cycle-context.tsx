@@ -12,6 +12,7 @@ import {
 import { useList } from "@refinedev/core";
 import { useAuth } from "@/contexts/auth-context";
 import type { Profile, PlanCycle } from "@/lib/database.types";
+import { daysBetween } from "@/lib/challenge-utils";
 
 export interface PlanCycleContextValue {
   userId: string | null;
@@ -72,11 +73,25 @@ export function PlanCycleProvider({ children }: { children: ReactNode }) {
   });
 
   // Profile-based data for the current cycle (always available)
+  // If the user was upgraded from challenger → client, extend the duration
+  // to cover the gap between challenge_start_date and plan_start_date.
   const currentCycleProfile = useMemo(() => {
     if (!profile) return null;
+    const planDuration = profile.plan_duration_days || 30;
+    const planStart = profile.plan_start_date || profile.created_at?.split("T")[0] || "";
+    const challengeStart = profile.challenge_start_date;
+
+    if (challengeStart && challengeStart < planStart) {
+      const gapDays = daysBetween(challengeStart, planStart);
+      return {
+        startDate: challengeStart,
+        durationDays: gapDays + planDuration,
+      };
+    }
+
     return {
-      startDate: profile.plan_start_date || profile.created_at?.split("T")[0] || "",
-      durationDays: profile.plan_duration_days || 30,
+      startDate: planStart,
+      durationDays: planDuration,
     };
   }, [profile]);
 
