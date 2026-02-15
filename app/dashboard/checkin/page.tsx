@@ -15,7 +15,7 @@ import {
   History,
 } from "lucide-react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { usePlanCycle } from "@/contexts/plan-cycle-context";
 import { checkInSchema, type CheckInFormData } from "@/lib/validations";
 import {
@@ -52,8 +52,8 @@ const STEPS = ["Measurements", "Photos", "Ratings", "Notes"];
  */
 export default function CheckInPage() {
   const router = useRouter();
+  const { userId, isLoading: authLoading } = useAuth();
   const { currentCycle, setSelectedCycle } = usePlanCycle();
-  const [userId, setUserId] = useState<string | null>(null);
   const [dayNumber, setDayNumber] = useState(1);
   const [currentStep, setCurrentStep] = useState(0);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
@@ -86,16 +86,6 @@ export default function CheckInPage() {
   useEffect(() => {
     setSelectedCycle(currentCycle);
   }, [currentCycle, setSelectedCycle]);
-
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch profile to calculate day number
   const profileQuery = useList<Profile>({
@@ -176,6 +166,9 @@ export default function CheckInPage() {
     async (data: CheckInFormData) => {
       if (!userId) return;
 
+      // Guard: only allow submission from the final step
+      if (currentStep !== STEPS.length - 1) return;
+
       // Check for duplicate and show warning if needed
       if (hasExistingCheckIn && !showDuplicateWarning) {
         setShowDuplicateWarning(true);
@@ -225,7 +218,7 @@ export default function CheckInPage() {
         }
       );
     },
-    [userId, hasExistingCheckIn, showDuplicateWarning, createMutation, router]
+    [userId, currentStep, hasExistingCheckIn, showDuplicateWarning, createMutation, router]
   );
 
   // Watch photo values for the photos step
@@ -242,7 +235,7 @@ export default function CheckInPage() {
     day: "numeric",
   });
 
-  const isLoading = profileQuery.query.isLoading;
+  const isLoading = authLoading || profileQuery.query.isLoading;
   const isSubmitting = createMutation.mutation.isPending;
 
   // Render step content
@@ -395,6 +388,7 @@ export default function CheckInPage() {
 
             {currentStep < STEPS.length - 1 ? (
               <button
+                key="next"
                 type="button"
                 onClick={handleNext}
                 className="btn-athletic flex items-center gap-2 px-6 py-3 gradient-electric text-black glow-power"
@@ -404,6 +398,7 @@ export default function CheckInPage() {
               </button>
             ) : (
               <button
+                key="submit"
                 type="submit"
                 disabled={isSubmitting}
                 className="btn-athletic flex items-center gap-2 px-6 py-3 gradient-electric text-black glow-power disabled:opacity-50"

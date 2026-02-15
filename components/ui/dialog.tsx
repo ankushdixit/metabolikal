@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {/* Close button - slightly larger tap target on mobile for accessibility */}
-      <DialogPrimitive.Close className="absolute right-3 top-3 z-50 p-2 h-10 w-10 sm:right-4 sm:top-4 sm:h-8 sm:w-8 flex items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+      <DialogPrimitive.Close className="absolute right-3 top-3 z-50 p-2 h-10 w-10 sm:right-4 sm:top-4 sm:h-8 sm:w-8 flex items-center justify-center rounded-sm bg-muted/60 opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-5 w-5 sm:h-4 sm:w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -83,7 +83,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    className={cn("text-lg font-semibold leading-none tracking-tight pr-12", className)}
     {...props}
   />
 ));
