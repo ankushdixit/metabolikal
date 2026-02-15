@@ -11,6 +11,7 @@ import {
   calculateCompletionPercent,
   calculateCumulativeStats,
   buildDayProgressMap,
+  daysBetween,
   DEFAULT_CHALLENGE_DAYS,
   DAYS_IN_WEEK,
 } from "@/lib/challenge-utils";
@@ -21,6 +22,24 @@ export type { DailyMetrics, DayProgress } from "@/lib/challenge-utils";
 
 // Constants (kept here — only used by client-facing points logic)
 const MAX_DAILY_POINTS = 150;
+const SAVE_TIMEOUT_MS = 10_000; // 10 second timeout for save operations
+
+/** Race an async operation against a timeout. Rejects on timeout. */
+function withTimeout<T>(fn: () => Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error("Save timed out")), ms);
+    fn().then(
+      (result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      },
+      (err) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      }
+    );
+  });
+}
 
 export interface ChallengeData {
   userId: string;
@@ -178,15 +197,33 @@ export function useGamification() {
       try {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role, plan_duration_days, plan_start_date, current_plan_cycle, created_at")
+          .select(
+            "role, plan_duration_days, plan_start_date, current_plan_cycle, challenge_start_date, created_at"
+          )
           .eq("id", userId)
           .single();
 
         if (profile) {
+          const planDuration = profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
+          const planStart =
+            profile.plan_start_date || profile.created_at?.split("T")[0] || getDateString();
+          const challengeStart = profile.challenge_start_date;
+
+          // If the user was upgraded from challenger → client and their original
+          // challenge started before the new plan_start_date, extend totalDays
+          // to cover the gap so their original progress days remain valid.
+          if (challengeStart && challengeStart < planStart) {
+            const gapDays = daysBetween(challengeStart, planStart);
+            return {
+              totalDays: gapDays + planDuration,
+              planStartDate: challengeStart,
+              planCycle: profile.current_plan_cycle || 1,
+            };
+          }
+
           return {
-            totalDays: profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS,
-            planStartDate:
-              profile.plan_start_date || profile.created_at?.split("T")[0] || getDateString(),
+            totalDays: planDuration,
+            planStartDate: planStart,
             planCycle: profile.current_plan_cycle || 1,
           };
         }
@@ -351,30 +388,31 @@ export function useGamification() {
       const today = getDateString();
 
       try {
-        // Upsert to database
-        const { error } = await supabase.from("challenge_progress").upsert(
-          {
-            user_id: user.id,
-            visitor_id: user.id, // Use user_id as visitor_id for compatibility
-            day_number: currentDay,
-            logged_date: today,
-            steps: metrics.steps,
-            water_liters: metrics.waterLiters,
-            floors_climbed: metrics.floorsClimbed,
-            protein_grams: metrics.proteinGrams,
-            sleep_hours: metrics.sleepHours,
-            feeling: metrics.feeling || null,
-            tomorrow_focus: metrics.tomorrowFocus || null,
-            points_earned: points,
-            plan_cycle: planCycle,
-          },
-          {
-            onConflict: "user_id,day_number,plan_cycle",
-          }
-        );
+        // Upsert to database with timeout to prevent indefinite hang
+        const upsertError = await withTimeout(async () => {
+          const { error: err } = await supabase.from("challenge_progress").upsert(
+            {
+              user_id: user.id,
+              visitor_id: user.id, // Use user_id as visitor_id for compatibility
+              day_number: currentDay,
+              logged_date: today,
+              steps: metrics.steps,
+              water_liters: metrics.waterLiters,
+              floors_climbed: metrics.floorsClimbed,
+              protein_grams: metrics.proteinGrams,
+              sleep_hours: metrics.sleepHours,
+              feeling: metrics.feeling || null,
+              tomorrow_focus: metrics.tomorrowFocus || null,
+              points_earned: points,
+              plan_cycle: planCycle,
+            },
+            { onConflict: "user_id,day_number,plan_cycle" }
+          );
+          return err;
+        }, SAVE_TIMEOUT_MS);
 
-        if (error) {
-          console.error("Error saving progress:", error);
+        if (upsertError) {
+          console.error("Error saving progress:", upsertError);
           return false;
         }
 
@@ -407,16 +445,11 @@ export function useGamification() {
     [user, challengeData, currentDay, planCycle, supabase]
   );
 
-  // Check if editing a specific day is allowed (week-lock: can edit any day in unlocked weeks)
-  // Current day is always editable — week-lock only gates past days
+  // Check if editing a specific day is allowed
+  // All past days and the current day are editable — week-lock is visual only
   const canEditDay = useCallback(
-    (dayNumber: number): boolean => {
-      if (dayNumber < 1 || dayNumber > currentDay) return false;
-      if (dayNumber === currentDay) return true;
-      const weekForDay = Math.ceil(dayNumber / DAYS_IN_WEEK);
-      return weekForDay <= weekUnlocked;
-    },
-    [currentDay, weekUnlocked]
+    (dayNumber: number): boolean => dayNumber >= 1 && dayNumber <= currentDay,
+    [currentDay]
   );
 
   // Save progress for any editable day
@@ -436,29 +469,30 @@ export function useGamification() {
           loggedDate = getDateString();
         }
 
-        const { error } = await supabase.from("challenge_progress").upsert(
-          {
-            user_id: user.id,
-            visitor_id: user.id,
-            day_number: dayNumber,
-            logged_date: loggedDate,
-            steps: metrics.steps,
-            water_liters: metrics.waterLiters,
-            floors_climbed: metrics.floorsClimbed,
-            protein_grams: metrics.proteinGrams,
-            sleep_hours: metrics.sleepHours,
-            feeling: metrics.feeling || null,
-            tomorrow_focus: metrics.tomorrowFocus || null,
-            points_earned: points,
-            plan_cycle: planCycle,
-          },
-          {
-            onConflict: "user_id,day_number,plan_cycle",
-          }
-        );
+        const upsertError = await withTimeout(async () => {
+          const { error: err } = await supabase.from("challenge_progress").upsert(
+            {
+              user_id: user.id,
+              visitor_id: user.id,
+              day_number: dayNumber,
+              logged_date: loggedDate,
+              steps: metrics.steps,
+              water_liters: metrics.waterLiters,
+              floors_climbed: metrics.floorsClimbed,
+              protein_grams: metrics.proteinGrams,
+              sleep_hours: metrics.sleepHours,
+              feeling: metrics.feeling || null,
+              tomorrow_focus: metrics.tomorrowFocus || null,
+              points_earned: points,
+              plan_cycle: planCycle,
+            },
+            { onConflict: "user_id,day_number,plan_cycle" }
+          );
+          return err;
+        }, SAVE_TIMEOUT_MS);
 
-        if (error) {
-          console.error("Error saving day progress:", error);
+        if (upsertError) {
+          console.error("Error saving day progress:", upsertError);
           return false;
         }
 

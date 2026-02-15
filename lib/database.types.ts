@@ -237,6 +237,7 @@ export interface Database {
           plan_start_date: string | null;
           plan_duration_days: number;
           current_plan_cycle: number;
+          challenge_start_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -258,6 +259,7 @@ export interface Database {
           plan_start_date?: string | null;
           plan_duration_days?: number;
           current_plan_cycle?: number;
+          challenge_start_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -279,6 +281,7 @@ export interface Database {
           plan_start_date?: string | null;
           plan_duration_days?: number;
           current_plan_cycle?: number;
+          challenge_start_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };

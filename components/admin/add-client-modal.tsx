@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Loader2, X } from "lucide-react";
+import { UserPlus, Loader2, X, ArrowUpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createClientSchema, type CreateClientFormData } from "@/lib/validations";
@@ -26,10 +26,22 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
+export interface ChallengerData {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  address?: string | null;
+}
+
 interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  mode?: "invite" | "upgrade";
+  challengerData?: ChallengerData;
 }
 
 const GENDER_OPTIONS = [
@@ -42,14 +54,23 @@ const GENDER_OPTIONS = [
 const DURATION_PRESETS = [7, 14, 21, 28, 30, 60, 90] as const;
 
 /**
- * Modal for creating a new client account
- * Sends an invite email for the client to set up their password
+ * Modal for creating a new client account or upgrading a challenger to client.
+ * In "invite" mode: sends an invite email for the client to set up their password.
+ * In "upgrade" mode: upgrades an existing challenger to client with plan settings.
  */
-export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalProps) {
+export function AddClientModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  mode = "invite",
+  challengerData,
+}: AddClientModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [customDuration, setCustomDuration] = useState<string>("");
   const [showConditionsDropdown, setShowConditionsDropdown] = useState(false);
+
+  const isUpgrade = mode === "upgrade";
 
   const { conditions, isLoading: conditionsLoading } = useMedicalConditions();
 
@@ -78,6 +99,19 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
   const selectedGender = watch("gender");
   const selectedDuration = watch("plan_duration_days");
   const selectedConditionIds = watch("condition_ids") ?? [];
+
+  // Pre-fill form fields when in upgrade mode
+  useEffect(() => {
+    if (isUpgrade && challengerData && isOpen) {
+      setValue("full_name", challengerData.full_name || "");
+      setValue("email", challengerData.email || "");
+      if (challengerData.phone) setValue("phone", challengerData.phone);
+      if (challengerData.date_of_birth) setValue("date_of_birth", challengerData.date_of_birth);
+      if (challengerData.gender)
+        setValue("gender", challengerData.gender as CreateClientFormData["gender"]);
+      if (challengerData.address) setValue("address", challengerData.address);
+    }
+  }, [isUpgrade, challengerData, isOpen, setValue]);
 
   // Reset custom duration when a preset is selected
   useEffect(() => {
@@ -126,31 +160,35 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
     setServerError(null);
 
     try {
-      const response = await fetch("/api/admin/invite-client", {
+      const endpoint = isUpgrade ? "/api/admin/upgrade-challenger" : "/api/admin/invite-client";
+      const body = isUpgrade ? { ...data, challenger_id: challengerData?.id } : data;
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
         if (result.details) {
-          // Handle validation errors from server
           const errorMessages = result.details
             .map((d: { field: string; message: string }) => d.message)
             .join(", ");
           setServerError(errorMessages);
         } else {
-          setServerError(result.error || "Failed to create client");
+          setServerError(result.error || `Failed to ${isUpgrade ? "upgrade" : "create"} client`);
         }
         return;
       }
 
-      // Success - show toast and close modal
-      toast.success(result.message || "Client created successfully!");
+      toast.success(
+        result.message ||
+          (isUpgrade ? "Challenger upgraded to client!" : "Client created successfully!")
+      );
       reset();
       onClose();
       onSuccess?.();
@@ -179,10 +217,20 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
 
         <DialogHeader className="p-6 pb-4 border-b border-border">
           <DialogTitle className="text-xl font-black uppercase tracking-tight">
-            Add <span className="gradient-athletic">Client</span>
+            {isUpgrade ? (
+              <>
+                Upgrade to <span className="gradient-athletic">Client</span>
+              </>
+            ) : (
+              <>
+                Add <span className="gradient-athletic">Client</span>
+              </>
+            )}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm">
-            Create a new client account. They will receive an email to set up their password.
+            {isUpgrade
+              ? "Set up a client plan. Challenge progress will be preserved."
+              : "Create a new client account. They will receive an email to set up their password."}
           </DialogDescription>
         </DialogHeader>
 
@@ -231,7 +279,8 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
               {...register("email")}
               placeholder="e.g., john@example.com"
               className={cn("bg-secondary border-border", errors.email && "border-destructive")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUpgrade}
+              readOnly={isUpgrade}
             />
             {errors.email && (
               <p className="text-destructive text-xs mt-1 font-bold">{errors.email.message}</p>
@@ -537,12 +586,16 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Creating...</span>
+                  <span>{isUpgrade ? "Upgrading..." : "Creating..."}</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="h-4 w-4" />
-                  <span>Add Client</span>
+                  {isUpgrade ? (
+                    <ArrowUpCircle className="h-4 w-4" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  <span>{isUpgrade ? "Upgrade to Client" : "Add Client"}</span>
                 </>
               )}
             </button>

@@ -36,16 +36,16 @@ export function CalendarTab({
   const day1Weekday = startDate ? new Date(startDate + "T00:00:00").getDay() : 0;
 
   const handleDayClick = (day: number) => {
-    const unlocked = isDayUnlocked(day);
     const progress = getDayProgress(day);
     const editable = canEditDay?.(day) ?? false;
 
-    if (!unlocked) {
+    // Only block clicks on locked *future* days
+    if (day > currentDay && !isDayUnlocked(day)) {
       setSelectedDay(null);
       return;
     }
 
-    // Missed day (past, unlocked, no data) — go directly to edit
+    // Missed day (past, no data) — go directly to edit
     if (editable && !progress?.hasData && day < currentDay) {
       onEditDay?.(day);
       return;
@@ -60,13 +60,12 @@ export function CalendarTab({
   };
 
   const getDayStatus = (day: number): "completed" | "current" | "future" | "locked" | "missed" => {
-    const unlocked = isDayUnlocked(day);
     const progress = allProgress[day];
 
-    if (!unlocked) return "locked";
     if (day === currentDay) return "current";
-    if (progress?.hasData) return "completed";
-    if (day < currentDay) return "missed";
+    if (day < currentDay) return progress?.hasData ? "completed" : "missed";
+    // Future days: keep week-lock for visual display
+    if (!isDayUnlocked(day)) return "locked";
     return "future";
   };
 

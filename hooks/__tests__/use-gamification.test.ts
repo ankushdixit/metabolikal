@@ -8,6 +8,7 @@ import {
   calculateDailyPoints,
   DailyMetrics,
 } from "../use-gamification";
+import { isEditableDay, daysBetween } from "@/lib/challenge-utils";
 
 // Note: The useGamification hook now requires Supabase authentication.
 // Integration tests for the hook should be done with proper Supabase mocking.
@@ -159,6 +160,55 @@ describe("Points Calculation Functions", () => {
       };
       expect(calculateDailyPoints(metrics, true)).toBe(150); // 135 + 15 capped at 150
     });
+  });
+});
+
+describe("isEditableDay", () => {
+  it("returns true for the current day", () => {
+    expect(isEditableDay(10, 10)).toBe(true);
+  });
+
+  it("returns true for past days", () => {
+    expect(isEditableDay(1, 10)).toBe(true);
+    expect(isEditableDay(5, 10)).toBe(true);
+    expect(isEditableDay(9, 10)).toBe(true);
+  });
+
+  it("returns false for future days", () => {
+    expect(isEditableDay(11, 10)).toBe(false);
+    expect(isEditableDay(30, 10)).toBe(false);
+  });
+
+  it("returns false for day 0 or negative", () => {
+    expect(isEditableDay(0, 10)).toBe(false);
+    expect(isEditableDay(-1, 10)).toBe(false);
+  });
+
+  it("handles day 1 as current day", () => {
+    expect(isEditableDay(1, 1)).toBe(true);
+    expect(isEditableDay(2, 1)).toBe(false);
+  });
+});
+
+describe("daysBetween", () => {
+  it("calculates days between two dates", () => {
+    expect(daysBetween("2026-01-01", "2026-01-31")).toBe(30);
+  });
+
+  it("returns 0 when dates are equal", () => {
+    expect(daysBetween("2026-01-15", "2026-01-15")).toBe(0);
+  });
+
+  it("returns 0 when dateB is before dateA", () => {
+    expect(daysBetween("2026-02-01", "2026-01-01")).toBe(0);
+  });
+
+  it("handles cross-month boundaries", () => {
+    expect(daysBetween("2026-01-30", "2026-02-02")).toBe(3);
+  });
+
+  it("handles cross-year boundaries", () => {
+    expect(daysBetween("2025-12-31", "2026-01-01")).toBe(1);
   });
 });
 

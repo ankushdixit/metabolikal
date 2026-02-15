@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useList, useUpdate } from "@refinedev/core";
+import { useList } from "@refinedev/core";
 import { Search, Trophy, UserPlus, Calendar, Target, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
+import { AddClientModal, type ChallengerData } from "@/components/admin/add-client-modal";
 import type {
   Profile,
   ChallengeProgress,
@@ -30,7 +30,8 @@ export default function ChallengersPage() {
   const { userId: adminId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [upgradingId, setUpgradingId] = useState<string | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [selectedChallenger, setSelectedChallenger] = useState<ChallengerData | null>(null);
 
   // Reset to page 1 when search changes
   useEffect(() => {
@@ -73,9 +74,6 @@ export default function ChallengersPage() {
       enabled: !!adminId,
     },
   });
-
-  // Update mutation for upgrading to client
-  const { mutate: updateProfile } = useUpdate<Profile>();
 
   // Process data
   const challengers = challengersQuery.query.data?.data || [];
@@ -132,31 +130,22 @@ export default function ChallengersPage() {
     assessmentQuery.query.isLoading ||
     calculatorQuery.query.isLoading;
 
-  // Handle upgrade to client
-  const handleUpgradeToClient = async (challengerId: string) => {
-    const challenger = challengersWithStats.find((c) => c.id === challengerId);
-    const challengerName = challenger?.full_name || "Challenger";
+  // Handle upgrade button click — open modal with challenger data
+  const handleUpgradeClick = (challenger: ChallengerWithStats) => {
+    setSelectedChallenger({
+      id: challenger.id,
+      full_name: challenger.full_name,
+      email: challenger.email,
+      phone: challenger.phone,
+      date_of_birth: challenger.date_of_birth,
+      gender: challenger.gender,
+      address: challenger.address,
+    });
+    setUpgradeModalOpen(true);
+  };
 
-    setUpgradingId(challengerId);
-    updateProfile(
-      {
-        resource: "profiles",
-        id: challengerId,
-        values: { role: "client" },
-      },
-      {
-        onSuccess: () => {
-          toast.success(`${challengerName} upgraded to client`);
-          challengersQuery.query.refetch();
-          setUpgradingId(null);
-        },
-        onError: (error) => {
-          console.error("Error upgrading challenger:", error);
-          toast.error(`Failed to upgrade ${challengerName}. Please try again.`);
-          setUpgradingId(null);
-        },
-      }
-    );
+  const handleUpgradeSuccess = () => {
+    challengersQuery.query.refetch();
   };
 
   // Format date for display
@@ -310,15 +299,10 @@ export default function ChallengersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleUpgradeToClient(challenger.id)}
-                        disabled={upgradingId === challenger.id}
-                        className="btn-athletic px-3 py-2 text-xs font-bold uppercase tracking-wider gradient-electric text-black hover:opacity-90 disabled:opacity-50 flex items-center gap-2 ml-auto"
+                        onClick={() => handleUpgradeClick(challenger)}
+                        className="btn-athletic px-3 py-2 text-xs font-bold uppercase tracking-wider gradient-electric text-black hover:opacity-90 flex items-center gap-2 ml-auto"
                       >
-                        {upgradingId === challenger.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <UserPlus className="h-3 w-3" />
-                        )}
+                        <UserPlus className="h-3 w-3" />
                         Upgrade
                       </button>
                     </td>
@@ -352,6 +336,18 @@ export default function ChallengersPage() {
           </div>
         )}
       </div>
+
+      {/* Upgrade Modal */}
+      <AddClientModal
+        isOpen={upgradeModalOpen}
+        onClose={() => {
+          setUpgradeModalOpen(false);
+          setSelectedChallenger(null);
+        }}
+        onSuccess={handleUpgradeSuccess}
+        mode="upgrade"
+        challengerData={selectedChallenger ?? undefined}
+      />
     </div>
   );
 }
