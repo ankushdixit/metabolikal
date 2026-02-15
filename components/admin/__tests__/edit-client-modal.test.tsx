@@ -21,12 +21,19 @@ jest.mock("@refinedev/core", () => ({
   }),
 }));
 
-// Mock the Supabase client
+// Mock the auth context
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "admin-123",
+    isLoading: false,
+    profile: null,
+    signOut: jest.fn(),
+  }),
+}));
+
+// Mock the Supabase client (still used for non-auth operations like plan_cycles update)
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: () => ({
-    auth: {
-      getUser: () => Promise.resolve({ data: { user: { id: "admin-123" } } }),
-    },
     from: () => ({
       update: () => ({
         eq: () => ({

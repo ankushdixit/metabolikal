@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCreate } from "@refinedev/core";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { TemplateFormHeader } from "@/components/admin/templates/template-form-header";
 import type { PlanTemplate, PlanTemplateInsert } from "@/lib/database.types";
 
@@ -17,7 +17,7 @@ import type { PlanTemplate, PlanTemplateInsert } from "@/lib/database.types";
  */
 export default function CreateTemplatePage() {
   const router = useRouter();
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
 
   // Form state
   const [template, setTemplate] = useState<Partial<PlanTemplate>>({
@@ -26,16 +26,6 @@ export default function CreateTemplatePage() {
     category: null,
     is_active: true,
   });
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Create mutation
   const createMutation = useCreate<PlanTemplate>();

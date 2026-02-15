@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import { Users, ClipboardCheck, Calendar } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { StatsCards } from "@/components/admin/stats-cards";
 import { TodaysChallengeActivity } from "@/components/admin/todays-challenge-activity";
 import type { Profile, CheckIn } from "@/lib/database.types";
@@ -14,17 +13,7 @@ import type { Profile, CheckIn } from "@/lib/database.types";
  * Displays overview stats and quick actions
  */
 export default function AdminDashboardPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
+  const { userId: adminId } = useAuth();
 
   // Fetch all clients (profiles with role='client')
   const clientsQuery = useList<Profile>({

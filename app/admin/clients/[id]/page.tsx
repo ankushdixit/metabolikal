@@ -20,7 +20,7 @@ import {
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { CheckInReview } from "@/components/admin/checkin-review";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
@@ -86,21 +86,11 @@ export default function ClientReviewPage() {
   const validTabs: Tab[] = ["checkins", "progress", "photos", "plans", "challenge"];
   const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : "checkins";
 
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const invalidate = useInvalidate();
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch client profile
   const profileQuery = useOne<Profile>({

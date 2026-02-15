@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
 import { Search, Users, UserPlus, Bell } from "lucide-react";
 import { toast } from "sonner";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
 import { AddClientModal } from "@/components/admin/add-client-modal";
@@ -22,7 +22,7 @@ type FilterTab = "all" | "active" | "flagged" | "invited" | "deactivated";
  * Displays all clients with search and filter capabilities
  */
 export default function ClientsPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,16 +35,6 @@ export default function ClientsPage() {
   const [bulkNotificationModalOpen, setBulkNotificationModalOpen] = useState(false);
   const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
   const [reactivateClient, setReactivateClient] = useState<Profile | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Reset to page 1 when filters change
   useEffect(() => {

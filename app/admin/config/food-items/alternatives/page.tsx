@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { AlternativesLinker, type AlternativeChange } from "@/components/admin/alternatives-linker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ import type { FoodItem, FoodItemAlternativeRow } from "@/lib/database.types";
  * Visual interface for managing food item alternatives
  */
 export default function AlternativesPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [pendingChanges, setPendingChanges] = useState<AlternativeChange[]>([]);
   const [bidirectional, setBidirectional] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,16 +24,6 @@ export default function AlternativesPage() {
     success: boolean;
     message: string;
   } | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Fetch all food items
   const foodItemsQuery = useList<FoodItem>({

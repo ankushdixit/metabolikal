@@ -16,6 +16,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Table,
   TableBody,
@@ -41,22 +42,12 @@ import type { FoodItem } from "@/lib/database.types";
  * Lists all food items with search and CRUD operations
  */
 export default function FoodItemsPage() {
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const { userId: adminId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<FoodItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Get current admin user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setAdminId(data.user.id);
-      }
-    });
-  }, []);
 
   // Reset to page 1 when search changes
   useEffect(() => {

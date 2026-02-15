@@ -8,14 +8,13 @@ jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(() => ({ get: jest.fn(() => null) })),
 }));
 
-jest.mock("@/lib/auth", () => ({
-  createBrowserSupabaseClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: "admin-id" } },
-      }),
-    },
-  })),
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    userId: "admin-id",
+    isLoading: false,
+    profile: null,
+    signOut: jest.fn(),
+  }),
 }));
 
 // Mock Refine hooks

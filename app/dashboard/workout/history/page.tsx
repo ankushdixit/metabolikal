@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useList } from "@refinedev/core";
 import { Calendar, ArrowLeft, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
 interface WorkoutLog {
@@ -36,17 +36,7 @@ interface DayHistory {
  * Displays past workout completion records
  */
 export default function WorkoutHistoryPage() {
-  const [userId, setUserId] = useState<string | null>(null);
-
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-      }
-    });
-  }, []);
+  const { userId } = useAuth();
 
   // Fetch workout logs for the past 30 days
   const thirtyDaysAgo = new Date();
