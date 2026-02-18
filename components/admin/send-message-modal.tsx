@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,7 +28,7 @@ interface SendMessageModalProps {
  */
 export function SendMessageModal({
   client,
-  adminId,
+  adminId: _adminId,
   isOpen,
   onClose,
   onSuccess,
@@ -44,18 +43,25 @@ export function SendMessageModal({
     setIsPending(true);
 
     try {
-      const supabase = createBrowserSupabaseClient();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
 
-      const { error } = await supabase.from("notifications").insert({
-        user_id: client.id,
-        sender_id: adminId,
-        type: "message",
-        title: title.trim(),
-        message: message.trim(),
+      const response = await fetch("/api/admin/send-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: client.id,
+          title: title.trim(),
+          message: message.trim(),
+        }),
+        signal: controller.signal,
       });
 
-      if (error) {
-        throw error;
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to send message");
       }
 
       // Send push notification (fire-and-forget, don't block UI)
@@ -85,8 +91,9 @@ export function SendMessageModal({
       onClose();
       onSuccess?.();
     } catch (error) {
-      console.error("Failed to send message:", error);
-      toast.error("Failed to send message");
+      const msg = error instanceof Error ? error.message : "Failed to send message";
+      console.error("Failed to send message:", msg);
+      toast.error(msg === "The operation was aborted." ? "Request timed out" : msg);
     } finally {
       setIsPending(false);
     }

@@ -78,6 +78,20 @@ function checkPushSupport(): { supported: boolean; reason?: string } {
 }
 
 /**
+ * Get the active service worker registration with a timeout.
+ * On Android PWAs, navigator.serviceWorker.ready can hang indefinitely
+ * if the service worker is in a broken state.
+ */
+async function getRegistrationWithTimeout(timeoutMs = 10000): Promise<ServiceWorkerRegistration> {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Service worker not ready")), timeoutMs)
+    ),
+  ]);
+}
+
+/**
  * Hook for managing push notification subscription state
  */
 export function usePushSubscription(): UsePushSubscriptionReturn {
@@ -104,12 +118,7 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
 
       // Wait for service worker with timeout
       try {
-        const registration = await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Service worker activation timed out")), 10000)
-          ),
-        ]);
+        const registration = await getRegistrationWithTimeout();
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
@@ -167,8 +176,8 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
         return false;
       }
 
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready;
+      // Get service worker registration (with timeout for Android)
+      const registration = await getRegistrationWithTimeout();
 
       // Get VAPID public key from environment
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -182,7 +191,10 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as globalThis.BufferSource,
       });
 
-      // Send subscription to server
+      // Send subscription to server (with timeout)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -191,7 +203,10 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
           deviceType: getDeviceType(),
           browser: getBrowserName(),
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!response.ok) {
         // Roll back browser subscription since DB save failed
@@ -204,8 +219,14 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       setIsLoading(false);
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to subscribe";
-      console.error("Push subscribe error:", message);
+      const raw = err instanceof Error ? err.message : "Failed to subscribe";
+      const message =
+        raw === "The operation was aborted."
+          ? "Request timed out — please try again"
+          : raw === "Service worker not ready"
+            ? "Notifications setup timed out — please reload and try again"
+            : raw;
+      console.error("Push subscribe error:", raw);
       setError(message);
       setIsLoading(false);
       return false;
@@ -218,19 +239,23 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
     setError(null);
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getRegistrationWithTimeout();
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
         // Unsubscribe from push manager
         await subscription.unsubscribe();
 
-        // Remove from server
+        // Remove from server (with timeout)
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
         await fetch("/api/push/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
-        });
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
       }
 
       setIsSubscribed(false);
