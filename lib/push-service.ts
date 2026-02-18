@@ -12,6 +12,15 @@ if (
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
+} else {
+  const missing = [
+    !process.env.VAPID_CONTACT_EMAIL && "VAPID_CONTACT_EMAIL",
+    !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+    !process.env.VAPID_PRIVATE_KEY && "VAPID_PRIVATE_KEY",
+  ].filter(Boolean);
+  console.warn(
+    `[Push] VAPID not configured — push notifications disabled. Missing: ${missing.join(", ")}`
+  );
 }
 
 export interface PushNotification {
@@ -190,10 +199,17 @@ export async function sendPushToUser(
     } else {
       failed++;
       const error = result.reason as { statusCode?: number; message?: string };
-      errors.push(error.message || "Unknown error");
+      const errorMsg = error.message || "Unknown error";
+      errors.push(errorMsg);
+      console.error(
+        `[Push] Failed to send to subscription ${subscriptions[index].id}:`,
+        `status=${error.statusCode}`,
+        errorMsg
+      );
 
       // If subscription expired or invalid, mark for cleanup
       if (error.statusCode === 410 || error.statusCode === 404) {
+        console.warn(`[Push] Removing expired subscription: ${subscriptions[index].id}`);
         expiredEndpoints.push(subscriptions[index].endpoint);
       }
     }
