@@ -12,6 +12,9 @@ if (
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
+  console.log(
+    `[Push] VAPID configured — public key starts with: ${process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY.slice(0, 12)}...`
+  );
 } else {
   const missing = [
     !process.env.VAPID_CONTACT_EMAIL && "VAPID_CONTACT_EMAIL",
@@ -178,31 +181,13 @@ export async function sendPushToUser(
     return { success: true, sent: 0, failed: 0, errors: [] };
   }
 
-  // Pre-filter obviously invalid endpoints
-  const invalidEndpoints = subscriptions
-    .filter(
-      (sub) =>
-        sub.endpoint.includes("permanently-removed.invalid") || !sub.endpoint.startsWith("https://")
-    )
-    .map((sub) => sub.endpoint);
-
-  if (invalidEndpoints.length > 0) {
-    console.warn(
-      `[Push] Removing ${invalidEndpoints.length} invalid subscription(s) for user ${userId}`
-    );
-    await supabase.from("push_subscriptions").delete().in("endpoint", invalidEndpoints);
-  }
-
-  const validSubscriptions = subscriptions.filter(
-    (sub) => !invalidEndpoints.includes(sub.endpoint)
-  );
-
-  if (validSubscriptions.length === 0) {
-    return { success: true, sent: 0, failed: 0, errors: [] };
-  }
+  // Log all subscription endpoints for debugging
+  subscriptions.forEach((sub) => {
+    console.log(`[Push] Subscription ${sub.id}: endpoint=${sub.endpoint.slice(0, 60)}...`);
+  });
 
   const results = await Promise.allSettled(
-    validSubscriptions.map((sub: PushSubscriptionRecord) => sendToSubscription(sub, notification))
+    subscriptions.map((sub: PushSubscriptionRecord) => sendToSubscription(sub, notification))
   );
 
   let sent = 0;
@@ -213,11 +198,12 @@ export async function sendPushToUser(
   results.forEach((result, index) => {
     if (result.status === "fulfilled") {
       sent++;
+      console.log(`[Push] Successfully sent to subscription ${subscriptions[index].id}`);
       // Update last_used_at
       supabase
         .from("push_subscriptions")
         .update({ last_used_at: new Date().toISOString() })
-        .eq("id", validSubscriptions[index].id)
+        .eq("id", subscriptions[index].id)
         .then(() => {}); // Fire and forget
     } else {
       failed++;
@@ -225,15 +211,15 @@ export async function sendPushToUser(
       const errorMsg = error.message || "Unknown error";
       errors.push(errorMsg);
       console.error(
-        `[Push] Failed to send to subscription ${validSubscriptions[index].id}:`,
+        `[Push] Failed to send to subscription ${subscriptions[index].id}:`,
         `status=${error.statusCode}`,
         errorMsg
       );
 
-      // If subscription expired, invalid, or rejected (VAPID mismatch), mark for cleanup
-      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
-        console.warn(`[Push] Removing stale subscription: ${validSubscriptions[index].id}`);
-        expiredEndpoints.push(validSubscriptions[index].endpoint);
+      // Only delete on 410 Gone — the subscription is permanently invalid
+      if (error.statusCode === 410) {
+        console.warn(`[Push] Subscription gone (410), removing: ${subscriptions[index].id}`);
+        expiredEndpoints.push(subscriptions[index].endpoint);
       }
     }
   });
