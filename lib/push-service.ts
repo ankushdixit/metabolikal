@@ -178,8 +178,31 @@ export async function sendPushToUser(
     return { success: true, sent: 0, failed: 0, errors: [] };
   }
 
+  // Pre-filter obviously invalid endpoints
+  const invalidEndpoints = subscriptions
+    .filter(
+      (sub) =>
+        sub.endpoint.includes("permanently-removed.invalid") || !sub.endpoint.startsWith("https://")
+    )
+    .map((sub) => sub.endpoint);
+
+  if (invalidEndpoints.length > 0) {
+    console.warn(
+      `[Push] Removing ${invalidEndpoints.length} invalid subscription(s) for user ${userId}`
+    );
+    await supabase.from("push_subscriptions").delete().in("endpoint", invalidEndpoints);
+  }
+
+  const validSubscriptions = subscriptions.filter(
+    (sub) => !invalidEndpoints.includes(sub.endpoint)
+  );
+
+  if (validSubscriptions.length === 0) {
+    return { success: true, sent: 0, failed: 0, errors: [] };
+  }
+
   const results = await Promise.allSettled(
-    subscriptions.map((sub: PushSubscriptionRecord) => sendToSubscription(sub, notification))
+    validSubscriptions.map((sub: PushSubscriptionRecord) => sendToSubscription(sub, notification))
   );
 
   let sent = 0;
@@ -194,7 +217,7 @@ export async function sendPushToUser(
       supabase
         .from("push_subscriptions")
         .update({ last_used_at: new Date().toISOString() })
-        .eq("id", subscriptions[index].id)
+        .eq("id", validSubscriptions[index].id)
         .then(() => {}); // Fire and forget
     } else {
       failed++;
@@ -202,15 +225,15 @@ export async function sendPushToUser(
       const errorMsg = error.message || "Unknown error";
       errors.push(errorMsg);
       console.error(
-        `[Push] Failed to send to subscription ${subscriptions[index].id}:`,
+        `[Push] Failed to send to subscription ${validSubscriptions[index].id}:`,
         `status=${error.statusCode}`,
         errorMsg
       );
 
-      // If subscription expired or invalid, mark for cleanup
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        console.warn(`[Push] Removing expired subscription: ${subscriptions[index].id}`);
-        expiredEndpoints.push(subscriptions[index].endpoint);
+      // If subscription expired, invalid, or rejected (VAPID mismatch), mark for cleanup
+      if (error.statusCode === 410 || error.statusCode === 404 || error.statusCode === 403) {
+        console.warn(`[Push] Removing stale subscription: ${validSubscriptions[index].id}`);
+        expiredEndpoints.push(validSubscriptions[index].endpoint);
       }
     }
   });
