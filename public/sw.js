@@ -3,7 +3,7 @@
 // Service Worker for Metabolikal PWA
 // Handles push notifications and notification clicks
 
-const CACHE_NAME = "metabolikal-v1";
+const CACHE_NAME = "metabolikal-v2";
 
 // Install event - skip waiting to activate immediately
 self.addEventListener("install", (event) => {
@@ -23,11 +23,12 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: data.icon || "/icons/icon-192x192.svg",
-      badge: data.badge || "/icons/icon-72x72.svg",
+      icon: data.icon || "/icons/icon-192x192.png",
+      badge: data.badge || "/icons/icon-72x72.png",
       tag: data.tag || "default",
       data: data.data || {},
       vibrate: [100, 50, 100],
+      renotify: !!data.tag,
       requireInteraction: data.requireInteraction || false,
       actions: data.actions || [],
     };

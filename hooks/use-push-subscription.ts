@@ -54,10 +54,27 @@ function getDeviceType(): "desktop" | "mobile" | "tablet" {
 function getBrowserName(): string {
   const ua = navigator.userAgent;
   if (ua.includes("Firefox")) return "firefox";
-  if (ua.includes("Chrome")) return "chrome";
+  if (ua.includes("Edg")) return "edge";
+  if (ua.includes("SamsungBrowser")) return "samsung";
+  if (ua.includes("Chrome") || ua.includes("CriOS")) return "chrome";
   if (ua.includes("Safari")) return "safari";
-  if (ua.includes("Edge")) return "edge";
   return "unknown";
+}
+
+/**
+ * Check if the current browser/OS supports push notifications in PWA context
+ */
+function checkPushSupport(): { supported: boolean; reason?: string } {
+  if (!("serviceWorker" in navigator)) {
+    return { supported: false, reason: "Service workers are not supported" };
+  }
+  if (!("PushManager" in window)) {
+    return { supported: false, reason: "Push notifications are not supported" };
+  }
+  if (!("Notification" in window)) {
+    return { supported: false, reason: "Notifications API is not available" };
+  }
+  return { supported: true };
 }
 
 /**
@@ -72,11 +89,12 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
 
   // Check support and current state on mount
   useEffect(() => {
-    const checkSupport = async () => {
-      // Check if push is supported
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    const checkSupportAndSubscription = async () => {
+      const { supported, reason } = checkPushSupport();
+      if (!supported) {
         setIsSupported(false);
         setPermission("unsupported");
+        setError(reason || null);
         setIsLoading(false);
         return;
       }
@@ -84,9 +102,14 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       setIsSupported(true);
       setPermission(Notification.permission);
 
-      // Check if already subscribed
+      // Wait for service worker with timeout
       try {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Service worker activation timed out")), 10000)
+          ),
+        ]);
         const subscription = await registration.pushManager.getSubscription();
         setIsSubscribed(!!subscription);
       } catch (err) {
@@ -96,7 +119,7 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       setIsLoading(false);
     };
 
-    checkSupport();
+    checkSupportAndSubscription();
   }, []);
 
   // Subscribe to push notifications
