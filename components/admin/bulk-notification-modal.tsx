@@ -60,33 +60,31 @@ export function BulkNotificationModal({
         throw error;
       }
 
-      // Send push notifications to all selected clients
-      try {
-        const pushResponse = await fetch("/api/push/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userIds: selectedClientIds,
-            notification: {
-              title: title.trim(),
-              body:
-                message.trim().length > 100 ? `${message.trim().slice(0, 97)}...` : message.trim(),
-              data: {
-                url: "/dashboard",
-                type: "message",
-              },
+      // Send push notifications to all selected clients (fire-and-forget, don't block UI)
+      fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userIds: selectedClientIds,
+          notification: {
+            title: title.trim(),
+            body:
+              message.trim().length > 100 ? `${message.trim().slice(0, 97)}...` : message.trim(),
+            data: {
+              url: "/dashboard",
+              type: "message",
             },
-          }),
-        });
-        const pushResult = await pushResponse.json();
-        console.log("Push notification result:", pushResult);
-        if (pushResult.sent > 0) {
-          toast.success(`Push sent to ${pushResult.sent} device(s)`);
-        }
-      } catch (pushError) {
-        console.error("Failed to send push notifications:", pushError);
-        // Don't throw - in-app notifications were already sent
-      }
+          },
+        }),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          console.log("Push notification result:", result);
+          if (result.sent > 0) {
+            toast.success(`Push sent to ${result.sent} device(s)`);
+          }
+        })
+        .catch((err) => console.error("Failed to send push notifications:", err));
 
       toast.success(
         `Notification sent to ${selectedClientIds.length} client${selectedClientIds.length !== 1 ? "s" : ""}`
