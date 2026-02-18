@@ -111,7 +111,31 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
           ),
         ]);
         const subscription = await registration.pushManager.getSubscription();
-        setIsSubscribed(!!subscription);
+
+        if (subscription) {
+          // Verify the subscription is backed by a DB record
+          try {
+            const res = await fetch("/api/push/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ endpoint: subscription.endpoint }),
+            });
+            const data = await res.json();
+            if (data.exists) {
+              setIsSubscribed(true);
+            } else {
+              // Browser has a subscription but DB doesn't — clean up the orphan
+              console.warn("Orphan push subscription found, cleaning up");
+              await subscription.unsubscribe().catch(() => {});
+              setIsSubscribed(false);
+            }
+          } catch {
+            // If verify fails (e.g. not logged in), trust browser state
+            setIsSubscribed(true);
+          }
+        } else {
+          setIsSubscribed(false);
+        }
       } catch (err) {
         console.error("Error checking subscription:", err);
       }
@@ -170,7 +194,10 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save subscription");
+        // Roll back browser subscription since DB save failed
+        await subscription.unsubscribe().catch(() => {});
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server returned ${response.status}`);
       }
 
       setIsSubscribed(true);
@@ -178,6 +205,7 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to subscribe";
+      console.error("Push subscribe error:", message);
       setError(message);
       setIsLoading(false);
       return false;

@@ -54,32 +54,29 @@ export function SendMessageModal({
         },
       },
       {
-        onSuccess: async () => {
-          // Send push notification to the client
-          try {
-            const pushResponse = await fetch("/api/push/send", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userIds: [client!.id],
-                notification: {
-                  title: title.trim(),
-                  body:
-                    message.trim().length > 100
-                      ? `${message.trim().slice(0, 97)}...`
-                      : message.trim(),
-                  data: {
-                    url: "/dashboard",
-                    type: "message",
-                  },
+        onSuccess: () => {
+          // Send push notification to the client (fire-and-forget, don't block UI)
+          fetch("/api/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userIds: [client!.id],
+              notification: {
+                title: title.trim(),
+                body:
+                  message.trim().length > 100
+                    ? `${message.trim().slice(0, 97)}...`
+                    : message.trim(),
+                data: {
+                  url: "/dashboard",
+                  type: "message",
                 },
-              }),
-            });
-            const pushResult = await pushResponse.json();
-            console.log("Push notification result:", pushResult);
-          } catch (pushError) {
-            console.error("Failed to send push notification:", pushError);
-          }
+              },
+            }),
+          })
+            .then((res) => res.json())
+            .then((result) => console.log("Push notification result:", result))
+            .catch((err) => console.error("Failed to send push notification:", err));
 
           toast.success(`Message sent to ${client?.full_name || "client"}`);
           setTitle("");

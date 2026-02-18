@@ -20,11 +20,16 @@ interface SubscribeRequest {
  */
 export async function POST(request: Request) {
   try {
+    console.log("[API /api/push/subscribe] Request received");
+
     // Authenticate the user
     const user = await getUser();
     if (!user) {
+      console.warn("[API /api/push/subscribe] Unauthorized — no user session");
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
+
+    console.log(`[API /api/push/subscribe] User: ${user.id}`);
 
     // Parse request body
     const body: SubscribeRequest = await request.json();
@@ -52,6 +57,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existing) {
+      console.log(`[API /api/push/subscribe] Updating existing subscription: ${existing.id}`);
       // Update the existing subscription (keys might have changed)
       const { error: updateError } = await supabase
         .from("push_subscriptions")
@@ -94,12 +100,16 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error("Error creating push subscription:", insertError);
+      console.error("[API /api/push/subscribe] Insert error:", insertError);
       return NextResponse.json(
         { success: false, error: "Failed to save subscription" },
         { status: 500 }
       );
     }
+
+    console.log(
+      `[API /api/push/subscribe] Created subscription: ${newSubscription.id} for user ${user.id}`
+    );
 
     return NextResponse.json({
       success: true,
