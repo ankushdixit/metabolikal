@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCreate } from "@refinedev/core";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -36,59 +36,60 @@ export function SendMessageModal({
 }: SendMessageModalProps) {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [isPending, setIsPending] = useState(false);
 
-  const createMutation = useCreate();
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!client || !title.trim() || !message.trim() || isPending) return;
 
-    createMutation.mutate(
-      {
-        resource: "notifications",
-        values: {
-          user_id: client.id,
-          sender_id: adminId,
-          type: "message",
-          title: title.trim(),
-          message: message.trim(),
-        },
-      },
-      {
-        onSuccess: () => {
-          // Send push notification to the client (fire-and-forget, don't block UI)
-          fetch("/api/push/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userIds: [client!.id],
-              notification: {
-                title: title.trim(),
-                body:
-                  message.trim().length > 100
-                    ? `${message.trim().slice(0, 97)}...`
-                    : message.trim(),
-                data: {
-                  url: "/dashboard",
-                  type: "message",
-                },
-              },
-            }),
-          })
-            .then((res) => res.json())
-            .then((result) => console.log("Push notification result:", result))
-            .catch((err) => console.error("Failed to send push notification:", err));
+    setIsPending(true);
 
-          toast.success(`Message sent to ${client?.full_name || "client"}`);
-          setTitle("");
-          setMessage("");
-          onClose();
-          onSuccess?.();
-        },
-        onError: (error) => {
-          toast.error(error?.message || "Failed to send message");
-        },
+    try {
+      const supabase = createBrowserSupabaseClient();
+
+      const { error } = await supabase.from("notifications").insert({
+        user_id: client.id,
+        sender_id: adminId,
+        type: "message",
+        title: title.trim(),
+        message: message.trim(),
+      });
+
+      if (error) {
+        throw error;
       }
-    );
+
+      // Send push notification (fire-and-forget, don't block UI)
+      fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userIds: [client.id],
+          notification: {
+            title: title.trim(),
+            body:
+              message.trim().length > 100 ? `${message.trim().slice(0, 97)}...` : message.trim(),
+            data: {
+              url: "/dashboard",
+              type: "message",
+            },
+          },
+        }),
+      })
+        .then((res) => res.json())
+        .then((result) => console.log("Push notification result:", result))
+        .catch((err) => console.error("Failed to send push notification:", err));
+
+      toast.success(`Message sent to ${client.full_name || "client"}`);
+      setTitle("");
+      setMessage("");
+      onClose();
+      onSuccess?.();
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -99,7 +100,6 @@ export function SendMessageModal({
     }
   };
 
-  const isPending = createMutation.mutation.isPending;
   const isFormValid = title.trim() !== "" && message.trim() !== "";
 
   return (
