@@ -30,9 +30,15 @@ export async function POST(request: Request) {
     }
 
     console.log(`[API /api/push/subscribe] User: ${user.id}`);
+    console.log(
+      `[API /api/push/subscribe] Client VAPID public key starts with: ${(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "NOT SET").slice(0, 12)}...`
+    );
 
     // Parse request body
     const body: SubscribeRequest = await request.json();
+    console.log(
+      `[API /api/push/subscribe] Endpoint: ${body.subscription?.endpoint?.slice(0, 60)}...`
+    );
 
     // Validate required fields
     if (
