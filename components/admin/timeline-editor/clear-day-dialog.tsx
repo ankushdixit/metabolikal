@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDelete } from "@refinedev/core";
 import { Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +46,13 @@ export function ClearDayDialog({
     new Set(["meal", "supplement", "workout", "lifestyle"])
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Safety net: reset loading state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
 
   // Delete mutation
   const deleteItem = useDelete();
@@ -120,6 +127,12 @@ export function ClearDayDialog({
 
     setIsSubmitting(true);
 
+    // Safety timeout: force-reset if operations hang (e.g. network drop)
+    const safetyTimeout = setTimeout(() => {
+      setIsSubmitting(false);
+      toast.error("Operation timed out. Please try again.");
+    }, 30_000);
+
     try {
       // Map source type to resource name
       const sourceTypeToResource: Record<ExtendedTimelineItem["sourceType"], string> = {
@@ -142,10 +155,10 @@ export function ClearDayDialog({
 
       toast.success(`Cleared ${itemsToDelete.length} items from Day ${dayNumber}`);
       onSuccess();
-      onClose();
     } catch {
       toast.error("Failed to clear items. Please try again.");
     } finally {
+      clearTimeout(safetyTimeout);
       setIsSubmitting(false);
     }
   };
