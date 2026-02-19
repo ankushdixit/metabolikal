@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
-import { Search, Users, UserPlus, Bell } from "lucide-react";
+import { Search, Users, UserPlus, Bell, Download } from "lucide-react";
 import { toast } from "sonner";
+import Papa from "papaparse";
+import { downloadBlob } from "@/lib/csv-parser";
 import { useAuth } from "@/contexts/auth-context";
 import { ClientTable } from "@/components/admin/client-table";
 import { SendMessageModal } from "@/components/admin/send-message-modal";
@@ -248,6 +250,51 @@ export default function ClientsPage() {
     handleExitSelectionMode();
   };
 
+  const handleExportCSV = () => {
+    if (filteredClients.length === 0) {
+      toast.error("No clients to export");
+      return;
+    }
+
+    const rows = filteredClients.map((client) => {
+      let status = "Active";
+      if (client.is_deactivated) {
+        status = "Deactivated";
+      } else if (client.invited_at && !client.invitation_accepted_at) {
+        status = "Invited";
+      } else if (client.lastCheckIn?.flagged_for_followup) {
+        status = "Flagged";
+      }
+
+      const formatDate = (d: string | null) => {
+        if (!d) return "";
+        return new Date(d).toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      };
+
+      return {
+        Name: client.full_name || "",
+        Email: client.email || "",
+        Phone: client.phone || "",
+        "Date of Birth": formatDate(client.date_of_birth),
+        Gender: client.gender || "",
+        Address: client.address || "",
+        "Plan Start Date": formatDate(client.plan_start_date),
+        "Plan Duration (Days)": client.plan_duration_days ?? "",
+        Status: status,
+        Joined: formatDate(client.created_at),
+      };
+    });
+
+    const csv = Papa.unparse(rows);
+    const today = new Date().toISOString().split("T")[0];
+    downloadBlob(csv, `clients_${today}.csv`, "text/csv;charset=utf-8");
+    toast.success(`Exported ${filteredClients.length} client(s)`);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header Section */}
@@ -272,6 +319,14 @@ export default function ClientsPage() {
                 Bulk Notify
               </button>
             )}
+            <button
+              onClick={handleExportCSV}
+              className="btn-athletic flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm font-bold uppercase tracking-wider"
+              data-testid="export-clients-button"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </button>
             <button
               onClick={() => setAddClientModalOpen(true)}
               className="btn-athletic flex items-center gap-2 px-4 py-2 gradient-electric text-black glow-power text-sm font-bold uppercase tracking-wider"
