@@ -149,12 +149,8 @@ describe("usePushSubscription", () => {
       unsubscribe: mockUnsubscribe,
     };
     mockGetSubscription.mockResolvedValue(existingSubscription);
-    mockServiceWorkerReady.mockResolvedValue({
-      pushManager: {
-        getSubscription: mockGetSubscription,
-        subscribe: mockSubscribe,
-      },
-    });
+    // Hook now calls /api/push/verify to check if browser subscription is backed by DB
+    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ exists: true }) });
 
     const { result } = renderHook(() => usePushSubscription());
 
@@ -240,7 +236,8 @@ describe("usePushSubscription", () => {
   });
 
   it("subscribe returns false when API call fails", async () => {
-    mockFetch.mockResolvedValue({ ok: false });
+    // Hook now reads response.json() and response.status on failure
+    mockFetch.mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) });
 
     const { result } = renderHook(() => usePushSubscription());
 
@@ -254,7 +251,7 @@ describe("usePushSubscription", () => {
     });
 
     expect(success).toBe(false);
-    expect(result.current.error).toBe("Failed to save subscription");
+    expect(result.current.error).toBe("Server returned 500");
   });
 
   it("unsubscribe removes subscription", async () => {

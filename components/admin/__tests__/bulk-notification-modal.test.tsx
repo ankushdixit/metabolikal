@@ -20,6 +20,10 @@ jest.mock("sonner", () => ({
   },
 }));
 
+// Mock global fetch for fire-and-forget push notification call in handleSubmit
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
+
 describe("BulkNotificationModal Component", () => {
   const defaultProps = {
     selectedClientIds: ["client-1", "client-2", "client-3"],
@@ -32,6 +36,7 @@ describe("BulkNotificationModal Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockInsert.mockReset();
+    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ sent: 0 }) });
   });
 
   describe("Rendering", () => {

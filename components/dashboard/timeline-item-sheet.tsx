@@ -577,6 +577,7 @@ export function TimelineItemSheet({
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
         <Drawer.Content
+          aria-describedby={undefined}
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50",
             "bg-background border rounded-t-xl",

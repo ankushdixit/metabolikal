@@ -59,8 +59,17 @@ const SheetContent = React.forwardRef<
 >(({ side = "right", className, children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      <SheetPrimitive.Close className="absolute right-4 top-4 p-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+    <SheetPrimitive.Content
+      ref={ref}
+      className={cn(
+        sheetVariants({ side }),
+        // Safe-area padding so content clears mobile status bar / notch
+        "pt-safe-top-content sm:pt-6",
+        className
+      )}
+      {...props}
+    >
+      <SheetPrimitive.Close className="absolute right-4 top-safe-top sm:top-4 p-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
