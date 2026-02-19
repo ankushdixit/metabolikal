@@ -3,6 +3,7 @@
 import { Utensils, ArrowRight, Plus } from "lucide-react";
 import type { MealCategory, QuantityType } from "@/lib/database.types";
 import { formatQuantityDisplay } from "@/lib/utils/quantity";
+import { getMealLabel } from "@/lib/utils/meal-labels";
 
 interface FoodItem {
   id: string;
@@ -20,23 +21,13 @@ interface MealCardProps {
   servingMultiplier: number;
   onSeeAlternatives: () => void;
   onLogFood: () => void;
+  /** Display label for this meal category (from useMealTypes) */
+  mealLabel?: string;
   /** Quantity input fields */
   quantityGrams?: number | null;
   quantityType?: QuantityType | null;
   quantityNote?: string | null;
 }
-
-/**
- * Meal category display names in order
- */
-const MEAL_LABELS: Record<MealCategory, string> = {
-  "pre-workout": "Pre-Workout Meal",
-  "post-workout": "Post-Workout Meal",
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  "evening-snack": "Evening Snacks",
-  dinner: "Dinner",
-};
 
 /**
  * Meal icons based on category
@@ -56,11 +47,13 @@ export function MealCard({
   servingMultiplier,
   onSeeAlternatives,
   onLogFood,
+  mealLabel: mealLabelProp,
   quantityGrams,
   quantityType,
   quantityNote,
 }: MealCardProps) {
   const MealIcon = getMealIcon(mealCategory);
+  const label = mealLabelProp || getMealLabel(mealCategory, {});
 
   // Calculate adjusted values based on serving multiplier
   const adjustedCalories = foodItem ? Math.round(foodItem.calories * servingMultiplier) : 0;
@@ -77,7 +70,7 @@ export function MealCard({
             <MealIcon className="h-5 w-5 text-muted-foreground" />
           </div>
           <h3 className="text-sm font-black tracking-[0.15em] text-muted-foreground uppercase">
-            {MEAL_LABELS[mealCategory]}
+            {label}
           </h3>
         </div>
         <p className="text-sm font-bold text-muted-foreground">No meal assigned</p>
@@ -93,9 +86,7 @@ export function MealCard({
           <div className="p-3 bg-secondary">
             <MealIcon className="h-5 w-5 text-primary" />
           </div>
-          <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">
-            {MEAL_LABELS[mealCategory]}
-          </h3>
+          <h3 className="text-sm font-black tracking-[0.15em] text-primary uppercase">{label}</h3>
         </div>
         {quantityDisplay ? (
           <span className="text-xs font-bold text-muted-foreground tracking-wider px-2 py-1 bg-secondary">
@@ -147,5 +138,3 @@ export function MealCard({
     </div>
   );
 }
-
-export { MEAL_LABELS };

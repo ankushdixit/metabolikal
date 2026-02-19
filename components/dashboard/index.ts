@@ -1,7 +1,7 @@
 export { CalorieSummary } from "./calorie-summary";
 export { ProteinProgress } from "./protein-progress";
 export { QuickActions } from "./quick-actions";
-export { MealCard, MEAL_LABELS } from "./meal-card";
+export { MealCard } from "./meal-card";
 export { FoodAlternativesDrawer } from "./food-alternatives-drawer";
 export { FoodLogForm } from "./food-log-form";
 export { FoodSearch } from "./food-search";

@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import type { MealCategory } from "@/lib/database.types";
 import type { DietPlanWithFood, DietTotals } from "@/hooks/use-daily-plan-data";
 import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
+import { useMealTypes } from "@/hooks/use-meal-types";
+import { buildMealLabelMap, getMealLabel, sortMealCategories } from "@/lib/utils/meal-labels";
 
 interface DailyDietSectionProps {
   dietByMeal: Map<MealCategory, DietPlanWithFood[]>;
@@ -20,37 +22,15 @@ interface DailyDietSectionProps {
 }
 
 /**
- * Meal category labels for display
- */
-const MEAL_LABELS: Record<MealCategory, string> = {
-  "pre-workout": "Pre-Workout",
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  "evening-snack": "Evening Snack",
-  "post-workout": "Post-Workout",
-  dinner: "Dinner",
-};
-
-/**
- * Meal category display order
- */
-const MEAL_ORDER: MealCategory[] = [
-  "pre-workout",
-  "breakfast",
-  "lunch",
-  "evening-snack",
-  "post-workout",
-  "dinner",
-];
-
-/**
  * Daily diet section component
  */
 export function DailyDietSection({ dietByMeal, totals, className }: DailyDietSectionProps) {
+  const { mealTypes } = useMealTypes();
+  const labelMap = buildMealLabelMap(mealTypes);
   const hasPlans = dietByMeal.size > 0;
 
-  // Get meals in display order
-  const orderedMeals = MEAL_ORDER.filter((meal) => dietByMeal.has(meal));
+  // Get meals in display order (sorted by meal_types.display_order)
+  const orderedMeals = sortMealCategories([...dietByMeal.keys()], mealTypes);
 
   return (
     <div className={cn("athletic-card p-4", className)}>
@@ -74,7 +54,7 @@ export function DailyDietSection({ dietByMeal, totals, className }: DailyDietSec
             return (
               <div key={meal} className="bg-secondary/30 p-3 rounded">
                 <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">
-                  {MEAL_LABELS[meal]}
+                  {getMealLabel(meal, labelMap)}
                 </p>
                 <div className="space-y-1">
                   {items.map((item) => {

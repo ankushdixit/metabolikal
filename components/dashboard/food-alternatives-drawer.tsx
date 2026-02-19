@@ -15,7 +15,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getCalorieColor } from "@/lib/utils/calorie-colors";
 import type { MealCategory } from "@/lib/database.types";
-import { MEAL_LABELS } from "./meal-card";
+import { getMealLabel } from "@/lib/utils/meal-labels";
 
 interface FoodItem {
   id: string;
@@ -47,6 +47,8 @@ interface FoodAlternativesDrawerProps {
   targetCalories: number;
   onSelectAlternative: (foodItemId: string) => void;
   isUpdating?: boolean;
+  /** Display label for this meal category (from useMealTypes) */
+  mealLabel?: string;
 }
 
 /**
@@ -62,6 +64,7 @@ export function FoodAlternativesDrawer({
   targetCalories,
   onSelectAlternative,
   isUpdating = false,
+  mealLabel: mealLabelProp,
 }: FoodAlternativesDrawerProps) {
   const [showVegetarianOnly, setShowVegetarianOnly] = useState(false);
 
@@ -96,7 +99,10 @@ export function FoodAlternativesDrawer({
           </SheetPrimitive.Close>
           <SheetHeader className="mb-6">
             <SheetTitle className="text-xl font-black uppercase tracking-tight">
-              <span className="gradient-athletic">{MEAL_LABELS[mealCategory]}</span> Alternatives
+              <span className="gradient-athletic">
+                {mealLabelProp || getMealLabel(mealCategory, {})}
+              </span>{" "}
+              Alternatives
             </SheetTitle>
             <SheetDescription className="text-muted-foreground font-bold text-sm">
               Select a food to swap into your meal plan
