@@ -127,15 +127,15 @@ export function CopyDayModal({
 
     setIsSubmitting(true);
 
+    // Safety timeout: force-reset if operations hang (e.g. network drop)
+    const safetyTimeout = setTimeout(() => {
+      setIsSubmitting(false);
+      toast.error("Operation timed out. Please try again.");
+    }, 30_000);
+
     try {
       const targetDays = Array.from(selectedDays);
       const supabase = createBrowserSupabaseClient();
-
-      // Log and show toast to confirm mode
-      console.log("=== COPY OPERATION ===");
-      console.log("Mode:", copyMode);
-      console.log("Target days:", targetDays);
-      console.log("Items to copy:", totalItems);
 
       if (copyMode === "replace") {
         toast.info(`Replace mode: Deleting existing items first...`);
@@ -145,10 +145,6 @@ export function CopyDayModal({
       for (const targetDay of targetDays) {
         // For replace mode, delete existing items on target day first
         if (copyMode === "replace") {
-          console.log(
-            `REPLACE MODE: Deleting existing items on day ${targetDay} for client ${clientId}...`
-          );
-
           // Fetch existing item IDs first
           const { data: dietIds } = await supabase
             .from("diet_plans")
@@ -181,42 +177,23 @@ export function CopyDayModal({
             lifestyle: lifestyleIds || [],
           };
 
-          console.log("Found items to delete:", {
-            diet: allIds.diet.length,
-            supplement: allIds.supplement.length,
-            workout: allIds.workout.length,
-            lifestyle: allIds.lifestyle.length,
-          });
-
           // Delete by IDs using Supabase .in() for each table
           if (allIds.diet.length > 0) {
             const ids = allIds.diet.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("diet_plans").delete().in("id", ids);
-            if (error) {
-              console.error("Failed to delete diet_plans:", error);
-              throw error;
-            }
-            console.log(`Deleted ${ids.length} diet plans`);
+            if (error) throw error;
           }
 
           if (allIds.supplement.length > 0) {
             const ids = allIds.supplement.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("supplement_plans").delete().in("id", ids);
-            if (error) {
-              console.error("Failed to delete supplement_plans:", error);
-              throw error;
-            }
-            console.log(`Deleted ${ids.length} supplement plans`);
+            if (error) throw error;
           }
 
           if (allIds.workout.length > 0) {
             const ids = allIds.workout.map((i: { id: string }) => i.id);
             const { error } = await supabase.from("workout_plans").delete().in("id", ids);
-            if (error) {
-              console.error("Failed to delete workout_plans:", error);
-              throw error;
-            }
-            console.log(`Deleted ${ids.length} workout plans`);
+            if (error) throw error;
           }
 
           if (allIds.lifestyle.length > 0) {
@@ -225,21 +202,8 @@ export function CopyDayModal({
               .from("lifestyle_activity_plans")
               .delete()
               .in("id", ids);
-            if (error) {
-              console.error("Failed to delete lifestyle_activity_plans:", error);
-              throw error;
-            }
-            console.log(`Deleted ${ids.length} lifestyle plans`);
+            if (error) throw error;
           }
-
-          const totalDeleted =
-            allIds.diet.length +
-            allIds.supplement.length +
-            allIds.workout.length +
-            allIds.lifestyle.length;
-          console.log(
-            `REPLACE MODE: Successfully deleted ${totalDeleted} items from day ${targetDay}`
-          );
         }
 
         // Copy diet plans with all fields (including display_order for ordering)
@@ -340,11 +304,11 @@ export function CopyDayModal({
       const modeText = copyMode === "replace" ? "Replaced and copied" : "Copied";
       toast.success(`${modeText} ${totalItems} items to ${selectedDays.size} ${dayText}`);
       onSuccess();
-      onClose();
     } catch (error) {
       console.error("Copy failed:", error);
       toast.error("Failed to copy items. Please try again.");
     } finally {
+      clearTimeout(safetyTimeout);
       setIsSubmitting(false);
     }
   };

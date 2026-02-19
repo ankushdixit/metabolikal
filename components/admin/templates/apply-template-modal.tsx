@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useList, useCreate } from "@refinedev/core";
 import { createBrowserSupabaseClient } from "@/lib/auth";
 import { Search, Loader2, LayoutTemplate, Filter, Plus, RefreshCw, Check } from "lucide-react";
@@ -73,6 +73,13 @@ export function ApplyTemplateModal({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [applyMode, setApplyMode] = useState<ApplyMode>("add");
   const [isApplying, setIsApplying] = useState(false);
+
+  // Safety net: reset loading state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsApplying(false);
+    }
+  }, [isOpen]);
 
   // Fetch active templates with item counts
   const templatesQuery = useList<TemplateWithCounts>({
@@ -174,202 +181,217 @@ export function ApplyTemplateModal({
 
     setIsApplying(true);
 
+    // Safety timeout: force-reset if operations hang (e.g. network drop)
+    const safetyTimeout = setTimeout(() => {
+      setIsApplying(false);
+      toast.error("Operation timed out. Please try again.");
+    }, 30_000);
+
     const results: { type: string; name: string; success: boolean; error?: string }[] = [];
+    let deleteFailed = false;
 
     try {
       // In replace mode, delete existing items first using Supabase directly
       if (applyMode === "replace") {
-        const supabase = createBrowserSupabaseClient();
+        try {
+          const supabase = createBrowserSupabaseClient();
 
-        if (existingDietPlanIds.length > 0) {
-          const { error } = await supabase
-            .from("diet_plans")
-            .delete()
-            .in("id", existingDietPlanIds);
-          if (error) throw error;
-        }
+          if (existingDietPlanIds.length > 0) {
+            const { error } = await supabase
+              .from("diet_plans")
+              .delete()
+              .in("id", existingDietPlanIds);
+            if (error) throw error;
+          }
 
-        if (existingSupplementPlanIds.length > 0) {
-          const { error } = await supabase
-            .from("supplement_plans")
-            .delete()
-            .in("id", existingSupplementPlanIds);
-          if (error) throw error;
-        }
+          if (existingSupplementPlanIds.length > 0) {
+            const { error } = await supabase
+              .from("supplement_plans")
+              .delete()
+              .in("id", existingSupplementPlanIds);
+            if (error) throw error;
+          }
 
-        if (existingWorkoutPlanIds.length > 0) {
-          const { error } = await supabase
-            .from("workout_plans")
-            .delete()
-            .in("id", existingWorkoutPlanIds);
-          if (error) throw error;
-        }
+          if (existingWorkoutPlanIds.length > 0) {
+            const { error } = await supabase
+              .from("workout_plans")
+              .delete()
+              .in("id", existingWorkoutPlanIds);
+            if (error) throw error;
+          }
 
-        if (existingLifestylePlanIds.length > 0) {
-          const { error } = await supabase
-            .from("lifestyle_activity_plans")
-            .delete()
-            .in("id", existingLifestylePlanIds);
-          if (error) throw error;
+          if (existingLifestylePlanIds.length > 0) {
+            const { error } = await supabase
+              .from("lifestyle_activity_plans")
+              .delete()
+              .in("id", existingLifestylePlanIds);
+            if (error) throw error;
+          }
+        } catch (error) {
+          console.error("Failed to delete existing items:", error);
+          toast.error("Failed to clear existing items before applying template");
+          deleteFailed = true;
         }
       }
-    } catch (error) {
-      console.error("Failed to delete existing items:", error);
-      toast.error("Failed to clear existing items before applying template");
+
+      if (!deleteFailed) {
+        // Create new items from template — sequential per-item try/catch
+
+        // Diet items
+        const dietItems = dietItemsQuery.query.data?.data || [];
+        for (const item of dietItems) {
+          const name = item.food_items?.name || "Diet item";
+          try {
+            await createDietPlan({
+              resource: "diet_plans",
+              values: {
+                client_id: clientId,
+                day_number: dayNumber,
+                food_item_id: item.food_item_id,
+                meal_category: item.meal_category,
+                serving_multiplier: item.serving_multiplier ?? 1.0,
+                time_type: item.time_type ?? "period",
+                time_start: item.time_start,
+                time_end: item.time_end,
+                time_period: item.time_period,
+                relative_anchor: item.relative_anchor,
+                relative_offset_minutes: item.relative_offset_minutes,
+                notes: item.notes,
+                display_order: item.display_order,
+                quantity_grams: item.quantity_grams,
+                quantity_type: item.quantity_type,
+                quantity_note: item.quantity_note,
+              },
+            });
+            results.push({ type: "diet", name, success: true });
+          } catch (error) {
+            console.error(`Failed to create diet plan for "${name}":`, error);
+            results.push({ type: "diet", name, success: false, error: String(error) });
+          }
+        }
+
+        // Supplement items
+        const supplementItems = supplementItemsQuery.query.data?.data || [];
+        for (const item of supplementItems) {
+          const name = item.supplements?.name || "Supplement";
+          try {
+            await createSupplementPlan({
+              resource: "supplement_plans",
+              values: {
+                client_id: clientId,
+                day_number: dayNumber,
+                supplement_id: item.supplement_id,
+                dosage: item.dosage ?? 1,
+                time_type: item.time_type ?? "relative",
+                time_start: item.time_start,
+                time_end: item.time_end,
+                time_period: item.time_period,
+                relative_anchor: item.relative_anchor,
+                relative_offset_minutes: item.relative_offset_minutes ?? 0,
+                notes: item.notes,
+                display_order: item.display_order,
+                is_active: true,
+              },
+            });
+            results.push({ type: "supplement", name, success: true });
+          } catch (error) {
+            console.error(`Failed to create supplement plan for "${name}":`, error);
+            results.push({ type: "supplement", name, success: false, error: String(error) });
+          }
+        }
+
+        // Workout items
+        const workoutItems = workoutItemsQuery.query.data?.data || [];
+        for (const item of workoutItems) {
+          const name = item.exercise_name || item.exercises?.name || "Exercise";
+          try {
+            await createWorkoutPlan({
+              resource: "workout_plans",
+              values: {
+                client_id: clientId,
+                day_number: dayNumber,
+                exercise_id: item.exercise_id,
+                exercise_name: name,
+                section: item.section ?? "main",
+                sets: item.sets,
+                reps: item.reps,
+                duration_minutes: item.duration_minutes,
+                scheduled_duration_minutes: item.scheduled_duration_minutes,
+                rest_seconds: item.rest_seconds,
+                time_type: item.time_type ?? "period",
+                time_start: item.time_start,
+                time_end: item.time_end,
+                time_period: item.time_period,
+                relative_anchor: item.relative_anchor,
+                relative_offset_minutes: item.relative_offset_minutes ?? 0,
+                instructions: item.notes,
+                display_order: item.display_order,
+              },
+            });
+            results.push({ type: "workout", name, success: true });
+          } catch (error) {
+            console.error(`Failed to create workout plan for "${name}":`, error);
+            results.push({ type: "workout", name, success: false, error: String(error) });
+          }
+        }
+
+        // Lifestyle items
+        const lifestyleItems = lifestyleItemsQuery.query.data?.data || [];
+        for (const item of lifestyleItems) {
+          const name = item.lifestyle_activity_types?.name || "Activity";
+          try {
+            await createLifestylePlan({
+              resource: "lifestyle_activity_plans",
+              values: {
+                client_id: clientId,
+                day_number: dayNumber,
+                activity_type_id: item.lifestyle_activity_type_id,
+                target_value: item.target_value,
+                time_type: item.time_type ?? "all_day",
+                time_start: item.time_start,
+                time_end: item.time_end,
+                time_period: item.time_period,
+                relative_anchor: item.relative_anchor,
+                relative_offset_minutes: item.relative_offset_minutes ?? 0,
+                notes: item.notes,
+                display_order: item.display_order,
+                is_active: true,
+              },
+            });
+            results.push({ type: "lifestyle", name, success: true });
+          } catch (error) {
+            console.error(`Failed to create lifestyle plan for "${name}":`, error);
+            results.push({ type: "lifestyle", name, success: false, error: String(error) });
+          }
+        }
+
+        // Report results
+        const succeeded = results.filter((r) => r.success);
+        const failed = results.filter((r) => !r.success);
+
+        if (failed.length === 0 && succeeded.length > 0) {
+          toast.success(`Applied ${succeeded.length} items from "${selectedTemplate?.name}"`);
+        } else if (succeeded.length === 0 && failed.length > 0) {
+          toast.error(
+            `Failed to apply all ${failed.length} items from "${selectedTemplate?.name}"`
+          );
+        } else if (succeeded.length > 0 && failed.length > 0) {
+          const failedNames = failed.map((r) => r.name).join(", ");
+          toast.warning(
+            `Applied ${succeeded.length} of ${results.length} items. Failed: ${failedNames}`
+          );
+        }
+
+        if (succeeded.length > 0) {
+          onSuccess();
+        } else {
+          onClose();
+        }
+      }
+    } finally {
+      clearTimeout(safetyTimeout);
       setIsApplying(false);
-      return;
     }
-
-    // Create new items from template — sequential per-item try/catch
-
-    // Diet items
-    const dietItems = dietItemsQuery.query.data?.data || [];
-    for (const item of dietItems) {
-      const name = item.food_items?.name || "Diet item";
-      try {
-        await createDietPlan({
-          resource: "diet_plans",
-          values: {
-            client_id: clientId,
-            day_number: dayNumber,
-            food_item_id: item.food_item_id,
-            meal_category: item.meal_category,
-            serving_multiplier: item.serving_multiplier ?? 1.0,
-            time_type: item.time_type ?? "period",
-            time_start: item.time_start,
-            time_end: item.time_end,
-            time_period: item.time_period,
-            relative_anchor: item.relative_anchor,
-            relative_offset_minutes: item.relative_offset_minutes,
-            notes: item.notes,
-            display_order: item.display_order,
-            quantity_grams: item.quantity_grams,
-            quantity_type: item.quantity_type,
-            quantity_note: item.quantity_note,
-          },
-        });
-        results.push({ type: "diet", name, success: true });
-      } catch (error) {
-        console.error(`Failed to create diet plan for "${name}":`, error);
-        results.push({ type: "diet", name, success: false, error: String(error) });
-      }
-    }
-
-    // Supplement items
-    const supplementItems = supplementItemsQuery.query.data?.data || [];
-    for (const item of supplementItems) {
-      const name = item.supplements?.name || "Supplement";
-      try {
-        await createSupplementPlan({
-          resource: "supplement_plans",
-          values: {
-            client_id: clientId,
-            day_number: dayNumber,
-            supplement_id: item.supplement_id,
-            dosage: item.dosage ?? 1,
-            time_type: item.time_type ?? "relative",
-            time_start: item.time_start,
-            time_end: item.time_end,
-            time_period: item.time_period,
-            relative_anchor: item.relative_anchor,
-            relative_offset_minutes: item.relative_offset_minutes ?? 0,
-            notes: item.notes,
-            display_order: item.display_order,
-            is_active: true,
-          },
-        });
-        results.push({ type: "supplement", name, success: true });
-      } catch (error) {
-        console.error(`Failed to create supplement plan for "${name}":`, error);
-        results.push({ type: "supplement", name, success: false, error: String(error) });
-      }
-    }
-
-    // Workout items
-    const workoutItems = workoutItemsQuery.query.data?.data || [];
-    for (const item of workoutItems) {
-      const name = item.exercise_name || item.exercises?.name || "Exercise";
-      try {
-        await createWorkoutPlan({
-          resource: "workout_plans",
-          values: {
-            client_id: clientId,
-            day_number: dayNumber,
-            exercise_id: item.exercise_id,
-            exercise_name: name,
-            section: item.section ?? "main",
-            sets: item.sets,
-            reps: item.reps,
-            duration_minutes: item.duration_minutes,
-            scheduled_duration_minutes: item.scheduled_duration_minutes,
-            rest_seconds: item.rest_seconds,
-            time_type: item.time_type ?? "period",
-            time_start: item.time_start,
-            time_end: item.time_end,
-            time_period: item.time_period,
-            relative_anchor: item.relative_anchor,
-            relative_offset_minutes: item.relative_offset_minutes ?? 0,
-            instructions: item.notes,
-            display_order: item.display_order,
-          },
-        });
-        results.push({ type: "workout", name, success: true });
-      } catch (error) {
-        console.error(`Failed to create workout plan for "${name}":`, error);
-        results.push({ type: "workout", name, success: false, error: String(error) });
-      }
-    }
-
-    // Lifestyle items
-    const lifestyleItems = lifestyleItemsQuery.query.data?.data || [];
-    for (const item of lifestyleItems) {
-      const name = item.lifestyle_activity_types?.name || "Activity";
-      try {
-        await createLifestylePlan({
-          resource: "lifestyle_activity_plans",
-          values: {
-            client_id: clientId,
-            day_number: dayNumber,
-            activity_type_id: item.lifestyle_activity_type_id,
-            target_value: item.target_value,
-            time_type: item.time_type ?? "all_day",
-            time_start: item.time_start,
-            time_end: item.time_end,
-            time_period: item.time_period,
-            relative_anchor: item.relative_anchor,
-            relative_offset_minutes: item.relative_offset_minutes ?? 0,
-            notes: item.notes,
-            display_order: item.display_order,
-            is_active: true,
-          },
-        });
-        results.push({ type: "lifestyle", name, success: true });
-      } catch (error) {
-        console.error(`Failed to create lifestyle plan for "${name}":`, error);
-        results.push({ type: "lifestyle", name, success: false, error: String(error) });
-      }
-    }
-
-    // Report results
-    const succeeded = results.filter((r) => r.success);
-    const failed = results.filter((r) => !r.success);
-
-    if (failed.length === 0 && succeeded.length > 0) {
-      toast.success(`Applied ${succeeded.length} items from "${selectedTemplate?.name}"`);
-    } else if (succeeded.length === 0 && failed.length > 0) {
-      toast.error(`Failed to apply all ${failed.length} items from "${selectedTemplate?.name}"`);
-    } else if (succeeded.length > 0 && failed.length > 0) {
-      const failedNames = failed.map((r) => r.name).join(", ");
-      toast.warning(
-        `Applied ${succeeded.length} of ${results.length} items. Failed: ${failedNames}`
-      );
-    }
-
-    if (succeeded.length > 0) {
-      onSuccess();
-    }
-    onClose();
-    setIsApplying(false);
   }, [
     selectedTemplateId,
     selectedTemplate,
