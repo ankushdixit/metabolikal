@@ -174,6 +174,8 @@ export function ApplyTemplateModal({
 
     setIsApplying(true);
 
+    const results: { type: string; name: string; success: boolean; error?: string }[] = [];
+
     try {
       // In replace mode, delete existing items first using Supabase directly
       if (applyMode === "replace") {
@@ -211,135 +213,163 @@ export function ApplyTemplateModal({
           if (error) throw error;
         }
       }
-
-      // Create new items from template
-      const createPromises: Promise<unknown>[] = [];
-
-      // Diet items
-      const dietItems = dietItemsQuery.query.data?.data || [];
-      for (const item of dietItems) {
-        createPromises.push(
-          createDietPlan({
-            resource: "diet_plans",
-            values: {
-              client_id: clientId,
-              day_number: dayNumber,
-              food_item_id: item.food_item_id,
-              meal_category: item.meal_category,
-              serving_multiplier: item.serving_multiplier,
-              time_type: item.time_type,
-              time_start: item.time_start,
-              time_end: item.time_end,
-              time_period: item.time_period,
-              relative_anchor: item.relative_anchor,
-              relative_offset_minutes: item.relative_offset_minutes,
-              notes: item.notes,
-              display_order: item.display_order,
-              // Copy quantity fields from template
-              quantity_grams: item.quantity_grams,
-              quantity_type: item.quantity_type,
-              quantity_note: item.quantity_note,
-            },
-          })
-        );
-      }
-
-      // Supplement items
-      const supplementItems = supplementItemsQuery.query.data?.data || [];
-      for (const item of supplementItems) {
-        createPromises.push(
-          createSupplementPlan({
-            resource: "supplement_plans",
-            values: {
-              client_id: clientId,
-              day_number: dayNumber,
-              supplement_id: item.supplement_id,
-              dosage: item.dosage,
-              time_type: item.time_type,
-              time_start: item.time_start,
-              time_end: item.time_end,
-              time_period: item.time_period,
-              relative_anchor: item.relative_anchor,
-              relative_offset_minutes: item.relative_offset_minutes,
-              notes: item.notes,
-              display_order: item.display_order,
-              is_active: true,
-            },
-          })
-        );
-      }
-
-      // Workout items
-      const workoutItems = workoutItemsQuery.query.data?.data || [];
-      for (const item of workoutItems) {
-        createPromises.push(
-          createWorkoutPlan({
-            resource: "workout_plans",
-            values: {
-              client_id: clientId,
-              day_number: dayNumber,
-              exercise_id: item.exercise_id,
-              // exercise_name is NOT NULL in workout_plans, so fall back to exercise library name
-              exercise_name: item.exercise_name || item.exercises?.name || "Exercise",
-              section: item.section,
-              sets: item.sets,
-              reps: item.reps,
-              duration_minutes: item.duration_minutes,
-              scheduled_duration_minutes: item.scheduled_duration_minutes,
-              rest_seconds: item.rest_seconds,
-              time_type: item.time_type,
-              time_start: item.time_start,
-              time_end: item.time_end,
-              time_period: item.time_period,
-              relative_anchor: item.relative_anchor,
-              relative_offset_minutes: item.relative_offset_minutes,
-              // Map template 'notes' to workout_plans 'instructions'
-              instructions: item.notes,
-              display_order: item.display_order,
-            },
-          })
-        );
-      }
-
-      // Lifestyle items
-      const lifestyleItems = lifestyleItemsQuery.query.data?.data || [];
-      for (const item of lifestyleItems) {
-        createPromises.push(
-          createLifestylePlan({
-            resource: "lifestyle_activity_plans",
-            values: {
-              client_id: clientId,
-              day_number: dayNumber,
-              // Map template 'lifestyle_activity_type_id' to plan 'activity_type_id'
-              activity_type_id: item.lifestyle_activity_type_id,
-              target_value: item.target_value,
-              time_type: item.time_type,
-              time_start: item.time_start,
-              time_end: item.time_end,
-              time_period: item.time_period,
-              relative_anchor: item.relative_anchor,
-              relative_offset_minutes: item.relative_offset_minutes,
-              notes: item.notes,
-              display_order: item.display_order,
-            },
-          })
-        );
-      }
-
-      await Promise.all(createPromises);
-
-      const totalItems =
-        dietItems.length + supplementItems.length + workoutItems.length + lifestyleItems.length;
-
-      toast.success(`Applied ${totalItems} items from "${selectedTemplate?.name}"`);
-      onSuccess();
-      onClose();
     } catch (error) {
-      console.error("Failed to apply template:", error);
-      toast.error("Failed to apply template");
-    } finally {
+      console.error("Failed to delete existing items:", error);
+      toast.error("Failed to clear existing items before applying template");
       setIsApplying(false);
+      return;
     }
+
+    // Create new items from template — sequential per-item try/catch
+
+    // Diet items
+    const dietItems = dietItemsQuery.query.data?.data || [];
+    for (const item of dietItems) {
+      const name = item.food_items?.name || "Diet item";
+      try {
+        await createDietPlan({
+          resource: "diet_plans",
+          values: {
+            client_id: clientId,
+            day_number: dayNumber,
+            food_item_id: item.food_item_id,
+            meal_category: item.meal_category,
+            serving_multiplier: item.serving_multiplier ?? 1.0,
+            time_type: item.time_type ?? "period",
+            time_start: item.time_start,
+            time_end: item.time_end,
+            time_period: item.time_period,
+            relative_anchor: item.relative_anchor,
+            relative_offset_minutes: item.relative_offset_minutes,
+            notes: item.notes,
+            display_order: item.display_order,
+            quantity_grams: item.quantity_grams,
+            quantity_type: item.quantity_type,
+            quantity_note: item.quantity_note,
+          },
+        });
+        results.push({ type: "diet", name, success: true });
+      } catch (error) {
+        console.error(`Failed to create diet plan for "${name}":`, error);
+        results.push({ type: "diet", name, success: false, error: String(error) });
+      }
+    }
+
+    // Supplement items
+    const supplementItems = supplementItemsQuery.query.data?.data || [];
+    for (const item of supplementItems) {
+      const name = item.supplements?.name || "Supplement";
+      try {
+        await createSupplementPlan({
+          resource: "supplement_plans",
+          values: {
+            client_id: clientId,
+            day_number: dayNumber,
+            supplement_id: item.supplement_id,
+            dosage: item.dosage ?? 1,
+            time_type: item.time_type ?? "relative",
+            time_start: item.time_start,
+            time_end: item.time_end,
+            time_period: item.time_period,
+            relative_anchor: item.relative_anchor,
+            relative_offset_minutes: item.relative_offset_minutes ?? 0,
+            notes: item.notes,
+            display_order: item.display_order,
+            is_active: true,
+          },
+        });
+        results.push({ type: "supplement", name, success: true });
+      } catch (error) {
+        console.error(`Failed to create supplement plan for "${name}":`, error);
+        results.push({ type: "supplement", name, success: false, error: String(error) });
+      }
+    }
+
+    // Workout items
+    const workoutItems = workoutItemsQuery.query.data?.data || [];
+    for (const item of workoutItems) {
+      const name = item.exercise_name || item.exercises?.name || "Exercise";
+      try {
+        await createWorkoutPlan({
+          resource: "workout_plans",
+          values: {
+            client_id: clientId,
+            day_number: dayNumber,
+            exercise_id: item.exercise_id,
+            exercise_name: name,
+            section: item.section ?? "main",
+            sets: item.sets,
+            reps: item.reps,
+            duration_minutes: item.duration_minutes,
+            scheduled_duration_minutes: item.scheduled_duration_minutes,
+            rest_seconds: item.rest_seconds,
+            time_type: item.time_type ?? "period",
+            time_start: item.time_start,
+            time_end: item.time_end,
+            time_period: item.time_period,
+            relative_anchor: item.relative_anchor,
+            relative_offset_minutes: item.relative_offset_minutes ?? 0,
+            instructions: item.notes,
+            display_order: item.display_order,
+          },
+        });
+        results.push({ type: "workout", name, success: true });
+      } catch (error) {
+        console.error(`Failed to create workout plan for "${name}":`, error);
+        results.push({ type: "workout", name, success: false, error: String(error) });
+      }
+    }
+
+    // Lifestyle items
+    const lifestyleItems = lifestyleItemsQuery.query.data?.data || [];
+    for (const item of lifestyleItems) {
+      const name = item.lifestyle_activity_types?.name || "Activity";
+      try {
+        await createLifestylePlan({
+          resource: "lifestyle_activity_plans",
+          values: {
+            client_id: clientId,
+            day_number: dayNumber,
+            activity_type_id: item.lifestyle_activity_type_id,
+            target_value: item.target_value,
+            time_type: item.time_type ?? "all_day",
+            time_start: item.time_start,
+            time_end: item.time_end,
+            time_period: item.time_period,
+            relative_anchor: item.relative_anchor,
+            relative_offset_minutes: item.relative_offset_minutes ?? 0,
+            notes: item.notes,
+            display_order: item.display_order,
+            is_active: true,
+          },
+        });
+        results.push({ type: "lifestyle", name, success: true });
+      } catch (error) {
+        console.error(`Failed to create lifestyle plan for "${name}":`, error);
+        results.push({ type: "lifestyle", name, success: false, error: String(error) });
+      }
+    }
+
+    // Report results
+    const succeeded = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
+
+    if (failed.length === 0 && succeeded.length > 0) {
+      toast.success(`Applied ${succeeded.length} items from "${selectedTemplate?.name}"`);
+    } else if (succeeded.length === 0 && failed.length > 0) {
+      toast.error(`Failed to apply all ${failed.length} items from "${selectedTemplate?.name}"`);
+    } else if (succeeded.length > 0 && failed.length > 0) {
+      const failedNames = failed.map((r) => r.name).join(", ");
+      toast.warning(
+        `Applied ${succeeded.length} of ${results.length} items. Failed: ${failedNames}`
+      );
+    }
+
+    if (succeeded.length > 0) {
+      onSuccess();
+    }
+    onClose();
+    setIsApplying(false);
   }, [
     selectedTemplateId,
     selectedTemplate,
