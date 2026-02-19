@@ -40,6 +40,8 @@ const DialogContent = React.forwardRef<
       className={cn(
         // Mobile-first: full screen on small devices, centered modal on larger screens
         "fixed inset-0 z-50 w-full border bg-background shadow-lg duration-200",
+        // Safe-area padding so content clears mobile status bar / notch
+        "pt-safe-top-content sm:pt-0",
         // Mobile: full screen with no transforms
         // Tablet/Desktop: centered with transforms and max-width
         "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:max-h-[90vh] sm:w-full sm:max-w-lg",
@@ -54,7 +56,8 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {/* Close button - slightly larger tap target on mobile for accessibility */}
-      <DialogPrimitive.Close className="absolute right-3 top-3 z-50 p-2 h-10 w-10 sm:right-4 sm:top-4 sm:h-8 sm:w-8 flex items-center justify-center rounded-sm bg-muted/60 opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+      {/* On mobile, offset from safe area so it clears the status bar */}
+      <DialogPrimitive.Close className="absolute right-3 top-safe-top z-50 p-2 h-10 w-10 sm:right-4 sm:top-4 sm:h-8 sm:w-8 flex items-center justify-center rounded-sm bg-muted/60 opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-5 w-5 sm:h-4 sm:w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

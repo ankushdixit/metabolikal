@@ -90,10 +90,12 @@ export function FoodAlternativesDrawer({
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "inset-y-0 right-0 h-full border-l",
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
-            "w-full sm:max-w-md overflow-y-auto"
+            "w-full sm:max-w-md overflow-y-auto",
+            // Safe-area padding so content clears mobile status bar / notch
+            "pt-safe-top-content sm:pt-6"
           )}
         >
-          <SheetPrimitive.Close className="absolute right-4 top-4 p-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+          <SheetPrimitive.Close className="absolute right-4 top-safe-top sm:top-4 p-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>

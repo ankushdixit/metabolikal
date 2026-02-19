@@ -7,6 +7,10 @@
 @import "tailwindcss";
 
 @theme {
+  /* Safe-area spacing tokens for modal close buttons */
+  --spacing-safe-top: var(--safe-area-top, 0px);
+  --spacing-safe-top-content: var(--safe-area-top-content, 0px);
+
   /* Base radius tokens - Sharp/minimal */
   --radius-lg: 0.25rem;
   --radius-md: 0.125rem;
@@ -43,6 +47,15 @@
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+
+  :root {
+    /* Safe-area custom properties for modal/sheet close buttons.
+       env(safe-area-inset-top) is non-zero on iOS PWA with notch/Dynamic Island.
+       Base offsets (3rem / 3.5rem) clear the mobile status bar on all devices;
+       env() adds extra room on notch/Dynamic Island devices. */
+    --safe-area-top: calc(env(safe-area-inset-top, 0px) + 3rem);
+    --safe-area-top-content: calc(env(safe-area-inset-top, 0px) + 3.5rem);
   }
 
   html {
