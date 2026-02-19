@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { MealCategory, QuantityType } from "@/lib/database.types";
-import { MEAL_LABELS } from "./meal-card";
+import { getMealLabel } from "@/lib/utils/meal-labels";
 import {
   calculateMultiplier,
   getDefaultQuantityType,
@@ -47,6 +47,8 @@ interface FoodLogFormProps {
     quantity_note?: string | null;
   }) => void;
   isLogging?: boolean;
+  /** Display label for this meal category (from useMealTypes) */
+  mealLabel?: string;
   /** Pre-filled quantity from planned meal */
   initialQuantityGrams?: number | null;
   initialQuantityType?: QuantityType | null;
@@ -69,6 +71,7 @@ export function FoodLogForm({
   mealCategory,
   onLogFood,
   isLogging = false,
+  mealLabel: mealLabelProp,
   initialQuantityGrams,
   initialQuantityType,
   initialQuantityNote,
@@ -137,7 +140,7 @@ export function FoodLogForm({
             Log <span className="gradient-athletic">Food</span>
           </DialogTitle>
           <DialogDescription className="text-muted-foreground font-bold text-sm">
-            {MEAL_LABELS[mealCategory]}
+            {mealLabelProp || getMealLabel(mealCategory, {})}
           </DialogDescription>
         </DialogHeader>
 

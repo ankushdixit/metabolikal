@@ -118,16 +118,6 @@ export interface UseDailyPlanDataReturn {
   refetchAll: () => void;
 }
 
-// Meal order for display
-const MEAL_ORDER: MealCategory[] = [
-  "pre-workout",
-  "breakfast",
-  "lunch",
-  "evening-snack",
-  "post-workout",
-  "dinner",
-];
-
 // Workout section order
 const WORKOUT_SECTION_ORDER: WorkoutSection[] = ["warmup", "main", "cooldown"];
 
@@ -280,28 +270,15 @@ export function useDailyPlanData({
   const lifestylePlans = lifestylePlansQuery.query.data?.data || [];
   const limits = limitsQuery.query.data?.data || [];
 
-  // Group diet plans by meal category
+  // Group diet plans by meal category (display ordering handled by consuming component)
   const dietByMeal = useMemo(() => {
     const grouped = new Map<MealCategory, DietPlanWithFood[]>();
 
-    // Initialize with meal order
-    for (const meal of MEAL_ORDER) {
-      grouped.set(meal, []);
-    }
-
-    // Group items
     for (const plan of dietPlans) {
       const meal = (plan.meal_category || "lunch") as MealCategory;
       const existing = grouped.get(meal) || [];
       existing.push(plan);
       grouped.set(meal, existing);
-    }
-
-    // Remove empty meal categories
-    for (const [meal, items] of grouped) {
-      if (items.length === 0) {
-        grouped.delete(meal);
-      }
     }
 
     return grouped;

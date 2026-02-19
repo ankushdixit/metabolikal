@@ -7,6 +7,71 @@ import { DailyDietSection } from "../daily-diet-section";
 import type { MealCategory } from "@/lib/database.types";
 import type { DietPlanWithFood, DietTotals } from "@/hooks/use-daily-plan-data";
 
+// Mock useMealTypes so DailyDietSection doesn't need a QueryClientProvider
+jest.mock("@/hooks/use-meal-types", () => ({
+  useMealTypes: () => ({
+    mealTypes: [
+      {
+        id: "1",
+        slug: "pre-workout",
+        name: "Pre-Workout",
+        display_order: 1,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+      {
+        id: "2",
+        slug: "breakfast",
+        name: "Breakfast",
+        display_order: 2,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+      {
+        id: "3",
+        slug: "lunch",
+        name: "Lunch",
+        display_order: 3,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+      {
+        id: "4",
+        slug: "evening-snack",
+        name: "Evening Snack",
+        display_order: 4,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+      {
+        id: "5",
+        slug: "post-workout",
+        name: "Post-Workout",
+        display_order: 5,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+      {
+        id: "6",
+        slug: "dinner",
+        name: "Dinner",
+        display_order: 6,
+        is_active: true,
+        created_at: "",
+        updated_at: "",
+      },
+    ],
+    isLoading: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+}));
+
 describe("DailyDietSection", () => {
   const mockDietPlan: DietPlanWithFood = {
     id: "plan-1",

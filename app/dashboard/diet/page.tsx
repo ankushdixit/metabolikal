@@ -11,18 +11,8 @@ import { FoodLogForm } from "@/components/dashboard/food-log-form";
 import { FoodSearch } from "@/components/dashboard/food-search";
 import { TodaysLogs } from "@/components/dashboard/todays-logs";
 import type { MealCategory } from "@/lib/database.types";
-
-/**
- * Meal category order as specified
- */
-const MEAL_ORDER: MealCategory[] = [
-  "pre-workout",
-  "post-workout",
-  "breakfast",
-  "lunch",
-  "evening-snack",
-  "dinner",
-];
+import { useMealTypes } from "@/hooks/use-meal-types";
+import { buildMealLabelMap, getMealLabel } from "@/lib/utils/meal-labels";
 
 interface FoodItem {
   id: string;
@@ -80,6 +70,9 @@ interface Profile {
 export default function DietPlanPage() {
   const { currentCycle, setSelectedCycle } = usePlanCycle();
   const { userId } = useAuth();
+  const { mealTypes } = useMealTypes();
+  const labelMap = buildMealLabelMap(mealTypes);
+  const mealOrder = mealTypes.map((mt) => mt.slug);
   const [dayNumber, setDayNumber] = useState(1);
 
   // Force-reset to current cycle on mount (diet page always uses current data)
@@ -324,7 +317,7 @@ export default function DietPlanPage() {
 
   // Get diet plan entries organized by meal category
   const dietPlanEntries = dietPlanQuery.query.data?.data || [];
-  const dietPlanByCategory = MEAL_ORDER.reduce(
+  const dietPlanByCategory = mealOrder.reduce(
     (acc, category) => {
       acc[category] =
         dietPlanEntries.find((entry: DietPlanEntry) => entry.meal_category === category) || null;
@@ -332,6 +325,12 @@ export default function DietPlanPage() {
     },
     {} as Record<MealCategory, DietPlanEntry | null>
   );
+  // Also include any categories in the data that aren't in mealOrder (e.g. newly added)
+  for (const entry of dietPlanEntries) {
+    if (!(entry.meal_category in dietPlanByCategory)) {
+      dietPlanByCategory[entry.meal_category] = entry;
+    }
+  }
 
   // Calculate totals
   const foodLogs = foodLogsQuery.query.data?.data || [];
@@ -446,7 +445,7 @@ export default function DietPlanPage() {
       {/* Loading State */}
       {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MEAL_ORDER.map((category) => (
+          {mealOrder.map((category) => (
             <div key={category} className="athletic-card p-6 pl-8 animate-pulse">
               <div className="h-4 w-32 bg-secondary mb-4" />
               <div className="h-6 w-48 bg-secondary mb-2" />
@@ -478,19 +477,23 @@ export default function DietPlanPage() {
       {/* Meal Cards Grid */}
       {!isLoading && dietPlanEntries.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MEAL_ORDER.map((category) => {
-            const entry = dietPlanByCategory[category];
-            return (
-              <MealCard
-                key={category}
-                mealCategory={category}
-                foodItem={entry?.food_items || null}
-                servingMultiplier={entry?.serving_multiplier || 1}
-                onSeeAlternatives={() => entry && setSelectedMealForAlternatives(entry)}
-                onLogFood={() => entry && setSelectedMealForLogging(entry)}
-              />
-            );
-          })}
+          {/* Show categories from mealOrder that have entries, plus any data-only categories */}
+          {[...new Set([...mealOrder, ...dietPlanEntries.map((e) => e.meal_category)])].map(
+            (category) => {
+              const entry = dietPlanByCategory[category];
+              return (
+                <MealCard
+                  key={category}
+                  mealCategory={category}
+                  mealLabel={getMealLabel(category, labelMap)}
+                  foodItem={entry?.food_items || null}
+                  servingMultiplier={entry?.serving_multiplier || 1}
+                  onSeeAlternatives={() => entry && setSelectedMealForAlternatives(entry)}
+                  onLogFood={() => entry && setSelectedMealForLogging(entry)}
+                />
+              );
+            }
+          )}
         </div>
       )}
 
@@ -502,6 +505,11 @@ export default function DietPlanPage() {
         isOpen={!!selectedMealForAlternatives}
         onClose={() => setSelectedMealForAlternatives(null)}
         mealCategory={selectedMealForAlternatives?.meal_category || "breakfast"}
+        mealLabel={
+          selectedMealForAlternatives
+            ? getMealLabel(selectedMealForAlternatives.meal_category, labelMap)
+            : undefined
+        }
         currentFoodItem={selectedMealForAlternatives?.food_items || null}
         alternatives={alternativesQuery.query.data?.data || []}
         targetCalories={
@@ -519,6 +527,11 @@ export default function DietPlanPage() {
         onClose={() => setSelectedMealForLogging(null)}
         foodItem={selectedMealForLogging?.food_items || null}
         mealCategory={selectedMealForLogging?.meal_category || "breakfast"}
+        mealLabel={
+          selectedMealForLogging
+            ? getMealLabel(selectedMealForLogging.meal_category, labelMap)
+            : undefined
+        }
         onLogFood={handleLogFood}
         isLogging={isLogging}
       />

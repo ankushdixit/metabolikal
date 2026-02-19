@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MealCategory } from "@/lib/database.types";
-import { MEAL_LABELS } from "./meal-card";
+import { useMealTypes } from "@/hooks/use-meal-types";
 
 interface FoodItem {
   id: string;
@@ -49,15 +49,6 @@ interface FoodSearchProps {
   isLogging?: boolean;
 }
 
-const MEAL_CATEGORIES: MealCategory[] = [
-  "pre-workout",
-  "post-workout",
-  "breakfast",
-  "lunch",
-  "evening-snack",
-  "dinner",
-];
-
 /**
  * FoodSearch component
  * Search for food items or manually enter custom food
@@ -73,6 +64,7 @@ export function FoodSearch({
   onLogCustomFood,
   isLogging = false,
 }: FoodSearchProps) {
+  const { mealTypes } = useMealTypes();
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<MealCategory>("breakfast");
   const [manualFood, setManualFood] = useState({
@@ -157,9 +149,9 @@ export function FoodSearch({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MEAL_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {MEAL_LABELS[category]}
+                {mealTypes.map((mt) => (
+                  <SelectItem key={mt.slug} value={mt.slug}>
+                    {mt.name}
                   </SelectItem>
                 ))}
               </SelectContent>

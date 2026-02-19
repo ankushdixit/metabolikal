@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { MealCard, MEAL_LABELS } from "../meal-card";
-import type { MealCategory } from "@/lib/database.types";
+import { MealCard } from "../meal-card";
 
 const mockFoodItem = {
   id: "food-1",
@@ -19,29 +18,44 @@ describe("MealCard Component", () => {
     jest.clearAllMocks();
   });
 
-  it("renders all 6 meal category labels correctly", () => {
-    const categories: MealCategory[] = [
-      "pre-workout",
-      "post-workout",
-      "breakfast",
-      "lunch",
-      "evening-snack",
-      "dinner",
-    ];
+  it("renders mealLabel prop when provided", () => {
+    render(
+      <MealCard
+        mealCategory="pre-workout"
+        mealLabel="Pre-Workout Meal"
+        foodItem={mockFoodItem}
+        servingMultiplier={1}
+        onSeeAlternatives={mockOnSeeAlternatives}
+        onLogFood={mockOnLogFood}
+      />
+    );
+    expect(screen.getByText("Pre-Workout Meal")).toBeInTheDocument();
+  });
 
-    categories.forEach((category) => {
-      const { unmount } = render(
-        <MealCard
-          mealCategory={category}
-          foodItem={mockFoodItem}
-          servingMultiplier={1}
-          onSeeAlternatives={mockOnSeeAlternatives}
-          onLogFood={mockOnLogFood}
-        />
-      );
-      expect(screen.getByText(MEAL_LABELS[category])).toBeInTheDocument();
-      unmount();
-    });
+  it("falls back to formatted slug when no mealLabel provided", () => {
+    render(
+      <MealCard
+        mealCategory="evening-snack"
+        foodItem={mockFoodItem}
+        servingMultiplier={1}
+        onSeeAlternatives={mockOnSeeAlternatives}
+        onLogFood={mockOnLogFood}
+      />
+    );
+    expect(screen.getByText("Evening Snack")).toBeInTheDocument();
+  });
+
+  it("handles unknown categories gracefully", () => {
+    render(
+      <MealCard
+        mealCategory="mid-morning-snack"
+        foodItem={mockFoodItem}
+        servingMultiplier={1}
+        onSeeAlternatives={mockOnSeeAlternatives}
+        onLogFood={mockOnLogFood}
+      />
+    );
+    expect(screen.getByText("Mid Morning Snack")).toBeInTheDocument();
   });
 
   it("displays food item name", () => {
