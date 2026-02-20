@@ -1,8 +1,18 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const withAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  // Tree-shake barrel imports for large icon/component libraries
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
 
   // Image domains for Next.js Image component
   // Allow Supabase storage images
@@ -152,7 +162,9 @@ const sentryConfig = {
   automaticVercelMonitors: true,
 };
 
-// Export with Sentry wrapper if DSN is configured, otherwise plain config
+// Apply bundle analyzer, then Sentry wrapper if DSN is configured
+const analyzedConfig = withAnalyzer(nextConfig);
+
 export default process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? withSentryConfig(nextConfig, sentryConfig)
-  : nextConfig;
+  ? withSentryConfig(analyzedConfig, sentryConfig)
+  : analyzedConfig;

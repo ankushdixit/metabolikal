@@ -20,10 +20,22 @@ import {
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/auth-context";
 import { CheckInReview } from "@/components/admin/checkin-review";
-import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
+
+const ProgressCharts = dynamic(
+  () =>
+    import("@/components/admin/progress-charts").then((mod) => ({ default: mod.ProgressCharts })),
+  {
+    loading: () => (
+      <div className="athletic-card p-6 pl-8 animate-pulse">
+        <div className="h-80 bg-secondary" />
+      </div>
+    ),
+  }
+);
 import { PlansSummary } from "@/components/admin/plans-summary";
 import { ChallengeProgressTab } from "@/components/admin/challenge-progress-tab";
 import { EditClientModal } from "@/components/admin/edit-client-modal";

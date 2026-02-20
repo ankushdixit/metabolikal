@@ -40,7 +40,6 @@ import {
   calculateLifestyleBoost,
   PriorityRecommendation,
 } from "@/lib/results-insights";
-import { toPng } from "html-to-image";
 import { ShareableResultsImage } from "../shareable-results-image";
 import { HealthScoreChart } from "../health-score-chart";
 import {
@@ -128,6 +127,7 @@ export function ResultsModal({
     if (!shareImageRef.current) return null;
 
     try {
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(shareImageRef.current, {
         quality: 1.0,
         pixelRatio: 2,

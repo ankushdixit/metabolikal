@@ -1,5 +1,3 @@
-"use client";
-
 import { ClientTimelineView } from "@/components/dashboard";
 
 /**
