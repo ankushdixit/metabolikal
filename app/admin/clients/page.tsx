@@ -43,12 +43,12 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [searchQuery, activeTab]);
 
-  // Fetch all clients (disable pagination to get all records)
+  // Fetch all clients with safety limit (need all for tab counts and search)
   const clientsQuery = useList<Profile>({
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "client" }],
     sorters: [{ field: "full_name", order: "asc" }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 500 },
     meta: {
       select:
         "id, full_name, email, phone, avatar_url, role, plan_start_date, plan_duration_days, is_deactivated, invited_at, invitation_accepted_at, date_of_birth, gender, address, created_at",
@@ -58,11 +58,12 @@ export default function ClientsPage() {
     },
   });
 
-  // Fetch all check-ins to get last check-in per client
+  // Fetch only pending (unreviewed) check-ins — server-side filter for flagged/status display
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
+    filters: [{ field: "reviewed_at", operator: "null", value: true }],
     sorters: [{ field: "submitted_at", order: "desc" }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 500 },
     meta: {
       select: "id, client_id, submitted_at, reviewed_at, flagged_for_followup",
     },
@@ -79,7 +80,7 @@ export default function ClientsPage() {
   const clientsWithCheckIns = useMemo(() => {
     return clients.map((client) => {
       const clientCheckIns = checkIns.filter((c) => c.client_id === client.id);
-      const lastCheckIn = clientCheckIns.length > 0 ? clientCheckIns[0] : null;
+      const lastCheckIn: CheckIn | null = clientCheckIns.length > 0 ? clientCheckIns[0] : null;
       return { ...client, lastCheckIn };
     });
   }, [clients, checkIns]);
