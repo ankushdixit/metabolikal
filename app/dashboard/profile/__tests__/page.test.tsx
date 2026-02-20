@@ -1,12 +1,17 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import ProfilePage from "../page";
 
-// Mock Supabase client
-const mockGetUser = jest.fn();
+// Mock auth context (profile page now uses useAuth instead of direct getUser)
+const mockUseAuth = jest.fn();
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
+// Mock Supabase client (still needed by child components)
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: () => ({
     auth: {
-      getUser: mockGetUser,
+      getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
     },
   }),
 }));
@@ -76,8 +81,12 @@ jest.mock("@/hooks/use-client-profile-data", () => ({
 describe("ProfilePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: "user-123", email: "test@example.com" } },
+    mockUseAuth.mockReturnValue({
+      userId: "user-123",
+      profile: null,
+      isLoading: false,
+      authError: null,
+      signOut: jest.fn(),
     });
     mockUseOne.mockReturnValue({
       query: {
@@ -153,7 +162,13 @@ describe("ProfilePage", () => {
   });
 
   it("shows loading state when no user ID", () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockUseAuth.mockReturnValue({
+      userId: null,
+      profile: null,
+      isLoading: false,
+      authError: null,
+      signOut: jest.fn(),
+    });
 
     const { container } = render(<ProfilePage />);
 

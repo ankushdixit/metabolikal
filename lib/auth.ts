@@ -106,16 +106,29 @@ export function isChallenger(role: UserRole): boolean {
 let browserClientInstance: ReturnType<typeof createBrowserClient> | null = null;
 
 /**
- * No-op lock function to bypass Navigator Locks API.
- * This prevents "signal is aborted without reason" errors.
+ * Mutex-based lock fallback for environments where Navigator Locks API
+ * causes "signal is aborted without reason" errors.
+ * Unlike a no-op, this properly serializes concurrent lock requests
+ * to prevent race conditions on token refresh within a single tab.
  */
-const noOpLock = async <R>(
-  _name: string,
-  _acquireTimeout: number,
-  fn: () => Promise<R>
-): Promise<R> => {
-  return await fn();
-};
+const fallbackLock = (() => {
+  const locks = new Map<string, Promise<void>>();
+  return async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => {
+    const existing = locks.get(_name);
+    if (existing) await existing;
+    let resolve: () => void;
+    const promise = new Promise<void>((r) => {
+      resolve = r;
+    });
+    locks.set(_name, promise);
+    try {
+      return await fn();
+    } finally {
+      resolve!();
+      locks.delete(_name);
+    }
+  };
+})();
 
 /**
  * Creates a Supabase client for browser/client-side usage with cookie storage.
@@ -134,8 +147,8 @@ export function createBrowserSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        // Disable Navigator Locks to prevent "signal is aborted" errors
-        lock: noOpLock,
+        // Use mutex fallback instead of Navigator Locks to prevent "signal is aborted" errors
+        lock: fallbackLock,
       },
     }
   );

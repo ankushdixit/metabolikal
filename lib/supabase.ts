@@ -1,17 +1,15 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { validateEnv, validateClientEnv, getEnvSafe } from "./env";
+import { validateEnv, getEnvSafe } from "./env";
 
 /**
- * Supabase client configuration
+ * Supabase server-side client configuration
  *
- * This module provides Supabase client instances for both server-side
- * and client-side usage. Environment validation ensures the client
- * only initializes with valid configuration.
+ * This module provides the Supabase client for server-side usage only.
+ * For browser/client-side usage, use createBrowserSupabaseClient from lib/auth.ts.
  */
 
-// Singleton instances
+// Singleton instance
 let serverClient: SupabaseClient | null = null;
-let browserClient: SupabaseClient | null = null;
 
 /**
  * Creates a Supabase client for server-side usage.
@@ -34,43 +32,6 @@ export function createServerSupabaseClient(): SupabaseClient {
   });
 
   return serverClient;
-}
-
-/**
- * Creates a Supabase client for browser/client-side usage.
- * Uses only NEXT_PUBLIC_ environment variables.
- *
- * NOTE: Prefer using createBrowserSupabaseClient from lib/auth.ts for most cases,
- * as it has better SSR support. This function exists for backwards compatibility.
- *
- * @throws Error if required NEXT_PUBLIC_ environment variables are missing
- */
-export function createBrowserSupabaseClient(): SupabaseClient {
-  if (browserClient) {
-    return browserClient;
-  }
-
-  const env = validateClientEnv();
-
-  browserClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-    },
-  });
-
-  return browserClient;
-}
-
-/**
- * Get the appropriate Supabase client based on the environment.
- * Automatically detects server vs browser context.
- */
-export function getSupabaseClient(): SupabaseClient {
-  if (typeof window === "undefined") {
-    return createServerSupabaseClient();
-  }
-  return createBrowserSupabaseClient();
 }
 
 /**
@@ -116,12 +77,8 @@ export async function testDatabaseConnection(): Promise<boolean> {
 }
 
 /**
- * Resets the singleton instances (useful for testing)
+ * Resets the singleton instance (useful for testing)
  */
 export function resetSupabaseClients(): void {
   serverClient = null;
-  browserClient = null;
 }
-
-// Export the client for use with Refine data provider
-export const supabaseClient = getSupabaseClient;

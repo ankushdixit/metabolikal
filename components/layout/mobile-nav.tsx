@@ -213,8 +213,7 @@ export function MobileNav() {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
           <button
             onClick={() => {
-              closeMenu();
-              signOut();
+              signOut(); // Hard redirect — menu state doesn't matter
             }}
             className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
           >

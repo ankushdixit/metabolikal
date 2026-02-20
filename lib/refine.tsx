@@ -3,6 +3,7 @@ import { dataProvider } from "@refinedev/supabase";
 import type { AuthProvider } from "@refinedev/core";
 import { getEnvSafe } from "./env";
 import { createBrowserSupabaseClient, type UserRole } from "./auth";
+import { authStateCache } from "@/contexts/auth-context";
 
 /**
  * Refine configuration
@@ -137,32 +138,40 @@ export const refineAuthProvider: AuthProvider = {
   },
 
   check: async () => {
+    // Read from module-level cache populated by AuthProvider (Task 1.2)
+    // This avoids a redundant getSession()/getUser() call per page load.
+    if (!authStateCache.isLoading) {
+      if (authStateCache.userId) {
+        return { authenticated: true };
+      }
+      return { authenticated: false, redirectTo: "/login" };
+    }
+
+    // Cache not yet populated — fall back to local session check (no network call)
     const supabase = createBrowserSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
     if (session) {
-      return {
-        authenticated: true,
-      };
+      return { authenticated: true };
     }
-
-    return {
-      authenticated: false,
-      redirectTo: "/login",
-    };
+    return { authenticated: false, redirectTo: "/login" };
   },
 
   getPermissions: async () => {
+    // Read from cache — eliminates getUser() + profile query (Task 1.2)
+    if (!authStateCache.isLoading && authStateCache.userId) {
+      return authStateCache.profile?.role ?? "client";
+    }
+
+    // Fallback when cache isn't populated yet
     const supabase = createBrowserSupabaseClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -174,14 +183,23 @@ export const refineAuthProvider: AuthProvider = {
   },
 
   getIdentity: async () => {
+    // Read from cache — eliminates getUser() + select("*") query (Task 1.2)
+    if (!authStateCache.isLoading && authStateCache.userId) {
+      return {
+        id: authStateCache.userId,
+        name: authStateCache.profile?.full_name,
+        avatar: authStateCache.profile?.avatar_url,
+        role: authStateCache.profile?.role,
+      };
+    }
+
+    // Fallback when cache isn't populated yet
     const supabase = createBrowserSupabaseClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
     const { data: profile } = await supabase
       .from("profiles")
