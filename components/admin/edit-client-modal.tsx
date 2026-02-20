@@ -203,6 +203,12 @@ export function EditClientModal({
             .eq("client_id", client.id)
             .eq("cycle_number", currentCycle);
           if (cycleError) {
+            // DB trigger returns overlap errors — surface them to the admin
+            if (cycleError.message?.includes("overlaps")) {
+              throw new Error(
+                "These plan dates overlap with another cycle. Please adjust the start date or duration."
+              );
+            }
             console.error("Error syncing plan_cycles:", cycleError);
           }
         }

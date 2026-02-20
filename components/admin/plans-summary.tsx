@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { Profile, PlanCycle } from "@/lib/database.types";
 import { parsePlanDate } from "@/lib/utils/plan-dates";
 import { cn } from "@/lib/utils";
+import { createBrowserSupabaseClient } from "@/lib/auth";
 import { PlanLimitsManager } from "./plan-limits-manager";
 import { DailyPlanView } from "./daily-plan-view";
 
@@ -83,7 +84,7 @@ export function PlansSummary({ clientId, selectedCycle, currentCycle }: PlansSum
     setIsEditingSettings(true);
   };
 
-  // Save plan settings
+  // Save plan settings — syncs both profile AND plan_cycles row
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
@@ -95,6 +96,32 @@ export function PlansSummary({ clientId, selectedCycle, currentCycle }: PlansSum
           plan_duration_days: editDuration,
         },
       });
+
+      // Sync the current plan_cycles row (was previously missing)
+      if (editStartDate) {
+        const supabase = createBrowserSupabaseClient();
+        const cycleNumber = profile?.current_plan_cycle ?? 1;
+        const { error: cycleError } = await supabase
+          .from("plan_cycles")
+          .update({
+            start_date: editStartDate,
+            duration_days: editDuration,
+          })
+          .eq("client_id", clientId)
+          .eq("cycle_number", cycleNumber);
+
+        if (cycleError) {
+          if (cycleError.message?.includes("overlaps")) {
+            toast.error(
+              "These plan dates overlap with another cycle. Please adjust the start date or duration."
+            );
+            setIsSaving(false);
+            return;
+          }
+          console.error("Error syncing plan_cycles:", cycleError);
+        }
+      }
+
       toast.success("Plan settings updated");
       profileQuery.query.refetch();
       setIsEditingSettings(false);
