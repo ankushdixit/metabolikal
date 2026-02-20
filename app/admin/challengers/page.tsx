@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
-import { Search, Trophy, UserPlus, Calendar, Target, Loader2 } from "lucide-react";
+import {
+  Search,
+  Trophy,
+  UserPlus,
+  Calendar,
+  Target,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
@@ -130,6 +139,19 @@ export default function ChallengersPage() {
     assessmentQuery.query.isLoading ||
     calculatorQuery.query.isLoading;
 
+  const isError =
+    challengersQuery.query.isError ||
+    progressQuery.query.isError ||
+    assessmentQuery.query.isError ||
+    calculatorQuery.query.isError;
+
+  const handleRetry = () => {
+    challengersQuery.query.refetch();
+    progressQuery.query.refetch();
+    assessmentQuery.query.refetch();
+    calculatorQuery.query.refetch();
+  };
+
   // Handle upgrade button click — open modal with challenger data
   const handleUpgradeClick = (challenger: ChallengerWithStats) => {
     setSelectedChallenger({
@@ -158,6 +180,26 @@ export default function ChallengersPage() {
       year: "numeric",
     });
   };
+
+  if (isError) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="athletic-card p-8 pl-10 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold mb-4">
+            Failed to load challengers. Please try again.
+          </p>
+          <button
+            onClick={handleRetry}
+            className="btn-athletic inline-flex items-center gap-2 px-5 py-3 bg-secondary text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

@@ -86,7 +86,6 @@ export default function LoginPage() {
       const redirectTo = role === "admin" ? "/admin" : "/dashboard";
 
       router.push(redirectTo);
-      router.refresh();
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);

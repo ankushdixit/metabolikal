@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useList } from "@refinedev/core";
-import { LineChart, Image as ImageIcon, AlertCircle, ClipboardList, Plus } from "lucide-react";
+import {
+  LineChart,
+  Image as ImageIcon,
+  AlertCircle,
+  ClipboardList,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
@@ -39,7 +46,8 @@ export default function ProgressPage() {
 
   const checkIns = checkInsQuery.query.data?.data || [];
   const isLoading = checkInsQuery.query.isLoading;
-  const isEmpty = !isLoading && checkIns.length === 0;
+  const isError = checkInsQuery.query.isError;
+  const isEmpty = !isLoading && !isError && checkIns.length === 0;
 
   const tabs: { label: string; value: Tab; icon: React.ComponentType<{ className?: string }> }[] = [
     { label: "Progress Charts", value: "charts", icon: LineChart },
@@ -73,8 +81,25 @@ export default function ProgressPage() {
       {/* Plan Cycle Selector + Historical Banner */}
       <HistoricalCycleBanner />
 
+      {/* Error State */}
+      {isError && (
+        <div className="athletic-card p-8 pl-10 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold mb-4">
+            Failed to load progress data. Please try again.
+          </p>
+          <button
+            onClick={() => checkInsQuery.query.refetch()}
+            className="btn-athletic inline-flex items-center gap-2 px-5 py-3 bg-secondary text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Loading State */}
-      {isLoading && (
+      {!isError && isLoading && (
         <div className="space-y-6">
           <div className="athletic-card p-4 pl-8 animate-pulse">
             <div className="flex gap-2">
@@ -136,16 +161,6 @@ export default function ProgressPage() {
           {activeTab === "charts" && <ProgressCharts checkIns={checkIns} />}
           {activeTab === "photos" && <PhotosGallery checkIns={checkIns} />}
         </>
-      )}
-
-      {/* Error State */}
-      {checkInsQuery.query.isError && (
-        <div className="athletic-card p-6 pl-8">
-          <div className="flex items-center gap-3 text-red-500">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-bold">Failed to load progress data. Please try again.</span>
-          </div>
-        </div>
       )}
     </div>
   );

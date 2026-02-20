@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useList } from "@refinedev/core";
-import { Search, Users, UserPlus, Bell, Download } from "lucide-react";
+import { Search, Users, UserPlus, Bell, Download, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import { downloadBlob } from "@/lib/csv-parser";
@@ -123,6 +123,12 @@ export default function ClientsPage() {
   );
 
   const isLoading = clientsQuery.query.isLoading || checkInsQuery.query.isLoading;
+  const isError = clientsQuery.query.isError || checkInsQuery.query.isError;
+
+  const handleRetry = () => {
+    clientsQuery.query.refetch();
+    checkInsQuery.query.refetch();
+  };
 
   // Tab counts
   const allCount = clientsWithCheckIns.length;
@@ -294,6 +300,26 @@ export default function ClientsPage() {
     downloadBlob(csv, `clients_${today}.csv`, "text/csv;charset=utf-8");
     toast.success(`Exported ${filteredClients.length} client(s)`);
   };
+
+  if (isError) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="athletic-card p-8 pl-10 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold mb-4">
+            Failed to load clients. Please try again.
+          </p>
+          <button
+            onClick={handleRetry}
+            className="btn-athletic inline-flex items-center gap-2 px-5 py-3 bg-secondary text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

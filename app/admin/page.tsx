@@ -2,7 +2,7 @@
 
 import { useList } from "@refinedev/core";
 import Link from "next/link";
-import { Users, ClipboardCheck, Calendar } from "lucide-react";
+import { Users, ClipboardCheck, Calendar, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { StatsCards } from "@/components/admin/stats-cards";
 import { TodaysChallengeActivity } from "@/components/admin/todays-challenge-activity";
@@ -55,6 +55,12 @@ export default function AdminDashboardPage() {
   ).length;
 
   const isLoading = clientsQuery.query.isLoading || checkInsQuery.query.isLoading;
+  const isError = clientsQuery.query.isError || checkInsQuery.query.isError;
+
+  const handleRetry = () => {
+    clientsQuery.query.refetch();
+    checkInsQuery.query.refetch();
+  };
 
   // Format today's date
   const today = new Date();
@@ -64,6 +70,26 @@ export default function AdminDashboardPage() {
     month: "long",
     day: "numeric",
   });
+
+  if (isError) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="athletic-card p-8 pl-10 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold mb-4">
+            Failed to load dashboard data. Please try again.
+          </p>
+          <button
+            onClick={handleRetry}
+            className="btn-athletic inline-flex items-center gap-2 px-5 py-3 bg-secondary text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

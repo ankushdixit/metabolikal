@@ -465,7 +465,7 @@ Option A is simpler and eliminates a query entirely. Option B improves caching b
 
 ---
 
-### Task 2.1: Add `isError` handling to all pages
+### Task 2.1: Add `isError` handling to all pages — DONE
 
 **Priority**: P1
 **Problem**: 8+ pages only check `isLoading` from Refine queries, never `isError`. When a query fails (expired token, RLS policy, network error), `isLoading` transitions to `false` but `isError` is `true`. These pages render with empty data and no feedback — users see blank content or zero counts.
@@ -513,7 +513,7 @@ if (isError) {
 
 ---
 
-### Task 2.2: Add error boundaries for admin and dashboard route segments
+### Task 2.2: Add error boundaries for admin and dashboard route segments — DONE
 
 **Priority**: P2
 **Problem**: Only `app/error.tsx` (root) and `app/global-error.tsx` exist. If a component inside `/dashboard` or `/admin` throws during render, the error bubbles to the root error boundary, which **replaces the entire page including sidebar and navigation**. The user can't navigate away — they must click "Try again" or edit the URL.
@@ -556,7 +556,7 @@ if (isError) {
 
 ---
 
-### Task 2.3: Add missing `loading.tsx` files
+### Task 2.3: Add missing `loading.tsx` files — DONE
 
 **Priority**: P2
 **Status**: Partially done. These already exist:
@@ -586,7 +586,7 @@ if (isError) {
 
 ---
 
-### Task 2.4: Fix notifications dropdown error handling
+### Task 2.4: Fix notifications dropdown error handling — DONE
 
 **Priority**: P2
 **Problem**: `components/layout/notifications-dropdown.tsx` makes direct Supabase calls (bypasses Refine/React Query). If the Supabase call **throws** (not returns an error, but throws), `setIsLoading(false)` never runs and the dropdown stays loading.
@@ -620,7 +620,7 @@ if (isError) {
 
 ---
 
-### Task 2.5: Fix offline completions stale closure
+### Task 2.5: Fix offline completions stale closure — DONE
 
 **Priority**: P2
 **Problem**: `hooks/use-offline-completions.ts:166-193` — the `useEffect` has an empty dependency array `[]` but references `syncQueueInternal` which depends on `queue` and `isSyncing`. When `handleOnline` fires, it calls a stale version that sees the initial empty queue.
@@ -646,7 +646,7 @@ useEffect(() => {
 
 ---
 
-### Task 2.6: Fix login page `router.push()` + `router.refresh()` race
+### Task 2.6: Fix login page `router.push()` + `router.refresh()` race — DONE
 
 **Priority**: P2
 **Problem**: `app/(auth)/login/page.tsx:88-89`:
@@ -672,7 +672,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 2.7: Fix diet/workout page wrong-day data flash
+### Task 2.7: Fix diet/workout page wrong-day data flash — DONE
 
 **Priority**: P3
 **Problem**: `app/dashboard/diet/page.tsx` and `app/dashboard/workout/page.tsx` initialize `dayNumber` to `1`, fire a query for day 1, then update `dayNumber` when the profile loads. This causes a brief flash of wrong-day content.

@@ -25,14 +25,9 @@ describe("QuickActions Component", () => {
     expect(mockOnLogFood).toHaveBeenCalledTimes(1);
   });
 
-  it("renders View Today's Meals link", () => {
+  it("renders View Today's Plan link", () => {
     render(<QuickActions onLogFood={mockOnLogFood} />);
-    expect(screen.getByText("View Today's Meals")).toBeInTheDocument();
-  });
-
-  it("renders View Today's Workout link", () => {
-    render(<QuickActions onLogFood={mockOnLogFood} />);
-    expect(screen.getByText("View Today's Workout")).toBeInTheDocument();
+    expect(screen.getByText("View Today's Plan")).toBeInTheDocument();
   });
 
   it("renders Submit Check-In link", () => {
@@ -40,16 +35,10 @@ describe("QuickActions Component", () => {
     expect(screen.getByText("Submit Check-In")).toBeInTheDocument();
   });
 
-  it("has correct href for View Today's Meals", () => {
+  it("has correct href for View Today's Plan", () => {
     render(<QuickActions onLogFood={mockOnLogFood} />);
-    const mealsLink = screen.getByText("View Today's Meals").closest("a");
-    expect(mealsLink).toHaveAttribute("href", "/dashboard/diet");
-  });
-
-  it("has correct href for View Today's Workout", () => {
-    render(<QuickActions onLogFood={mockOnLogFood} />);
-    const workoutLink = screen.getByText("View Today's Workout").closest("a");
-    expect(workoutLink).toHaveAttribute("href", "/dashboard/workout");
+    const planLink = screen.getByText("View Today's Plan").closest("a");
+    expect(planLink).toHaveAttribute("href", "/dashboard");
   });
 
   it("has correct href for Submit Check-In", () => {
@@ -60,8 +49,7 @@ describe("QuickActions Component", () => {
 
   it("renders description for each action", () => {
     render(<QuickActions onLogFood={mockOnLogFood} />);
-    expect(screen.getByText("Check your meal plan")).toBeInTheDocument();
-    expect(screen.getByText("See your exercises")).toBeInTheDocument();
+    expect(screen.getByText("Check your meal & workout plan")).toBeInTheDocument();
     expect(screen.getByText("Log your progress")).toBeInTheDocument();
   });
 
@@ -80,7 +68,7 @@ describe("QuickActions Component", () => {
   it("renders btn-athletic styling on all buttons", () => {
     const { container } = render(<QuickActions onLogFood={mockOnLogFood} />);
     const athleticButtons = container.querySelectorAll(".btn-athletic");
-    expect(athleticButtons.length).toBe(4); // Log Food + 3 navigation buttons
+    expect(athleticButtons.length).toBe(3); // Log Food + 2 navigation buttons
   });
 
   it("renders gradient electric accent bar in header", () => {
