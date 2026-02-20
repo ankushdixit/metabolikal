@@ -74,23 +74,40 @@ export default function ChallengeHistoryPage() {
     setSelectedDay(null);
   }, [selectedCycle]);
 
-  // Calculate cumulative stats using shared utility + totalPoints
+  // Calculate current day from start date (0 = plan hasn't started)
+  const currentDay = useMemo(() => {
+    if (!startDate) return 0;
+    return getDaysSinceStart(startDate, totalDays);
+  }, [startDate, totalDays]);
+
+  // Filter progress to only include days that have actually occurred (day <= currentDay).
+  // This prevents stale DB rows from future dates from appearing as "completed".
+  const validProgress = useMemo(() => {
+    if (currentDay === 0) return {};
+    const filtered: Record<number, DayProgress> = {};
+    for (const [key, value] of Object.entries(progress)) {
+      const dayNum = Number(key);
+      if (dayNum <= currentDay) {
+        filtered[dayNum] = value;
+      }
+    }
+    return filtered;
+  }, [progress, currentDay]);
+
+  // Calculate cumulative stats using only valid (occurred) progress
   const cumulativeStats = useMemo(() => {
-    const stats = calculateCumulativeStats(progress);
-    const totalPoints = Object.values(progress).reduce((sum, day) => sum + day.pointsEarned, 0);
+    const stats = calculateCumulativeStats(validProgress);
+    const totalPoints = Object.values(validProgress).reduce(
+      (sum, day) => sum + day.pointsEarned,
+      0
+    );
     return {
       ...stats,
       totalWater: Math.round(stats.totalWater * 10) / 10,
       totalSleepHours: Math.round(stats.totalSleepHours * 10) / 10,
       totalPoints,
     };
-  }, [progress]);
-
-  // Calculate current day from start date
-  const currentDay = useMemo(() => {
-    if (!startDate) return 1;
-    return getDaysSinceStart(startDate, totalDays);
-  }, [startDate, totalDays]);
+  }, [validProgress]);
 
   // Calculate completion percentage
   const completionPercent = Math.round((cumulativeStats.daysCompleted / totalDays) * 100);
@@ -98,17 +115,17 @@ export default function ChallengeHistoryPage() {
   // Handle day click
   const handleDayClick = useCallback(
     (day: number) => {
-      const dayProgress = progress[day];
-      if (dayProgress?.hasData) {
+      const dayProgress = validProgress[day];
+      if (dayProgress?.hasData && day <= currentDay) {
         setSelectedDay(selectedDay === day ? null : day);
       } else {
         setSelectedDay(null);
       }
     },
-    [progress, selectedDay]
+    [validProgress, selectedDay, currentDay]
   );
 
-  const selectedDayProgress = selectedDay ? progress[selectedDay] : null;
+  const selectedDayProgress = selectedDay ? validProgress[selectedDay] : null;
   const showSkeleton = !isReady || isLoading;
   const hasError = isError && !isLoading;
   const isEmpty = !showSkeleton && !hasError && cumulativeStats.daysCompleted === 0;
@@ -308,8 +325,9 @@ export default function ChallengeHistoryPage() {
                   })()}
 
                 {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
-                  const dayProgress = progress[day];
+                  const dayProgress = validProgress[day];
                   const hasData = dayProgress?.hasData || false;
+                  const hasOccurred = day <= currentDay;
                   const isSelected = selectedDay === day;
                   const dayDate = startDate ? getDateForDay(startDate, day) : null;
                   const dateLabel = dayDate
@@ -324,7 +342,7 @@ export default function ChallengeHistoryPage() {
                       className={cn(
                         "aspect-square flex flex-col items-center justify-center relative",
                         "text-sm font-black transition-all",
-                        hasData
+                        hasData && hasOccurred
                           ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90"
                           : day === currentDay
                             ? "ring-2 ring-primary bg-secondary"
@@ -332,7 +350,7 @@ export default function ChallengeHistoryPage() {
                         isSelected && "ring-2 ring-accent"
                       )}
                     >
-                      {hasData ? <Check className="h-4 w-4" /> : day}
+                      {hasData && hasOccurred ? <Check className="h-4 w-4" /> : day}
                       {dateLabel && (
                         <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>
                       )}

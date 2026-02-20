@@ -53,11 +53,11 @@ export function DailyPlanView({ clientId, onEditSettings }: DailyPlanViewProps) 
     enabled: !!clientId,
   });
 
-  // Set initial day to "today" once plan config loads
+  // Set initial day to "today" once plan config loads (min 1 for admin nav)
   useEffect(() => {
     if (!initialDaySet && planConfig.startDate && planConfig.durationDays > 0) {
       const today = calculateCurrentDay(planConfig.startDate, planConfig.durationDays);
-      setCurrentDay(today);
+      setCurrentDay(Math.max(today, 1));
       setInitialDaySet(true);
     }
   }, [planConfig.startDate, planConfig.durationDays, initialDaySet]);

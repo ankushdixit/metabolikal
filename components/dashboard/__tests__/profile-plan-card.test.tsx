@@ -78,8 +78,9 @@ describe("ProfilePlanCard", () => {
       startDate: new Date("2026-01-20T00:00:00"),
       endDate: new Date("2026-02-02T00:00:00"),
       durationDays: 14,
-      dayNumber: 1,
+      dayNumber: 0,
       daysRemaining: 14,
+      daysUntilStart: 5,
       progressPercent: 0,
       isBeforeStart: true,
       isCompleted: false,
@@ -89,6 +90,12 @@ describe("ProfilePlanCard", () => {
       render(<ProfilePlanCard planInfo={futurePlanInfo} isLoading={false} />);
 
       expect(screen.getByText(/STARTING SOON/i)).toBeInTheDocument();
+    });
+
+    it("shows correct days until start", () => {
+      render(<ProfilePlanCard planInfo={futurePlanInfo} isLoading={false} />);
+
+      expect(screen.getByText(/Starts in 5 days/i)).toBeInTheDocument();
     });
 
     it("does not show COMPLETED badge", () => {

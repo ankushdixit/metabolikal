@@ -563,6 +563,8 @@ export default function LandingPage() {
           <DayCounterTray
             currentDay={gamification.currentDay}
             totalDays={gamification.totalDays}
+            isBeforeStart={gamification.isBeforeStart}
+            daysUntilPlanStart={gamification.daysUntilPlanStart}
             onOpenChallengeHub={handleOpenChallengeHub}
           />
 
@@ -572,6 +574,8 @@ export default function LandingPage() {
             totalDays={gamification.totalDays}
             totalPoints={gamification.totalPoints}
             dayStreak={gamification.dayStreak}
+            isBeforeStart={gamification.isBeforeStart}
+            daysUntilPlanStart={gamification.daysUntilPlanStart}
             onOpenChallengeHub={handleOpenChallengeHub}
           />
         </>

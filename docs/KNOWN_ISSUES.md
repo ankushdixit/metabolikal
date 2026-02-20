@@ -6,33 +6,24 @@ Bugs and issues found during manual testing that are **not related** to the stab
 
 ---
 
-## Issue 1: Challenge "Starts in 0 days" when plan starts in the future
+## Issue 1: Challenge "Starts in 0 days" when plan starts in the future — FIXED
 
 **Severity**: Medium
 **Found on**: /dashboard/profile (MY PLAN card)
-**Client**: Mamta Srivastava (plan_start_date: 2026-02-26)
+**Fixed**: 2026-02-20
 
-The profile plan card shows "Starts in 0 days" with 0% progress, but the plan starts Feb 26 — 6 days from now (today is Feb 20). The countdown calculation is wrong.
+**Root cause**: `getDaysSinceStart()` clamped to minimum 1 even for future start dates, causing all downstream components to show "Day 1" and "Starts in 0 days" for plans that haven't started yet.
 
-Additionally, the challenge page (/dashboard/challenge) shows "1 days completed" with Day 1 checked on the calendar for Feb 26, even though that date hasn't arrived yet. The floating tray also shows "Day 1 / 89 days remaining" which is incorrect for a plan that hasn't started.
-
-**Expected behavior**: "Starts in 6 days", no days completed, Day 1 should not be checked.
-
-**Likely cause**: The days-since-start calculation in `lib/challenge-utils.ts` (`getDaysSinceStart`) or the plan card component doesn't correctly handle future start dates. There may also be a `challenge_progress` row in the DB for a date that hasn't occurred yet.
+**Fix**: Changed `getDaysSinceStart()` to return 0 for future start dates. Added `daysUntilStart()` helper. Updated `GamificationState` with `isBeforeStart` and `daysUntilPlanStart`. Fixed all 11 affected consumer files to show "Starting Soon" / "Starts in X days" and prevent challenge progress saves before plan start.
 
 ---
 
-## Issue 2: Orphaned /dashboard/diet and /dashboard/workout pages
+## Issue 2: Orphaned /dashboard/diet and /dashboard/workout pages — FIXED
 
 **Severity**: Low
 **Found on**: /dashboard/diet, /dashboard/workout (accessible via URL only)
+**Fixed**: 2026-02-20
 
-These pages are accessible by typing the URL directly but have no sidebar links. Diet, workout, supplement, and lifestyle activities were consolidated into "Today's Plan" (/dashboard). These orphaned pages:
-
-- Still fetch data independently (unbounded queries)
-- Are listed in the stability plan for error handling fixes (Task 2.1, 2.7) that may be unnecessary
-- Could confuse anyone who discovers them via URL
-
-**Recommendation**: Consider removing these route files to reduce dead code and skip unnecessary stability plan tasks for them.
+Route files removed. Diet, workout, supplement, and lifestyle activities are consolidated into "Today's Plan" (/dashboard).
 
 ---

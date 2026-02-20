@@ -59,6 +59,7 @@ jest.mock("@/lib/challenge-utils", () => {
   return {
     ...actual,
     getDaysSinceStart: jest.fn().mockReturnValue(5),
+    daysUntilStart: jest.fn().mockReturnValue(0),
   };
 });
 

@@ -11,6 +11,8 @@ const createMockGamification = (
   currentDay: 1,
   totalDays: 30,
   startDate: "2026-01-28",
+  isBeforeStart: false,
+  daysUntilPlanStart: 0,
   totalPoints: 100,
   dayStreak: 3,
   weekUnlocked: 1,

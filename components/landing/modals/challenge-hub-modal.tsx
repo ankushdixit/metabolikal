@@ -38,6 +38,8 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
     currentDay,
     totalDays,
     startDate,
+    isBeforeStart,
+    daysUntilPlanStart,
     totalPoints,
     weekUnlocked,
     completionPercent,
@@ -106,9 +108,11 @@ export function ChallengeHubModal({ open, onOpenChange, gamification }: Challeng
               </div>
               <div>
                 <div className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                  Day
+                  {isBeforeStart ? "Starts In" : "Day"}
                 </div>
-                <div className="text-lg font-black">{currentDay}</div>
+                <div className="text-lg font-black">
+                  {isBeforeStart ? `${daysUntilPlanStart}d` : currentDay}
+                </div>
               </div>
             </div>
 

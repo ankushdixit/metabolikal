@@ -23,6 +23,8 @@ export function DashboardChallengeHub() {
       <DayCounterTray
         currentDay={gamification.currentDay}
         totalDays={gamification.totalDays}
+        isBeforeStart={gamification.isBeforeStart}
+        daysUntilPlanStart={gamification.daysUntilPlanStart}
         onOpenChallengeHub={() => setChallengeHubOpen(true)}
       />
       {/* Mobile: floating bottom bar */}
@@ -31,6 +33,8 @@ export function DashboardChallengeHub() {
         totalDays={gamification.totalDays}
         totalPoints={gamification.totalPoints}
         dayStreak={gamification.dayStreak}
+        isBeforeStart={gamification.isBeforeStart}
+        daysUntilPlanStart={gamification.daysUntilPlanStart}
         onOpenChallengeHub={() => setChallengeHubOpen(true)}
       />
       <ChallengeHubModal

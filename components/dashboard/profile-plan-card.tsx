@@ -71,6 +71,7 @@ export function ProfilePlanCard({ planInfo, isLoading }: ProfilePlanCardProps) {
     durationDays,
     dayNumber,
     daysRemaining,
+    daysUntilStart,
     progressPercent,
     isBeforeStart,
     isCompleted,
@@ -96,7 +97,7 @@ export function ProfilePlanCard({ planInfo, isLoading }: ProfilePlanCardProps) {
       <div className="space-y-0">
         <DetailRow
           icon={<Calendar className="w-4 h-4" />}
-          label="Started"
+          label={isBeforeStart ? "Starts" : "Started"}
           value={formatPlanDate(startDate!)}
         />
         <DetailRow
@@ -119,7 +120,7 @@ export function ProfilePlanCard({ planInfo, isLoading }: ProfilePlanCardProps) {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-bold">
                     {isBeforeStart
-                      ? `Starts in ${Math.abs(dayNumber! - 1)} days`
+                      ? `Starts in ${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`
                       : isCompleted
                         ? `Day ${durationDays} of ${durationDays}`
                         : `Day ${dayNumber} of ${durationDays}`}

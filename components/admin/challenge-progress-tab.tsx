@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   getDaysSinceStart,
+  daysUntilStart,
   calculateStreak,
   calculateCompletionPercent,
   calculateTotalPoints,
@@ -98,9 +99,14 @@ export function ChallengeProgressTab({
   const progress = useMemo(() => buildDayProgressMap(progressRows), [progressRows]);
 
   const currentDay = useMemo(() => getDaysSinceStart(startDate, totalDays), [startDate, totalDays]);
+  const isNotStarted = currentDay === 0;
+  const daysUntil = useMemo(() => daysUntilStart(startDate), [startDate]);
 
   const totalPoints = useMemo(() => calculateTotalPoints(progress), [progress]);
-  const dayStreak = useMemo(() => calculateStreak(progress, currentDay), [progress, currentDay]);
+  const dayStreak = useMemo(
+    () => (isNotStarted ? 0 : calculateStreak(progress, currentDay)),
+    [progress, currentDay, isNotStarted]
+  );
   const completionPercent = useMemo(
     () => calculateCompletionPercent(progress, totalDays),
     [progress, totalDays]
@@ -124,6 +130,20 @@ export function ChallengeProgressTab({
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isNotStarted) {
+    return (
+      <div className="athletic-card p-8 pl-10 text-center">
+        <Calendar className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+        <p className="text-amber-500 font-bold">
+          Plan starts in {daysUntil} day{daysUntil === 1 ? "" : "s"}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Challenge data will appear once the plan start date arrives
+        </p>
       </div>
     );
   }
@@ -152,8 +172,10 @@ export function ChallengeProgressTab({
 
   const stats = [
     {
-      label: "Current Day",
-      value: `${currentDay} / ${totalDays}`,
+      label: isNotStarted ? "Starts In" : "Current Day",
+      value: isNotStarted
+        ? `${daysUntil} day${daysUntil === 1 ? "" : "s"}`
+        : `${currentDay} / ${totalDays}`,
       icon: Calendar,
     },
     {

@@ -1,6 +1,7 @@
 import {
   getDateString,
   getDaysSinceStart,
+  daysUntilStart,
   calculateStreak,
   calculateWeekUnlocked,
   calculateCompletionPercent,
@@ -60,11 +61,10 @@ describe("challenge-utils", () => {
       expect(getDaysSinceStart(today, 30)).toBe(1);
     });
 
-    it("never returns less than 1", () => {
-      // Future start date
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 5);
-      expect(getDaysSinceStart(getDateString(tomorrow), 30)).toBe(1);
+    it("returns 0 for future start date", () => {
+      const future = new Date();
+      future.setDate(future.getDate() + 5);
+      expect(getDaysSinceStart(getDateString(future), 30)).toBe(0);
     });
 
     it("never exceeds totalDays", () => {
@@ -76,6 +76,29 @@ describe("challenge-utils", () => {
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
       expect(getDaysSinceStart(getDateString(threeDaysAgo), 30)).toBe(3);
+    });
+  });
+
+  describe("daysUntilStart", () => {
+    it("returns 0 when start date is today or in the past", () => {
+      const today = getDateString();
+      expect(daysUntilStart(today)).toBe(0);
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      expect(daysUntilStart(getDateString(yesterday))).toBe(0);
+    });
+
+    it("returns correct count for future start date", () => {
+      const future = new Date();
+      future.setDate(future.getDate() + 5);
+      expect(daysUntilStart(getDateString(future))).toBe(5);
+    });
+
+    it("returns 1 for tomorrow", () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      expect(daysUntilStart(getDateString(tomorrow))).toBe(1);
     });
   });
 
