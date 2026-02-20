@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -77,8 +77,16 @@ export function FoodLogForm({
   initialQuantityNote,
 }: FoodLogFormProps) {
   const [quantityGrams, setQuantityGrams] = useState<number>(100);
+  const [debouncedQuantityGrams, setDebouncedQuantityGrams] = useState<number>(100);
   const [quantityType, setQuantityType] = useState<QuantityType | null>(null);
   const [quantityNote, setQuantityNote] = useState("");
+
+  // Debounce quantity changes (300ms) — keeps input responsive while
+  // deferring multiplier/calorie recalculation for fast typing
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuantityGrams(quantityGrams), 300);
+    return () => clearTimeout(timer);
+  }, [quantityGrams]);
 
   // Initialize quantity when dialog opens or food item changes
   useEffect(() => {
@@ -86,39 +94,47 @@ export function FoodLogForm({
       // Use initial values if provided (from planned meal), otherwise calculate defaults
       if (initialQuantityGrams != null) {
         setQuantityGrams(initialQuantityGrams);
+        setDebouncedQuantityGrams(initialQuantityGrams);
         setQuantityType(initialQuantityType || getDefaultQuantityType(foodItem));
         setQuantityNote(initialQuantityNote || "");
       } else {
-        setQuantityGrams(getInitialQuantity(foodItem));
+        const initial = getInitialQuantity(foodItem);
+        setQuantityGrams(initial);
+        setDebouncedQuantityGrams(initial);
         setQuantityType(getDefaultQuantityType(foodItem));
         setQuantityNote("");
       }
     }
   }, [isOpen, foodItem, initialQuantityGrams, initialQuantityType, initialQuantityNote]);
 
-  // Calculate multiplier from quantity
+  // Calculate multiplier from debounced quantity
   const calculatedMultiplier = useMemo(() => {
-    return calculateMultiplier(quantityGrams, quantityType, foodItem);
-  }, [quantityGrams, quantityType, foodItem]);
+    return calculateMultiplier(debouncedQuantityGrams, quantityType, foodItem);
+  }, [debouncedQuantityGrams, quantityType, foodItem]);
 
   // Calculate adjusted values
   const adjustedCalories = foodItem ? Math.round(foodItem.calories * calculatedMultiplier) : 0;
   const adjustedProtein = foodItem ? Math.round(foodItem.protein * calculatedMultiplier) : 0;
 
-  const handleLog = () => {
+  const handleLog = useCallback(() => {
     if (!foodItem || isLogging) return;
+
+    // Use actual quantity (not debounced) for submission accuracy
+    const actualMultiplier = calculateMultiplier(quantityGrams, quantityType, foodItem);
+    const actualCalories = Math.round(foodItem.calories * actualMultiplier);
+    const actualProtein = Math.round(foodItem.protein * actualMultiplier);
 
     onLogFood({
       food_item_id: foodItem.id,
-      calories: adjustedCalories,
-      protein: adjustedProtein,
-      serving_multiplier: calculatedMultiplier,
+      calories: actualCalories,
+      protein: actualProtein,
+      serving_multiplier: actualMultiplier,
       meal_category: mealCategory,
       quantity_grams: quantityGrams,
       quantity_type: quantityType,
       quantity_note: quantityNote || null,
     });
-  };
+  }, [foodItem, isLogging, quantityGrams, quantityType, mealCategory, quantityNote, onLogFood]);
 
   // Reset when dialog closes
   const handleOpenChange = (open: boolean) => {
@@ -227,7 +243,10 @@ export function FoodLogForm({
                 <button
                   key={qty}
                   type="button"
-                  onClick={() => setQuantityGrams(qty)}
+                  onClick={() => {
+                    setQuantityGrams(qty);
+                    setDebouncedQuantityGrams(qty);
+                  }}
                   disabled={isLogging}
                   className={cn(
                     "py-2 text-xs font-bold rounded transition-all",

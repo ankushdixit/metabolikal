@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { usePlanCycle } from "@/contexts/plan-cycle-context";
+import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 import { checkInSchema, type CheckInFormData } from "@/lib/validations";
 import {
   MeasurementsStep,
@@ -55,7 +55,7 @@ const STEPS = ["Measurements", "Photos", "Ratings", "Notes"];
 export default function CheckInPage() {
   const router = useRouter();
   const { userId, isLoading: authLoading } = useAuth();
-  const { currentCycle, setSelectedCycle } = usePlanCycle();
+  const { currentCycle, setSelectedCycle } = usePlanCycleData();
   const [dayNumber, setDayNumber] = useState(1);
   const [currentStep, setCurrentStep] = useState(0);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);

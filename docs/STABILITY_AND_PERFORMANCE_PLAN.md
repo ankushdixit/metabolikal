@@ -872,7 +872,7 @@ Migration naming: `YYYYMMDD_HHMMSS_add_performance_indexes.sql` in `supabase/mig
 
 ---
 
-### Task 4.1: Split PlanCycleContext into data + loading contexts
+### Task 4.1: Split PlanCycleContext into data + loading contexts — DONE
 
 **Problem**: `contexts/plan-cycle-context.tsx` wraps the entire dashboard. The context value includes `isLoading` which changes frequently. Every loading state toggle re-renders ALL consumers.
 
@@ -904,7 +904,7 @@ Components that only need data use `usePlanCycleData()`. Only skeleton/spinner c
 
 ---
 
-### Task 4.2: Add React.memo to list item components
+### Task 4.2: Add React.memo to list item components — DONE
 
 **Problem**: Zero `React.memo` across 253 TSX components. Timeline lists render 30+ items — when parent state changes, ALL items re-render.
 
@@ -918,7 +918,7 @@ Components that only need data use `usePlanCycleData()`. Only skeleton/spinner c
 
 ---
 
-### Task 4.3: Memoize heavy array operations in timeline views
+### Task 4.3: Memoize heavy array operations in timeline views — DONE
 
 **Problem**:
 
@@ -935,7 +935,7 @@ Components that only need data use `usePlanCycleData()`. Only skeleton/spinner c
 
 ---
 
-### Task 4.4: Fix ModalContext re-renders
+### Task 4.4: Fix ModalContext re-renders — DONE
 
 **Problem**: `contexts/modal-context.tsx` — every modal state change re-renders ALL consumers. Opening/closing any of ~15 modal types re-renders the entire public site tree.
 
@@ -953,7 +953,7 @@ Only the modal rendering component uses `useModalState()`.
 
 ---
 
-### Task 4.5: Add useCallback to event handlers and debounce inputs
+### Task 4.5: Add useCallback to event handlers and debounce inputs — DONE
 
 **Problem**:
 

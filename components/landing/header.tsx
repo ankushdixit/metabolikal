@@ -9,13 +9,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, X, Flame, ChevronRight } from "lucide-react";
-import { useModalContext } from "@/contexts/modal-context";
+import { useModalActions } from "@/contexts/modal-context";
 
 const navItems = ["Home", "Transformations", "About", "Challenge"];
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { openModal } = useModalContext();
+  const { openModal } = useModalActions();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

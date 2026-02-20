@@ -14,7 +14,9 @@ import { useAuth } from "@/contexts/auth-context";
 import type { PlanCycle } from "@/lib/database.types";
 import { daysBetween } from "@/lib/challenge-utils";
 
-export interface PlanCycleContextValue {
+/* ── Context value types ───────────────────────────────────────────── */
+
+export interface PlanCycleDataValue {
   userId: string | null;
   currentCycle: number;
   selectedCycle: number;
@@ -30,10 +32,21 @@ export interface PlanCycleContextValue {
     durationDays: number;
   } | null;
   setSelectedCycle: (cycle: number) => void;
+}
+
+export interface PlanCycleLoadingValue {
   isLoading: boolean;
 }
 
-const PlanCycleContext = createContext<PlanCycleContextValue | undefined>(undefined);
+/** Combined type kept for backward-compatibility with usePlanCycle(). */
+export type PlanCycleContextValue = PlanCycleDataValue & PlanCycleLoadingValue;
+
+/* ── Two separate contexts ─────────────────────────────────────────── */
+
+const PlanCycleDataContext = createContext<PlanCycleDataValue | undefined>(undefined);
+const PlanCycleLoadingContext = createContext<PlanCycleLoadingValue | undefined>(undefined);
+
+/* ── Provider ──────────────────────────────────────────────────────── */
 
 export function PlanCycleProvider({ children }: { children: ReactNode }) {
   const { userId, profile, isLoading: authLoading } = useAuth();
@@ -107,10 +120,8 @@ export function PlanCycleProvider({ children }: { children: ReactNode }) {
     setSelectedCycleRaw(cycle);
   }, []);
 
-  // Loading when auth is still loading (profile not yet available)
-  const isLoading = authLoading;
-
-  const value = useMemo<PlanCycleContextValue>(
+  // Data context value — changes only when plan data changes (rare)
+  const dataValue = useMemo<PlanCycleDataValue>(
     () => ({
       userId,
       currentCycle,
@@ -119,7 +130,6 @@ export function PlanCycleProvider({ children }: { children: ReactNode }) {
       cycleDetails,
       currentCycleProfile,
       setSelectedCycle,
-      isLoading,
     }),
     [
       userId,
@@ -129,17 +139,47 @@ export function PlanCycleProvider({ children }: { children: ReactNode }) {
       cycleDetails,
       currentCycleProfile,
       setSelectedCycle,
-      isLoading,
     ]
   );
 
-  return <PlanCycleContext.Provider value={value}>{children}</PlanCycleContext.Provider>;
+  // Loading context value — changes frequently during auth init
+  const loadingValue = useMemo<PlanCycleLoadingValue>(
+    () => ({ isLoading: authLoading }),
+    [authLoading]
+  );
+
+  return (
+    <PlanCycleLoadingContext.Provider value={loadingValue}>
+      <PlanCycleDataContext.Provider value={dataValue}>{children}</PlanCycleDataContext.Provider>
+    </PlanCycleLoadingContext.Provider>
+  );
 }
 
-export function usePlanCycle() {
-  const context = useContext(PlanCycleContext);
+/* ── Hooks ─────────────────────────────────────────────────────────── */
+
+/** Use when you only need plan cycle data (userId, cycles, details).
+ *  Will NOT re-render when loading state changes. */
+export function usePlanCycleData() {
+  const context = useContext(PlanCycleDataContext);
   if (context === undefined) {
-    throw new Error("usePlanCycle must be used within a PlanCycleProvider");
+    throw new Error("usePlanCycleData must be used within a PlanCycleProvider");
   }
   return context;
+}
+
+/** Use when you only need loading state (skeleton/spinner components). */
+export function usePlanCycleLoading() {
+  const context = useContext(PlanCycleLoadingContext);
+  if (context === undefined) {
+    throw new Error("usePlanCycleLoading must be used within a PlanCycleProvider");
+  }
+  return context;
+}
+
+/** Backward-compatible hook — subscribes to BOTH contexts.
+ *  Prefer usePlanCycleData() in components that don't need isLoading. */
+export function usePlanCycle(): PlanCycleContextValue {
+  const data = usePlanCycleData();
+  const loading = usePlanCycleLoading();
+  return { ...data, ...loading };
 }

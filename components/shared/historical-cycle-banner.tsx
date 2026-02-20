@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { PlanCycleSelector } from "@/components/shared/plan-cycle-selector";
-import { usePlanCycle } from "@/contexts/plan-cycle-context";
+import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 
 /**
  * HistoricalCycleBanner
@@ -17,7 +17,7 @@ export function HistoricalCycleBanner() {
     isViewingHistory,
     currentCycleProfile,
     setSelectedCycle,
-  } = usePlanCycle();
+  } = usePlanCycleData();
 
   if (!userId) return null;
 

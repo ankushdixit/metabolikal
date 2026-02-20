@@ -24,7 +24,7 @@ import {
 } from "@/lib/challenge-utils";
 import type { DayProgress } from "@/lib/challenge-utils";
 import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
-import { usePlanCycle } from "@/contexts/plan-cycle-context";
+import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 import type { ChallengeProgress } from "@/lib/database.types";
 
 const DEFAULT_TOTAL_DAYS = 30;
@@ -34,7 +34,7 @@ const DEFAULT_TOTAL_DAYS = 30;
  * Displays the user's challenge progress in the client portal
  */
 export default function ChallengeHistoryPage() {
-  const { userId, selectedCycle, cycleDetails } = usePlanCycle();
+  const { userId, selectedCycle, cycleDetails } = usePlanCycleData();
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 

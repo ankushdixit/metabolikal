@@ -2,16 +2,19 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import ProgressPage from "../page";
 
 // Mock plan cycle context
+const mockPlanCycleData = {
+  userId: "user-123",
+  currentCycle: 1,
+  selectedCycle: 1,
+  isViewingHistory: false,
+  cycleDetails: null,
+  currentCycleProfile: null,
+  setSelectedCycle: jest.fn(),
+};
 jest.mock("@/contexts/plan-cycle-context", () => ({
-  usePlanCycle: () => ({
-    userId: "user-123",
-    currentCycle: 1,
-    selectedCycle: 1,
-    isViewingHistory: false,
-    cycleDetails: null,
-    setSelectedCycle: jest.fn(),
-    isLoading: false,
-  }),
+  usePlanCycleData: () => mockPlanCycleData,
+  usePlanCycleLoading: () => ({ isLoading: false }),
+  usePlanCycle: () => ({ ...mockPlanCycleData, isLoading: false }),
 }));
 
 // Mock HistoricalCycleBanner

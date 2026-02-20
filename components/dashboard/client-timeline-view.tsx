@@ -83,10 +83,18 @@ function ClientTimelineViewInner() {
 
   // Simple state management (following admin pattern)
   const [currentDay, setCurrentDay] = useState<number>(1);
+  const [debouncedDay, setDebouncedDay] = useState<number>(1);
   const [initialDaySet, setInitialDaySet] = useState(false);
   const [typeFilters, setTypeFilters] = useState<TypeFilters>(urlFilters);
   const [expandedItem, setExpandedItem] = useState<ExtendedTimelineItem | null>(null);
   const [isMarking, setIsMarking] = useState(false);
+
+  // Debounce day changes (200ms) — PlanDayNavigator shows instant day feedback
+  // while data fetching is deferred to avoid rapid API calls during navigation
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedDay(currentDay), 200);
+    return () => clearTimeout(timer);
+  }, [currentDay]);
 
   // Food swap state
   const [selectedDietPlanForSwap, setSelectedDietPlanForSwap] = useState<{
@@ -103,9 +111,9 @@ function ClientTimelineViewInner() {
     } | null;
   } | null>(null);
 
-  // Fetch timeline data using day number override
+  // Fetch timeline data using debounced day number
   const timeline = useClientTimeline({
-    dayNumberOverride: currentDay,
+    dayNumberOverride: debouncedDay,
   });
 
   // Destructure for easier access (desktop view still uses these)
@@ -181,6 +189,7 @@ function ClientTimelineViewInner() {
   useEffect(() => {
     if (!initialDaySet && planProgress && planProgress.dayNumber > 0) {
       setCurrentDay(planProgress.dayNumber);
+      setDebouncedDay(planProgress.dayNumber);
       setInitialDaySet(true);
     }
   }, [planProgress, initialDaySet]);

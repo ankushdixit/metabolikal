@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { useList, useUpdate } from "@refinedev/core";
 import { cn } from "@/lib/utils";
 import {
@@ -185,18 +185,18 @@ interface TimelineItemCardProps {
   item: ExtendedTimelineItem;
   isCompleted: boolean;
   completionStatus: { completed: number; total: number };
-  onClick: () => void;
-  onQuickComplete: () => void;
+  onItemClick: (item: ExtendedTimelineItem) => void;
+  onItemQuickComplete: (item: ExtendedTimelineItem) => void;
   readOnly: boolean;
   isOfflinePending: boolean;
 }
 
-function TimelineItemCard({
+const TimelineItemCard = memo(function TimelineItemCard({
   item,
   isCompleted,
   completionStatus,
-  onClick,
-  onQuickComplete,
+  onItemClick,
+  onItemQuickComplete,
   readOnly,
   isOfflinePending,
 }: TimelineItemCardProps) {
@@ -209,15 +209,21 @@ function TimelineItemCard({
   const timeString = getTimeFromScheduling(item);
   const timeDisplay = formatTimeDisplay(timeString);
 
+  const handleClick = useCallback(() => onItemClick(item), [onItemClick, item]);
+  const handleQuickComplete = useCallback(
+    () => onItemQuickComplete(item),
+    [onItemQuickComplete, item]
+  );
+
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick();
+          handleClick();
         }
       }}
       className={cn(
@@ -235,9 +241,9 @@ function TimelineItemCard({
         onClick={(e) => {
           e.stopPropagation();
           if (!readOnly && !hasMultipleItems) {
-            onQuickComplete();
+            handleQuickComplete();
           } else {
-            onClick();
+            handleClick();
           }
         }}
         disabled={readOnly}
@@ -298,28 +304,30 @@ function TimelineItemCard({
       </div>
     </div>
   );
-}
+});
 
 interface CollapsiblePeriodProps {
   period: TimePeriod;
   isExpanded: boolean;
-  onToggle: () => void;
+  onToggle: (periodId: string) => void;
   children: React.ReactNode;
   nowIndicatorRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-function CollapsiblePeriod({
+const CollapsiblePeriod = memo(function CollapsiblePeriod({
   period,
   isExpanded,
   onToggle,
   children,
   nowIndicatorRef,
 }: CollapsiblePeriodProps) {
+  const handleToggle = useCallback(() => onToggle(period.id), [onToggle, period.id]);
+
   return (
     <div className="space-y-2">
       {/* Period header */}
       <button
-        onClick={onToggle}
+        onClick={handleToggle}
         className={cn(
           "w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors",
           "min-h-[44px]",
@@ -352,7 +360,7 @@ function CollapsiblePeriod({
       {isExpanded && <div className="space-y-2">{children}</div>}
     </div>
   );
-}
+});
 
 // =============================================================================
 // MAIN COMPONENT
@@ -876,7 +884,7 @@ export function MobileTimelineView({
                 key={period.id}
                 period={period}
                 isExpanded={expandedPeriods.has(period.id)}
-                onToggle={() => handleTogglePeriod(period.id)}
+                onToggle={handleTogglePeriod}
                 nowIndicatorRef={period.isNow ? nowIndicatorRef : undefined}
               >
                 {period.items.map((item) => {
@@ -890,8 +898,8 @@ export function MobileTimelineView({
                       item={item}
                       isCompleted={completed}
                       completionStatus={status}
-                      onClick={() => handleItemClick(item)}
-                      onQuickComplete={() => handleQuickComplete(item)}
+                      onItemClick={handleItemClick}
+                      onItemQuickComplete={handleQuickComplete}
                       readOnly={isViewingFutureDay || isViewingPast}
                       isOfflinePending={!!pendingAction}
                     />

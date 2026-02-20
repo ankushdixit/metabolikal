@@ -7,7 +7,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useModalContext } from "@/contexts/modal-context";
+import { useModalActions } from "@/contexts/modal-context";
 
 // Simple YouTube icon component
 function YoutubeIcon({ className }: { className?: string }) {
@@ -40,7 +40,7 @@ function InstagramIcon({ className }: { className?: string }) {
 const navItems = ["Home", "Transformations", "About", "Challenge"];
 
 export function Footer() {
-  const { openModal } = useModalContext();
+  const { openModal } = useModalActions();
 
   return (
     <footer className="bg-card border-t border-border">

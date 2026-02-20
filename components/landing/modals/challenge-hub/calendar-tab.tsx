@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo, useCallback, useMemo } from "react";
 import { Check, Lock, Calendar, Pencil } from "lucide-react";
 import { DayProgress } from "@/hooks/use-gamification";
 import { getDateForDay } from "@/lib/challenge-utils";
@@ -19,6 +19,44 @@ interface CalendarTabProps {
 
 const DAYS_PER_WEEK = 7;
 
+interface CalendarDayButtonProps {
+  day: number;
+  status: "completed" | "current" | "future" | "locked" | "missed";
+  isSelected: boolean;
+  dateLabel: string | null;
+  onClick: (day: number) => void;
+}
+
+const CalendarDayButton = memo(function CalendarDayButton({
+  day,
+  status,
+  isSelected,
+  dateLabel,
+  onClick,
+}: CalendarDayButtonProps) {
+  return (
+    <button
+      onClick={() => onClick(day)}
+      disabled={status === "locked"}
+      className={`
+        aspect-square flex flex-col items-center justify-center relative
+        text-sm font-black transition-all
+        ${status === "completed" ? "bg-primary text-primary-foreground" : ""}
+        ${status === "current" ? "ring-2 ring-primary bg-secondary" : ""}
+        ${status === "future" ? "bg-secondary text-muted-foreground hover:bg-secondary/80" : ""}
+        ${status === "missed" ? "bg-secondary border-2 border-dashed border-primary/40 text-muted-foreground hover:border-primary/70 cursor-pointer" : ""}
+        ${status === "locked" ? "bg-muted text-muted-foreground/50 cursor-not-allowed" : ""}
+        ${isSelected ? "ring-2 ring-accent" : ""}
+      `}
+    >
+      {status === "completed" && <Check className="h-4 w-4" />}
+      {status === "locked" && <Lock className="h-3 w-3" />}
+      {(status === "current" || status === "future" || status === "missed") && day}
+      {dateLabel && <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>}
+    </button>
+  );
+});
+
 export function CalendarTab({
   currentDay,
   totalDays,
@@ -32,42 +70,66 @@ export function CalendarTab({
 }: CalendarTabProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const calendarDays = Array.from({ length: totalDays }, (_, i) => i + 1);
-  const day1Weekday = startDate ? new Date(startDate + "T00:00:00").getDay() : 0;
+  const calendarDays = useMemo(
+    () => Array.from({ length: totalDays }, (_, i) => i + 1),
+    [totalDays]
+  );
+  const day1Weekday = useMemo(
+    () => (startDate ? new Date(startDate + "T00:00:00").getDay() : 0),
+    [startDate]
+  );
 
-  const handleDayClick = (day: number) => {
-    const progress = getDayProgress(day);
-    const editable = canEditDay?.(day) ?? false;
-
-    // Only block clicks on locked *future* days
-    if (day > currentDay && !isDayUnlocked(day)) {
-      setSelectedDay(null);
-      return;
+  // Pre-compute date labels for each day to avoid recalculating inside .map()
+  const dateLabels = useMemo(() => {
+    if (!startDate) return {};
+    const labels: Record<number, string> = {};
+    for (let i = 1; i <= totalDays; i++) {
+      const dayDate = getDateForDay(startDate, i);
+      labels[i] = dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
+    return labels;
+  }, [startDate, totalDays]);
 
-    // Missed day (past, no data) — go directly to edit
-    if (editable && !progress?.hasData && day < currentDay) {
-      onEditDay?.(day);
-      return;
-    }
+  const handleDayClick = useCallback(
+    (day: number) => {
+      const progress = getDayProgress(day);
+      const editable = canEditDay?.(day) ?? false;
 
-    // Completed or current day — toggle details panel
-    if (progress?.hasData) {
-      setSelectedDay(selectedDay === day ? null : day);
-    } else {
-      setSelectedDay(null);
-    }
-  };
+      // Only block clicks on locked *future* days
+      if (day > currentDay && !isDayUnlocked(day)) {
+        setSelectedDay(null);
+        return;
+      }
 
-  const getDayStatus = (day: number): "completed" | "current" | "future" | "locked" | "missed" => {
-    const progress = allProgress[day];
+      // Missed day (past, no data) — go directly to edit
+      if (editable && !progress?.hasData && day < currentDay) {
+        onEditDay?.(day);
+        return;
+      }
 
-    if (day === currentDay) return "current";
-    if (day < currentDay) return progress?.hasData ? "completed" : "missed";
-    // Future days: keep week-lock for visual display
-    if (!isDayUnlocked(day)) return "locked";
-    return "future";
-  };
+      // Completed or current day — toggle details panel
+      setSelectedDay((prev) => {
+        if (progress?.hasData) {
+          return prev === day ? null : day;
+        }
+        return null;
+      });
+    },
+    [getDayProgress, canEditDay, currentDay, isDayUnlocked, onEditDay]
+  );
+
+  const getDayStatus = useCallback(
+    (day: number): "completed" | "current" | "future" | "locked" | "missed" => {
+      const progress = allProgress[day];
+
+      if (day === currentDay) return "current";
+      if (day < currentDay) return progress?.hasData ? "completed" : "missed";
+      // Future days: keep week-lock for visual display
+      if (!isDayUnlocked(day)) return "locked";
+      return "future";
+    },
+    [allProgress, currentDay, isDayUnlocked]
+  );
 
   const selectedDayProgress = selectedDay ? getDayProgress(selectedDay) : null;
 
@@ -109,39 +171,16 @@ export function CalendarTab({
             <div key={`pad-${i}`} className="aspect-square" />
           ))}
 
-          {calendarDays.map((day) => {
-            const status = getDayStatus(day);
-            const isSelected = selectedDay === day;
-            const dayDate = startDate ? getDateForDay(startDate, day) : null;
-            const dateLabel = dayDate
-              ? dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-              : null;
-
-            return (
-              <button
-                key={day}
-                onClick={() => handleDayClick(day)}
-                disabled={status === "locked"}
-                className={`
-                  aspect-square flex flex-col items-center justify-center relative
-                  text-sm font-black transition-all
-                  ${status === "completed" ? "bg-primary text-primary-foreground" : ""}
-                  ${status === "current" ? "ring-2 ring-primary bg-secondary" : ""}
-                  ${status === "future" ? "bg-secondary text-muted-foreground hover:bg-secondary/80" : ""}
-                  ${status === "missed" ? "bg-secondary border-2 border-dashed border-primary/40 text-muted-foreground hover:border-primary/70 cursor-pointer" : ""}
-                  ${status === "locked" ? "bg-muted text-muted-foreground/50 cursor-not-allowed" : ""}
-                  ${isSelected ? "ring-2 ring-accent" : ""}
-                `}
-              >
-                {status === "completed" && <Check className="h-4 w-4" />}
-                {status === "locked" && <Lock className="h-3 w-3" />}
-                {(status === "current" || status === "future" || status === "missed") && day}
-                {dateLabel && (
-                  <span className="text-[8px] leading-tight opacity-70">{dateLabel}</span>
-                )}
-              </button>
-            );
-          })}
+          {calendarDays.map((day) => (
+            <CalendarDayButton
+              key={day}
+              day={day}
+              status={getDayStatus(day)}
+              isSelected={selectedDay === day}
+              dateLabel={dateLabels[day] ?? null}
+              onClick={handleDayClick}
+            />
+          ))}
 
           {/* Fill remaining cells with empty space for visual consistency */}
           {(() => {
