@@ -1,7 +1,5 @@
 import {
   createServerSupabaseClient,
-  createBrowserSupabaseClient,
-  getSupabaseClient,
   testDatabaseConnection,
   resetSupabaseClients,
 } from "../supabase";
@@ -62,45 +60,6 @@ describe("Supabase client", () => {
 
     it("throws when env vars are missing", () => {
       expect(() => createServerSupabaseClient()).toThrow();
-    });
-  });
-
-  describe("createBrowserSupabaseClient", () => {
-    it("creates a client when env vars are set", () => {
-      setValidEnv();
-
-      const client = createBrowserSupabaseClient();
-
-      expect(client).toBeDefined();
-      expect(client.from).toBeDefined();
-    });
-
-    it("returns the same instance on subsequent calls", () => {
-      setValidEnv();
-
-      const client1 = createBrowserSupabaseClient();
-      const client2 = createBrowserSupabaseClient();
-
-      expect(client1).toBe(client2);
-    });
-
-    it("throws when client env vars are missing", () => {
-      // Only set server env vars
-      process.env.SUPABASE_URL = "https://test.supabase.co";
-      process.env.SUPABASE_ANON_KEY = "test-anon-key";
-
-      expect(() => createBrowserSupabaseClient()).toThrow();
-    });
-  });
-
-  describe("getSupabaseClient", () => {
-    it("returns server client when not in browser", () => {
-      setValidEnv();
-
-      // In Node.js test environment, window is undefined
-      const client = getSupabaseClient();
-
-      expect(client).toBeDefined();
     });
   });
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import { User } from "@supabase/supabase-js";
 import { CalculatorResult } from "@/lib/database.types";
 import { migrateLocalStorageToDatabase } from "./use-assessment-storage";
@@ -27,8 +28,13 @@ interface UseProfileCompletionReturn extends ProfileCompletionState {
  * 1. Being authenticated
  * 2. Having completed the lifestyle assessment
  * 3. Having completed the metabolic calculator
+ *
+ * When inside AuthProvider, uses cached userId to avoid a redundant getUser() call.
+ * On the public page (outside AuthProvider), falls back to direct getUser().
  */
 export function useProfileCompletion(): UseProfileCompletionReturn {
+  const auth = useOptionalAuth();
+
   const [state, setState] = useState<ProfileCompletionState>({
     isLoading: true,
     isAuthenticated: false,
@@ -55,10 +61,20 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      // Check authentication status
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // If AuthContext is available, use its userId to skip getUser() (Task 1.3)
+      let user: User | null = null;
+      if (auth && !auth.isLoading) {
+        if (auth.userId) {
+          // Create a minimal user-like object from AuthContext
+          user = { id: auth.userId } as User;
+        }
+      } else {
+        // Outside AuthProvider or auth still loading — fall back to direct getUser()
+        const {
+          data: { user: supabaseUser },
+        } = await supabase.auth.getUser();
+        user = supabaseUser;
+      }
 
       if (!user) {
         setState({
@@ -135,7 +151,7 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
         isLoading: false,
       }));
     }
-  }, [supabase]);
+  }, [supabase, auth]);
 
   // Check on mount and when auth state changes
   useEffect(() => {
@@ -146,17 +162,20 @@ export function useProfileCompletion(): UseProfileCompletionReturn {
 
     checkProfileCompletion();
 
-    // Subscribe to auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkProfileCompletion();
-    });
+    // Only subscribe to onAuthStateChange when outside AuthProvider (public page)
+    // Inside AuthProvider, auth changes propagate via the auth context dependency
+    if (!auth) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(() => {
+        checkProfileCompletion();
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [checkProfileCompletion, supabase]);
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [checkProfileCompletion, supabase, auth]);
 
   return {
     ...state,

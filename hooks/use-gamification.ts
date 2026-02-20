@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserSupabaseClient } from "@/lib/auth";
-import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { useOptionalAuth } from "@/contexts/auth-context";
 import {
   getDateString,
   getDaysSinceStart,
@@ -53,7 +53,7 @@ export interface ChallengeData {
 
 export interface GamificationState {
   isLoading: boolean;
-  user: User | null;
+  user: { id: string } | null;
   currentDay: number;
   totalDays: number;
   startDate: string;
@@ -134,10 +134,14 @@ function getEmptyDayProgress(dayNumber: number): DayProgress {
   };
 }
 
-// Main hook - now requires authentication
+// Main hook - uses AuthContext for userId when available (Task 1.3)
 export function useGamification() {
+  const auth = useOptionalAuth();
+  // When inside AuthProvider, use cached userId. Otherwise track it locally.
+  const [localUserId, setLocalUserId] = useState<string | null>(null);
+  const authUserId = auth?.userId ?? localUserId;
+
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
   const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
   const [dailyVisitPoints, setDailyVisitPoints] = useState(0);
   const [startDate, setStartDate] = useState<string>(getDateString());
@@ -236,88 +240,100 @@ export function useGamification() {
     [supabase]
   );
 
-  // Initialize and subscribe to auth changes
+  // Initialize when userId becomes available (Task 1.3)
+  // Inside AuthProvider: reacts to auth.userId changes, no getUser()/onAuthStateChange needed.
+  // Outside AuthProvider (public page): falls back to getUser() + onAuthStateChange.
   useEffect(() => {
     if (!supabase) {
       setIsLoading(false);
       return;
     }
 
-    const initializeGamification = async () => {
+    // If AuthProvider is present and still loading, wait for it
+    if (auth && auth.isLoading) return;
+
+    // If AuthProvider gave us a userId (or localUserId was set by fallback), use it
+    const effectiveUserId = auth?.userId ?? localUserId;
+
+    if (!effectiveUserId && auth) {
+      // AuthProvider is done loading and user isn't authenticated
+      setChallengeData(null);
+      setTotalDays(DEFAULT_CHALLENGE_DAYS);
+      setPlanCycle(1);
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const initializeGamification = async (userId: string) => {
       setIsLoading(true);
 
-      // Get current user
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
+      const profileResult = await loadProfileDuration(userId);
+      if (cancelled) return;
+      setTotalDays(profileResult.totalDays);
+      setPlanCycle(profileResult.planCycle);
 
-      if (currentUser) {
-        setUser(currentUser);
+      const data = await loadChallengeData(userId, profileResult.planCycle);
+      if (cancelled) return;
 
-        // Fetch profile first to get plan cycle
-        const profileResult = await loadProfileDuration(currentUser.id);
-        setTotalDays(profileResult.totalDays);
-        setPlanCycle(profileResult.planCycle);
+      if (data) {
+        data.startDate = profileResult.planStartDate;
+        setChallengeData(data);
+        setStartDate(data.startDate);
 
-        // Then fetch challenge data with the correct plan cycle
-        const data = await loadChallengeData(currentUser.id, profileResult.planCycle);
-
-        if (data) {
-          data.startDate = profileResult.planStartDate;
-          setChallengeData(data);
-          setStartDate(data.startDate);
-
-          // Award daily visit points
-          const today = getDateString();
-          if (data.lastVisitDate !== today) {
-            setDailyVisitPoints(10);
-          }
+        const today = getDateString();
+        if (data.lastVisitDate !== today) {
+          setDailyVisitPoints(10);
         }
-      } else {
-        // Not authenticated - clear state
-        setUser(null);
-        setChallengeData(null);
-        setTotalDays(DEFAULT_CHALLENGE_DAYS);
-        setPlanCycle(1);
       }
 
       setIsLoading(false);
     };
 
-    initializeGamification();
-
-    // Subscribe to auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, session: Session | null) => {
-        if (session?.user) {
-          setUser(session.user);
-
-          const profileResult = await loadProfileDuration(session.user.id);
-          setTotalDays(profileResult.totalDays);
-          setPlanCycle(profileResult.planCycle);
-
-          const data = await loadChallengeData(session.user.id, profileResult.planCycle);
-
-          if (data) {
-            data.startDate = profileResult.planStartDate;
-            setChallengeData(data);
-            setStartDate(data.startDate);
+    if (effectiveUserId) {
+      initializeGamification(effectiveUserId);
+    } else {
+      // No AuthProvider — resolve userId via getUser() (public page fallback)
+      supabase.auth
+        .getUser()
+        .then(({ data: { user } }: { data: { user: { id: string } | null } }) => {
+          if (cancelled) return;
+          if (user) {
+            setLocalUserId(user.id);
+            // The effect will re-run with the new localUserId
+          } else {
+            setChallengeData(null);
+            setTotalDays(DEFAULT_CHALLENGE_DAYS);
+            setPlanCycle(1);
+            setIsLoading(false);
           }
-        } else {
-          setUser(null);
-          setChallengeData(null);
-          setTotalDays(DEFAULT_CHALLENGE_DAYS);
-          setPlanCycle(1);
+        });
+    }
+
+    // Only subscribe to onAuthStateChange when outside AuthProvider
+    let subscription: { unsubscribe: () => void } | null = null;
+    if (!auth) {
+      const { data } = supabase.auth.onAuthStateChange(
+        (_event: string, session: { user: { id: string } } | null) => {
+          if (session?.user) {
+            setLocalUserId(session.user.id);
+          } else {
+            setLocalUserId(null);
+            setChallengeData(null);
+            setTotalDays(DEFAULT_CHALLENGE_DAYS);
+            setPlanCycle(1);
+          }
         }
-      }
-    );
+      );
+      subscription = data.subscription;
+    }
 
     return () => {
-      subscription.unsubscribe();
+      cancelled = true;
+      subscription?.unsubscribe();
     };
-  }, [supabase, loadChallengeData, loadProfileDuration]);
+  }, [auth, localUserId, supabase, loadChallengeData, loadProfileDuration]);
 
   // Calculate current day
   const currentDay = useMemo(() => {
@@ -382,7 +398,7 @@ export function useGamification() {
   // Save today's progress to database
   const saveTodayProgress = useCallback(
     async (metrics: DailyMetrics): Promise<boolean> => {
-      if (!user || !challengeData || !supabase) return false;
+      if (!authUserId || !challengeData || !supabase) return false;
 
       const points = calculateDailyPoints(metrics, true);
       const today = getDateString();
@@ -392,8 +408,8 @@ export function useGamification() {
         const upsertError = await withTimeout(async () => {
           const { error: err } = await supabase.from("challenge_progress").upsert(
             {
-              user_id: user.id,
-              visitor_id: user.id, // Use user_id as visitor_id for compatibility
+              user_id: authUserId,
+              visitor_id: authUserId, // Use user_id as visitor_id for compatibility
               day_number: currentDay,
               logged_date: today,
               steps: metrics.steps,
@@ -442,7 +458,7 @@ export function useGamification() {
         return false;
       }
     },
-    [user, challengeData, currentDay, planCycle, supabase]
+    [authUserId, challengeData, currentDay, planCycle, supabase]
   );
 
   // Check if editing a specific day is allowed
@@ -455,7 +471,7 @@ export function useGamification() {
   // Save progress for any editable day
   const saveDayProgress = useCallback(
     async (dayNumber: number, metrics: DailyMetrics): Promise<boolean> => {
-      if (!user || !supabase) return false;
+      if (!authUserId || !supabase) return false;
 
       try {
         const points = calculateDailyPoints(metrics, true);
@@ -472,8 +488,8 @@ export function useGamification() {
         const upsertError = await withTimeout(async () => {
           const { error: err } = await supabase.from("challenge_progress").upsert(
             {
-              user_id: user.id,
-              visitor_id: user.id,
+              user_id: authUserId,
+              visitor_id: authUserId,
               day_number: dayNumber,
               logged_date: loggedDate,
               steps: metrics.steps,
@@ -521,7 +537,7 @@ export function useGamification() {
         return false;
       }
     },
-    [user, supabase, startDate, planCycle]
+    [authUserId, supabase, startDate, planCycle]
   );
 
   // Award assessment points
@@ -566,19 +582,19 @@ export function useGamification() {
 
   // Reset challenge (admin/testing only)
   const resetChallenge = useCallback(async () => {
-    if (!user || !supabase) return;
+    if (!authUserId || !supabase) return;
 
     try {
       // Delete progress for this user's current plan cycle
       await supabase
         .from("challenge_progress")
         .delete()
-        .eq("user_id", user.id)
+        .eq("user_id", authUserId)
         .eq("plan_cycle", planCycle);
 
       // Reset local state
       setChallengeData({
-        userId: user.id,
+        userId: authUserId,
         startDate: getDateString(),
         dailyProgress: {},
         assessmentPoints: 0,
@@ -591,11 +607,11 @@ export function useGamification() {
     } catch (error) {
       console.error("Error resetting challenge:", error);
     }
-  }, [user, planCycle, supabase]);
+  }, [authUserId, planCycle, supabase]);
 
   const state: GamificationState = {
     isLoading,
-    user,
+    user: authUserId ? { id: authUserId } : null,
     currentDay,
     totalDays,
     startDate,

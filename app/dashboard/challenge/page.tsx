@@ -70,19 +70,21 @@ const DEFAULT_TOTAL_DAYS = 30;
 export default function ChallengeHistoryPage() {
   const { userId, selectedCycle, cycleDetails } = usePlanCycle();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<number, DayProgress>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const totalDays = cycleDetails?.durationDays || DEFAULT_TOTAL_DAYS;
   const startDate = cycleDetails?.startDate || "";
+  // Dependencies not yet available (parent contexts still loading)
+  const isReady = !!userId && !!selectedCycle;
 
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   // Fetch challenge progress for the selected cycle
   useEffect(() => {
-    if (!userId || !selectedCycle) return;
+    if (!isReady) return;
 
     const fetchProgress = async () => {
       setIsLoading(true);
@@ -133,7 +135,7 @@ export default function ChallengeHistoryPage() {
     };
 
     fetchProgress();
-  }, [userId, selectedCycle, supabase]);
+  }, [isReady, userId, selectedCycle, supabase]);
 
   // Calculate cumulative stats
   const cumulativeStats = useMemo((): CumulativeStats => {
@@ -191,7 +193,8 @@ export default function ChallengeHistoryPage() {
   );
 
   const selectedDayProgress = selectedDay ? progress[selectedDay] : null;
-  const isEmpty = !isLoading && cumulativeStats.daysCompleted === 0;
+  const showSkeleton = !isReady || isLoading;
+  const isEmpty = !showSkeleton && cumulativeStats.daysCompleted === 0;
 
   const summaryStats = [
     {
@@ -282,7 +285,7 @@ export default function ChallengeHistoryPage() {
       <HistoricalCycleBanner />
 
       {/* Loading State */}
-      {isLoading && (
+      {showSkeleton && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
@@ -325,7 +328,7 @@ export default function ChallengeHistoryPage() {
       )}
 
       {/* Content */}
-      {!isLoading && !error && !isEmpty && (
+      {!showSkeleton && !error && !isEmpty && (
         <>
           {/* Summary Stats */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">

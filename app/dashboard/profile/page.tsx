@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useOne } from "@refinedev/core";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { ProfilePhotoUpload } from "@/components/dashboard/profile-photo-upload";
 import { ProfileDetailsCard } from "@/components/dashboard/profile-details-card";
 import { ProfilePlanCard } from "@/components/dashboard/profile-plan-card";
@@ -10,6 +9,7 @@ import { ProfileConditionsCard } from "@/components/dashboard/profile-conditions
 import { ProfileTargetsCard } from "@/components/dashboard/profile-targets-card";
 import { NotificationSettings } from "@/components/push/notification-settings";
 import { useClientProfileData, calculatePlanInfo } from "@/hooks/use-client-profile-data";
+import { useAuth } from "@/contexts/auth-context";
 import type { Profile } from "@/lib/database.types";
 
 /**
@@ -17,21 +17,8 @@ import type { Profile } from "@/lib/database.types";
  * Displays user profile details, photo upload, and security options
  */
 export default function ProfilePage() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  // Get current user from Supabase auth
-  useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    supabase.auth
-      .getUser()
-      .then(({ data }: { data: { user: { id: string; email?: string } | null } }) => {
-        if (data.user) {
-          setUserId(data.user.id);
-          setUserEmail(data.user.email || null);
-        }
-      });
-  }, []);
+  // Use AuthContext instead of direct getUser() call (Task 1.3)
+  const { userId } = useAuth();
 
   // Fetch user profile
   const profileQuery = useOne<Profile>({
@@ -44,6 +31,7 @@ export default function ProfilePage() {
 
   const profile = profileQuery.query.data?.data;
   const isLoading = profileQuery.query.isLoading;
+  const userEmail = profile?.email ?? null;
 
   // Fetch additional profile data (conditions, limits)
   const {

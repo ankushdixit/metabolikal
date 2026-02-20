@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useList } from "@refinedev/core";
 import { useAuth } from "@/contexts/auth-context";
-import type { Profile, PlanCycle } from "@/lib/database.types";
+import type { PlanCycle } from "@/lib/database.types";
 import { daysBetween } from "@/lib/challenge-utils";
 
 export interface PlanCycleContextValue {
@@ -36,17 +36,11 @@ export interface PlanCycleContextValue {
 const PlanCycleContext = createContext<PlanCycleContextValue | undefined>(undefined);
 
 export function PlanCycleProvider({ children }: { children: ReactNode }) {
-  const { userId } = useAuth();
+  const { userId, profile, isLoading: authLoading } = useAuth();
   const [selectedCycle, setSelectedCycleRaw] = useState<number | null>(null);
 
-  // Fetch profile
-  const profileQuery = useList<Profile>({
-    resource: "profiles",
-    filters: [{ field: "id", operator: "eq", value: userId || "" }],
-    queryOptions: { enabled: !!userId },
-  });
-
-  const profile = profileQuery.query.data?.data?.[0];
+  // Read plan fields directly from AuthProvider's profile (Task 1.4)
+  // This eliminates a redundant useList query that fetched the same profile.
   const currentCycle = profile?.current_plan_cycle ?? 1;
 
   // Initialize selectedCycle to currentCycle when profile loads
@@ -113,7 +107,8 @@ export function PlanCycleProvider({ children }: { children: ReactNode }) {
     setSelectedCycleRaw(cycle);
   }, []);
 
-  const isLoading = profileQuery.query.isLoading;
+  // Loading when auth is still loading (profile not yet available)
+  const isLoading = authLoading;
 
   const value = useMemo<PlanCycleContextValue>(
     () => ({

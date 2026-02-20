@@ -1,33 +1,31 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 120_000; // 120 seconds (reduced from 30s — Task 1.3)
 
 /**
- * Polls the current user's `is_deactivated` flag every 30 seconds.
+ * Polls the current user's `is_deactivated` flag every 120 seconds.
  * If deactivated, signs the user out and redirects to login with an error message.
+ *
+ * Uses userId from AuthContext instead of calling getUser() every poll (Task 1.3).
  */
 export function useDeactivationGuard() {
-  const router = useRouter();
+  const { userId, signOut } = useAuth();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    if (!userId) return;
+
     const supabase = createBrowserSupabaseClient();
 
     async function checkDeactivation() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_deactivated")
-        .eq("id", user.id)
+        .eq("id", userId!)
         .single();
 
       if (profile?.is_deactivated) {
@@ -37,8 +35,8 @@ export function useDeactivationGuard() {
           intervalRef.current = null;
         }
 
-        await supabase.auth.signOut();
-        router.push("/login?error=account_deactivated");
+        // signOut() from AuthContext handles the redirect
+        signOut();
       }
     }
 
@@ -51,5 +49,5 @@ export function useDeactivationGuard() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [router]);
+  }, [userId, signOut]);
 }
