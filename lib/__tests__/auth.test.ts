@@ -1,4 +1,14 @@
-import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from "../auth";
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  canAccessDashboard,
+  canAccessAdmin,
+  isChallenger,
+  createBrowserSupabaseClient,
+} from "../auth";
+import type { UserRole } from "../auth";
 
 describe("loginSchema", () => {
   const validData = {
@@ -219,6 +229,179 @@ describe("resetPasswordSchema", () => {
         confirmPassword: "matchingpassword",
       });
       expect(result.success).toBe(true);
+    });
+  });
+});
+
+// =============================================================================
+// Role Helper Functions
+// =============================================================================
+
+describe("canAccessDashboard", () => {
+  it("returns true for admin role", () => {
+    expect(canAccessDashboard("admin")).toBe(true);
+  });
+
+  it("returns true for client role", () => {
+    expect(canAccessDashboard("client")).toBe(true);
+  });
+
+  it("returns false for challenger role", () => {
+    expect(canAccessDashboard("challenger")).toBe(false);
+  });
+
+  it("returns false for unknown/invalid role", () => {
+    expect(canAccessDashboard("unknown" as UserRole)).toBe(false);
+  });
+});
+
+describe("canAccessAdmin", () => {
+  it("returns true for admin role", () => {
+    expect(canAccessAdmin("admin")).toBe(true);
+  });
+
+  it("returns false for client role", () => {
+    expect(canAccessAdmin("client")).toBe(false);
+  });
+
+  it("returns false for challenger role", () => {
+    expect(canAccessAdmin("challenger")).toBe(false);
+  });
+
+  it("returns false for unknown/invalid role", () => {
+    expect(canAccessAdmin("viewer" as UserRole)).toBe(false);
+  });
+});
+
+describe("isChallenger", () => {
+  it("returns true for challenger role", () => {
+    expect(isChallenger("challenger")).toBe(true);
+  });
+
+  it("returns false for admin role", () => {
+    expect(isChallenger("admin")).toBe(false);
+  });
+
+  it("returns false for client role", () => {
+    expect(isChallenger("client")).toBe(false);
+  });
+
+  it("returns false for unknown/invalid role", () => {
+    expect(isChallenger("moderator" as UserRole)).toBe(false);
+  });
+});
+
+// =============================================================================
+// createBrowserSupabaseClient (singleton behavior)
+// =============================================================================
+
+describe("createBrowserSupabaseClient", () => {
+  it("returns a Supabase client object", () => {
+    const client = createBrowserSupabaseClient();
+    expect(client).toBeDefined();
+    expect(client.auth).toBeDefined();
+    expect(client.from).toBeDefined();
+  });
+
+  it("returns the same instance on subsequent calls (singleton)", () => {
+    const client1 = createBrowserSupabaseClient();
+    const client2 = createBrowserSupabaseClient();
+    expect(client1).toBe(client2);
+  });
+});
+
+// =============================================================================
+// Validation Schema Edge Cases
+// =============================================================================
+
+describe("validation schema edge cases", () => {
+  describe("loginSchema", () => {
+    it("rejects missing fields entirely", () => {
+      const result = loginSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects null values", () => {
+      const result = loginSchema.safeParse({ email: null, password: null });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects non-string types", () => {
+      const result = loginSchema.safeParse({ email: 123, password: true });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("registerSchema", () => {
+    it("rejects missing confirmPassword", () => {
+      const result = registerSchema.safeParse({
+        fullName: "Test",
+        email: "test@example.com",
+        password: "password123",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects when all fields are empty strings", () => {
+      const result = registerSchema.safeParse({
+        fullName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects password of exactly 7 characters even if matching", () => {
+      const result = registerSchema.safeParse({
+        fullName: "Test User",
+        email: "test@example.com",
+        password: "1234567",
+        confirmPassword: "1234567",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("forgotPasswordSchema", () => {
+    it("rejects missing email field", () => {
+      const result = forgotPasswordSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects email with just @ symbol", () => {
+      const result = forgotPasswordSchema.safeParse({ email: "@" });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("resetPasswordSchema", () => {
+    it("rejects missing fields entirely", () => {
+      const result = resetPasswordSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects password of exactly 7 characters", () => {
+      const result = resetPasswordSchema.safeParse({
+        password: "1234567",
+        confirmPassword: "1234567",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("reports password mismatch on the confirmPassword path", () => {
+      const result = resetPasswordSchema.safeParse({
+        password: "password123",
+        confirmPassword: "password456",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const confirmErr = result.error.issues.find((issue) =>
+          issue.path.includes("confirmPassword")
+        );
+        expect(confirmErr).toBeDefined();
+        expect(confirmErr?.message).toBe("Passwords do not match");
+      }
     });
   });
 });
