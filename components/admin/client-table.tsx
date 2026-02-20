@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import Link from "next/link";
 import {
   Flag,
@@ -58,6 +58,151 @@ function getClientStatus(client: ClientWithCheckIn): "deactivated" | "invited" |
   }
   return null;
 }
+
+interface ClientRowProps {
+  client: ClientWithCheckIn;
+  selectionMode: boolean;
+  isSelected: boolean;
+  isSelectable: boolean;
+  onCheckboxChange: (clientId: string, checked: boolean) => void;
+  onSendMessage?: (client: Profile) => void;
+  onResendInvite?: (client: Profile) => void;
+  onDeactivateClient?: (client: Profile) => void;
+  onReactivateClient?: (client: Profile) => void;
+  resendingId: string | null;
+  deactivatingId: string | null;
+  reactivatingId: string | null;
+}
+
+const ClientRow = memo(function ClientRow({
+  client,
+  selectionMode,
+  isSelected,
+  isSelectable,
+  onCheckboxChange,
+  onSendMessage,
+  onResendInvite,
+  onDeactivateClient,
+  onReactivateClient,
+  resendingId,
+  deactivatingId,
+  reactivatingId,
+}: ClientRowProps) {
+  const status = getClientStatus(client);
+  return (
+    <TableRow className="border-border">
+      {selectionMode && (
+        <TableCell className="w-12">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => onCheckboxChange(client.id, checked as boolean)}
+            disabled={!isSelectable}
+            aria-label={`Select ${client.full_name || client.email}`}
+            data-testid={`select-checkbox-${client.id}`}
+          />
+        </TableCell>
+      )}
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/20 flex items-center justify-center shrink-0">
+            <span className="text-primary font-black">{client.full_name?.charAt(0) || "?"}</span>
+          </div>
+          <span className="font-bold">{client.full_name}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground">{client.email}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {client.lastCheckIn ? (
+          new Date(client.lastCheckIn.submitted_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        ) : (
+          <span className="text-muted-foreground/50">No check-ins</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {status === "deactivated" ? (
+          <span className="text-red-400 font-bold text-xs uppercase">Deactivated</span>
+        ) : status === "invited" ? (
+          <span className="text-blue-400 font-bold text-xs uppercase">Invited</span>
+        ) : client.lastCheckIn?.flagged_for_followup ? (
+          <div className="flex items-center gap-2">
+            <Flag className="h-4 w-4 text-primary" />
+            <span className="text-primary font-bold text-xs uppercase">Flagged</span>
+          </div>
+        ) : client.lastCheckIn && !client.lastCheckIn.reviewed_at ? (
+          <span className="text-yellow-500 font-bold text-xs uppercase">Pending Review</span>
+        ) : (
+          <span className="text-neon-green font-bold text-xs uppercase">Active</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          {onResendInvite && status === "invited" && (
+            <button
+              onClick={() => onResendInvite(client)}
+              disabled={resendingId === client.id}
+              className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-sm disabled:opacity-50"
+              title="Resend invitation email"
+            >
+              {resendingId === client.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+            </button>
+          )}
+          {onReactivateClient && status === "deactivated" && (
+            <button
+              onClick={() => onReactivateClient(client)}
+              disabled={reactivatingId === client.id}
+              className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm disabled:opacity-50"
+              title="Reactivate client"
+            >
+              {reactivatingId === client.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserCheck className="h-4 w-4" />
+              )}
+            </button>
+          )}
+          {onDeactivateClient && status !== "deactivated" && (
+            <button
+              onClick={() => onDeactivateClient(client)}
+              disabled={deactivatingId === client.id}
+              className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm disabled:opacity-50"
+              title="Deactivate client"
+            >
+              {deactivatingId === client.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserX className="h-4 w-4" />
+              )}
+            </button>
+          )}
+          {onSendMessage && !client.is_deactivated && (
+            <button
+              onClick={() => onSendMessage(client)}
+              className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary hover:bg-primary/30 text-sm"
+              title="Send message"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </button>
+          )}
+          <Link
+            href={`/admin/clients/${client.id}`}
+            className="btn-athletic inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"
+          >
+            <Eye className="h-4 w-4" />
+            <span>View</span>
+          </Link>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 /**
  * Client table component for admin
@@ -130,35 +275,44 @@ export function ClientTable({
     selectableClients.every((client) => selectedIds.includes(client.id));
   const someSelected = selectableClients.some((client) => selectedIds.includes(client.id));
 
-  const handleResendInvite = async (client: Profile) => {
-    if (!onResendInvite) return;
-    setResendingId(client.id);
-    try {
-      await onResendInvite(client);
-    } finally {
-      setResendingId(null);
-    }
-  };
+  const handleResendInvite = useCallback(
+    async (client: Profile) => {
+      if (!onResendInvite) return;
+      setResendingId(client.id);
+      try {
+        await onResendInvite(client);
+      } finally {
+        setResendingId(null);
+      }
+    },
+    [onResendInvite]
+  );
 
-  const handleDeactivate = async (client: Profile) => {
-    if (!onDeactivateClient) return;
-    setDeactivatingId(client.id);
-    try {
-      await onDeactivateClient(client);
-    } finally {
-      setDeactivatingId(null);
-    }
-  };
+  const handleDeactivate = useCallback(
+    async (client: Profile) => {
+      if (!onDeactivateClient) return;
+      setDeactivatingId(client.id);
+      try {
+        await onDeactivateClient(client);
+      } finally {
+        setDeactivatingId(null);
+      }
+    },
+    [onDeactivateClient]
+  );
 
-  const handleReactivate = async (client: Profile) => {
-    if (!onReactivateClient) return;
-    setReactivatingId(client.id);
-    try {
-      await onReactivateClient(client);
-    } finally {
-      setReactivatingId(null);
-    }
-  };
+  const handleReactivate = useCallback(
+    async (client: Profile) => {
+      if (!onReactivateClient) return;
+      setReactivatingId(client.id);
+      try {
+        await onReactivateClient(client);
+      } finally {
+        setReactivatingId(null);
+      }
+    },
+    [onReactivateClient]
+  );
   if (isLoading) {
     return (
       <div className="athletic-card overflow-hidden">
@@ -228,126 +382,21 @@ export function ClientTable({
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client.id} className="border-border">
-                {selectionMode && (
-                  <TableCell className="w-12">
-                    <Checkbox
-                      checked={selectedIds.includes(client.id)}
-                      onCheckedChange={(checked) =>
-                        handleCheckboxChange(client.id, checked as boolean)
-                      }
-                      disabled={!isSelectable(client)}
-                      aria-label={`Select ${client.full_name || client.email}`}
-                      data-testid={`select-checkbox-${client.id}`}
-                    />
-                  </TableCell>
-                )}
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/20 flex items-center justify-center shrink-0">
-                      <span className="text-primary font-black">
-                        {client.full_name?.charAt(0) || "?"}
-                      </span>
-                    </div>
-                    <span className="font-bold">{client.full_name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{client.email}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {client.lastCheckIn ? (
-                    new Date(client.lastCheckIn.submitted_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  ) : (
-                    <span className="text-muted-foreground/50">No check-ins</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {getClientStatus(client) === "deactivated" ? (
-                    <span className="text-red-400 font-bold text-xs uppercase">Deactivated</span>
-                  ) : getClientStatus(client) === "invited" ? (
-                    <span className="text-blue-400 font-bold text-xs uppercase">Invited</span>
-                  ) : client.lastCheckIn?.flagged_for_followup ? (
-                    <div className="flex items-center gap-2">
-                      <Flag className="h-4 w-4 text-primary" />
-                      <span className="text-primary font-bold text-xs uppercase">Flagged</span>
-                    </div>
-                  ) : client.lastCheckIn && !client.lastCheckIn.reviewed_at ? (
-                    <span className="text-yellow-500 font-bold text-xs uppercase">
-                      Pending Review
-                    </span>
-                  ) : (
-                    <span className="text-neon-green font-bold text-xs uppercase">Active</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {/* Resend Invite button for pending invitations */}
-                    {onResendInvite && getClientStatus(client) === "invited" && (
-                      <button
-                        onClick={() => handleResendInvite(client)}
-                        disabled={resendingId === client.id}
-                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-sm disabled:opacity-50"
-                        title="Resend invitation email"
-                      >
-                        {resendingId === client.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Mail className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                    {/* Reactivate button for deactivated users */}
-                    {onReactivateClient && getClientStatus(client) === "deactivated" && (
-                      <button
-                        onClick={() => handleReactivate(client)}
-                        disabled={reactivatingId === client.id}
-                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm disabled:opacity-50"
-                        title="Reactivate client"
-                      >
-                        {reactivatingId === client.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <UserCheck className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                    {/* Deactivate button for active users */}
-                    {onDeactivateClient && getClientStatus(client) !== "deactivated" && (
-                      <button
-                        onClick={() => handleDeactivate(client)}
-                        disabled={deactivatingId === client.id}
-                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm disabled:opacity-50"
-                        title="Deactivate client"
-                      >
-                        {deactivatingId === client.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <UserX className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                    {onSendMessage && !client.is_deactivated && (
-                      <button
-                        onClick={() => onSendMessage(client)}
-                        className="btn-athletic inline-flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary hover:bg-primary/30 text-sm"
-                        title="Send message"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                      </button>
-                    )}
-                    <Link
-                      href={`/admin/clients/${client.id}`}
-                      className="btn-athletic inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>View</span>
-                    </Link>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <ClientRow
+                key={client.id}
+                client={client}
+                selectionMode={selectionMode}
+                isSelected={selectedIds.includes(client.id)}
+                isSelectable={isSelectable(client)}
+                onCheckboxChange={handleCheckboxChange}
+                onSendMessage={onSendMessage}
+                onResendInvite={onResendInvite ? handleResendInvite : undefined}
+                onDeactivateClient={onDeactivateClient ? handleDeactivate : undefined}
+                onReactivateClient={onReactivateClient ? handleReactivate : undefined}
+                resendingId={resendingId}
+                deactivatingId={deactivatingId}
+                reactivatingId={reactivatingId}
+              />
             ))}
           </TableBody>
         </Table>

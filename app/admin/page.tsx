@@ -29,11 +29,12 @@ export default function AdminDashboardPage() {
     },
   });
 
-  // Fetch check-ins with only needed columns
+  // Fetch only pending (unreviewed) check-ins — server-side filter replaces JS filtering
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
+    filters: [{ field: "reviewed_at", operator: "null", value: true }],
     sorters: [{ field: "submitted_at", order: "desc" }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 500 },
     meta: {
       select: "id, client_id, submitted_at, reviewed_at, flagged_for_followup",
     },
@@ -44,10 +45,8 @@ export default function AdminDashboardPage() {
 
   // Calculate stats
   const clients = clientsQuery.query.data?.data || [];
-  const allCheckIns = checkInsQuery.query.data?.data || [];
-
-  // Filter for pending check-ins (reviewed_at is null)
-  const pendingCheckIns = allCheckIns.filter((checkIn) => !checkIn.reviewed_at);
+  // All check-ins returned are already pending (reviewed_at IS NULL) via server filter
+  const pendingCheckIns = checkInsQuery.query.data?.data || [];
 
   // Count only active clients (not invited pending, not deactivated)
   const activeClients = clients.filter(

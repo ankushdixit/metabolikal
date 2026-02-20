@@ -40,10 +40,12 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
   }, [clientIds]);
 
   // Fetch challenge progress only for the displayed clients
+  // Safety limit: even with 50 clients × 90-day plans, 5000 rows covers all realistic scenarios
+  // A date filter is impractical here because streak calculation needs full historical data
   const progressQuery = useList<ChallengeProgress>({
     resource: "challenge_progress",
     filters: [{ field: "user_id", operator: "in", value: stableClientIds }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 5000 },
     meta: {
       select:
         "user_id, plan_cycle, day_number, logged_date, steps, water_liters, floors_climbed, protein_grams, sleep_hours, points_earned",

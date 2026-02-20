@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { useList, useDelete } from "@refinedev/core";
 import Link from "next/link";
 import {
@@ -36,6 +36,72 @@ import {
 import { cn } from "@/lib/utils";
 import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import type { FoodItem } from "@/lib/database.types";
+
+interface FoodItemRowProps {
+  item: FoodItem;
+  onDeleteClick: (item: FoodItem) => void;
+}
+
+const FoodItemRow = memo(function FoodItemRow({ item, onDeleteClick }: FoodItemRowProps) {
+  return (
+    <TableRow className="border-border">
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10">
+            <Utensils className="h-4 w-4 text-primary" />
+          </div>
+          <span className="font-bold">{item.name}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {item.serving_size ? `${item.serving_size}g` : "—"}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {item.raw_quantity ? `${item.raw_quantity}g` : "—"}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {item.cooked_quantity ? `${item.cooked_quantity}g` : "—"}
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="font-bold text-orange-400">{item.calories}</span>
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="font-bold text-blue-400">{item.protein}g</span>
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="font-bold text-yellow-400">{item.carbs ?? 0}g</span>
+      </TableCell>
+      <TableCell className="text-right">
+        <span className="font-bold text-pink-400">{item.fats ?? 0}g</span>
+      </TableCell>
+      <TableCell className="text-center">
+        {item.is_vegetarian && (
+          <div className="inline-flex items-center justify-center p-1 bg-neon-green/20">
+            <Leaf className="h-4 w-4 text-neon-green" />
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Link
+            href={`/admin/config/food-items/edit/${item.id}`}
+            className="p-2 rounded hover:bg-secondary transition-colors"
+            title="Edit"
+          >
+            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+          </Link>
+          <button
+            onClick={() => onDeleteClick(item)}
+            className="p-2 rounded hover:bg-destructive/20 transition-colors"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+          </button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 /**
  * Food Items Page
@@ -89,11 +155,11 @@ export default function FoodItemsPage() {
   const isLoading = foodItemsQuery.query.isLoading;
 
   // Handle delete confirmation
-  const handleDeleteClick = (item: FoodItem) => {
+  const handleDeleteClick = useCallback((item: FoodItem) => {
     setItemToDelete(item);
     setDeleteError(null);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
   // Perform delete
   const handleConfirmDelete = async () => {
@@ -266,62 +332,7 @@ export default function FoodItemsPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedItems.map((item: FoodItem) => (
-                    <TableRow key={item.id} className="border-border">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10">
-                            <Utensils className="h-4 w-4 text-primary" />
-                          </div>
-                          <span className="font-bold">{item.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {item.serving_size ? `${item.serving_size}g` : "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {item.raw_quantity ? `${item.raw_quantity}g` : "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {item.cooked_quantity ? `${item.cooked_quantity}g` : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-bold text-orange-400">{item.calories}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-bold text-blue-400">{item.protein}g</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-bold text-yellow-400">{item.carbs ?? 0}g</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-bold text-pink-400">{item.fats ?? 0}g</span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.is_vegetarian && (
-                          <div className="inline-flex items-center justify-center p-1 bg-neon-green/20">
-                            <Leaf className="h-4 w-4 text-neon-green" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Link
-                            href={`/admin/config/food-items/edit/${item.id}`}
-                            className="p-2 rounded hover:bg-secondary transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(item)}
-                            className="p-2 rounded hover:bg-destructive/20 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <FoodItemRow key={item.id} item={item} onDeleteClick={handleDeleteClick} />
                   ))}
                 </TableBody>
               </Table>

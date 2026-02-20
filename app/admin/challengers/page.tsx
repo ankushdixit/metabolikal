@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { useList } from "@refinedev/core";
 import {
   Search,
@@ -30,6 +30,77 @@ interface ChallengerWithStats extends Profile {
   hasCalculator: boolean;
   lastActive: string | null;
 }
+
+interface ChallengerRowProps {
+  challenger: ChallengerWithStats;
+  onUpgradeClick: (challenger: ChallengerWithStats) => void;
+  formatDate: (dateString: string | null) => string;
+}
+
+const ChallengerRow = memo(function ChallengerRow({
+  challenger,
+  onUpgradeClick,
+  formatDate,
+}: ChallengerRowProps) {
+  return (
+    <tr className="border-b border-border hover:bg-secondary/30 transition-colors">
+      <td className="px-6 py-4">
+        <div>
+          <div className="font-bold text-foreground">{challenger.full_name}</div>
+          <div className="text-xs text-muted-foreground">{challenger.email}</div>
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex items-center justify-center gap-2">
+          <div
+            className={cn("p-1", challenger.hasAssessment ? "bg-primary" : "bg-secondary")}
+            title={challenger.hasAssessment ? "Assessment completed" : "Assessment pending"}
+          >
+            <Target
+              className={cn(
+                "h-3 w-3",
+                challenger.hasAssessment ? "text-black" : "text-muted-foreground"
+              )}
+            />
+          </div>
+          <div
+            className={cn("p-1", challenger.hasCalculator ? "bg-primary" : "bg-secondary")}
+            title={challenger.hasCalculator ? "Calculator completed" : "Calculator pending"}
+          >
+            <Calendar
+              className={cn(
+                "h-3 w-3",
+                challenger.hasCalculator ? "text-black" : "text-muted-foreground"
+              )}
+            />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-4 text-center">
+        <span className="font-bold text-foreground">{challenger.daysCompleted}</span>
+        <span className="text-muted-foreground text-xs"> / 30 days</span>
+      </td>
+      <td className="px-4 py-4 text-center">
+        <span className="font-bold text-primary">{challenger.totalPoints.toLocaleString()}</span>
+      </td>
+      <td className="px-4 py-4 text-center text-sm text-muted-foreground">
+        {formatDate(challenger.lastActive)}
+      </td>
+      <td className="px-4 py-4 text-center text-sm text-muted-foreground">
+        {formatDate(challenger.created_at)}
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button
+          onClick={() => onUpgradeClick(challenger)}
+          className="btn-athletic px-3 py-2 text-xs font-bold uppercase tracking-wider gradient-electric text-black hover:opacity-90 flex items-center gap-2 ml-auto"
+        >
+          <UserPlus className="h-3 w-3" />
+          Upgrade
+        </button>
+      </td>
+    </tr>
+  );
+});
 
 /**
  * Challengers Management Page
@@ -172,7 +243,7 @@ export default function ChallengersPage() {
   };
 
   // Handle upgrade button click — open modal with challenger data
-  const handleUpgradeClick = (challenger: ChallengerWithStats) => {
+  const handleUpgradeClick = useCallback((challenger: ChallengerWithStats) => {
     setSelectedChallenger({
       id: challenger.id,
       full_name: challenger.full_name,
@@ -183,14 +254,14 @@ export default function ChallengersPage() {
       address: challenger.address,
     });
     setUpgradeModalOpen(true);
-  };
+  }, []);
 
   const handleUpgradeSuccess = () => {
     challengersQuery.query.refetch();
   };
 
   // Format date for display
-  const formatDate = (dateString: string | null) => {
+  const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return "Never";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -198,7 +269,7 @@ export default function ChallengersPage() {
       day: "numeric",
       year: "numeric",
     });
-  };
+  }, []);
 
   if (isError) {
     return (
@@ -297,77 +368,12 @@ export default function ChallengersPage() {
               </thead>
               <tbody>
                 {paginatedChallengers.map((challenger) => (
-                  <tr
+                  <ChallengerRow
                     key={challenger.id}
-                    className="border-b border-border hover:bg-secondary/30 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-bold text-foreground">{challenger.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{challenger.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <div
-                          className={cn(
-                            "p-1",
-                            challenger.hasAssessment ? "bg-primary" : "bg-secondary"
-                          )}
-                          title={
-                            challenger.hasAssessment ? "Assessment completed" : "Assessment pending"
-                          }
-                        >
-                          <Target
-                            className={cn(
-                              "h-3 w-3",
-                              challenger.hasAssessment ? "text-black" : "text-muted-foreground"
-                            )}
-                          />
-                        </div>
-                        <div
-                          className={cn(
-                            "p-1",
-                            challenger.hasCalculator ? "bg-primary" : "bg-secondary"
-                          )}
-                          title={
-                            challenger.hasCalculator ? "Calculator completed" : "Calculator pending"
-                          }
-                        >
-                          <Calendar
-                            className={cn(
-                              "h-3 w-3",
-                              challenger.hasCalculator ? "text-black" : "text-muted-foreground"
-                            )}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="font-bold text-foreground">{challenger.daysCompleted}</span>
-                      <span className="text-muted-foreground text-xs"> / 30 days</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="font-bold text-primary">
-                        {challenger.totalPoints.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center text-sm text-muted-foreground">
-                      {formatDate(challenger.lastActive)}
-                    </td>
-                    <td className="px-4 py-4 text-center text-sm text-muted-foreground">
-                      {formatDate(challenger.created_at)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleUpgradeClick(challenger)}
-                        className="btn-athletic px-3 py-2 text-xs font-bold uppercase tracking-wider gradient-electric text-black hover:opacity-90 flex items-center gap-2 ml-auto"
-                      >
-                        <UserPlus className="h-3 w-3" />
-                        Upgrade
-                      </button>
-                    </td>
-                  </tr>
+                    challenger={challenger}
+                    onUpgradeClick={handleUpgradeClick}
+                    formatDate={formatDate}
+                  />
                 ))}
               </tbody>
             </table>
