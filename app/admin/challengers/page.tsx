@@ -52,40 +52,59 @@ export default function ChallengersPage() {
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "challenger" }],
     sorters: [{ field: "created_at", order: "desc" }],
+    pagination: { mode: "off" },
+    meta: {
+      select: "id, full_name, email, phone, date_of_birth, gender, address, created_at",
+    },
     queryOptions: {
       enabled: !!adminId,
     },
   });
 
-  // Fetch challenge progress for all users (disable pagination to get all records)
+  // Extract challenger IDs for dependent queries
+  const challengers = challengersQuery.query.data?.data || [];
+  const challengerIds = useMemo(() => challengers.map((c) => c.id), [challengers]);
+
+  // Fetch challenge progress only for challengers
   const progressQuery = useList<ChallengeProgress>({
     resource: "challenge_progress",
+    filters: [{ field: "user_id", operator: "in", value: challengerIds }],
     pagination: { mode: "off" },
+    meta: {
+      select: "user_id, day_number, logged_date, points_earned",
+    },
     queryOptions: {
-      enabled: !!adminId,
+      enabled: challengerIds.length > 0,
     },
   });
 
-  // Fetch assessment results (disable pagination to get all records)
+  // Fetch assessment results only for challengers
   const assessmentQuery = useList<AssessmentResult>({
     resource: "assessment_results",
+    filters: [{ field: "user_id", operator: "in", value: challengerIds }],
     pagination: { mode: "off" },
+    meta: {
+      select: "id, user_id",
+    },
     queryOptions: {
-      enabled: !!adminId,
+      enabled: challengerIds.length > 0,
     },
   });
 
-  // Fetch calculator results (disable pagination to get all records)
+  // Fetch calculator results only for challengers
   const calculatorQuery = useList<CalculatorResult>({
     resource: "calculator_results",
+    filters: [{ field: "user_id", operator: "in", value: challengerIds }],
     pagination: { mode: "off" },
+    meta: {
+      select: "id, user_id",
+    },
     queryOptions: {
-      enabled: !!adminId,
+      enabled: challengerIds.length > 0,
     },
   });
 
   // Process data
-  const challengers = challengersQuery.query.data?.data || [];
   const progress = progressQuery.query.data?.data || [];
   const assessments = assessmentQuery.query.data?.data || [];
   const calculators = calculatorQuery.query.data?.data || [];

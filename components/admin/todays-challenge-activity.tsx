@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useList } from "@refinedev/core";
 import Link from "next/link";
 import { Trophy, Flame, Check } from "lucide-react";
@@ -27,12 +27,29 @@ interface ClientChallengeStatus {
 }
 
 export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeActivityProps) {
-  // Fetch all challenge progress (for all clients at once)
+  // Stable client IDs reference — only recalculate when client list actually changes
+  const clientIds = useMemo(() => clients.map((c) => c.id), [clients]);
+  const prevIdsRef = useRef<string[]>([]);
+  const stableClientIds = useMemo(() => {
+    const prev = prevIdsRef.current;
+    if (prev.length === clientIds.length && prev.every((id, i) => id === clientIds[i])) {
+      return prev;
+    }
+    prevIdsRef.current = clientIds;
+    return clientIds;
+  }, [clientIds]);
+
+  // Fetch challenge progress only for the displayed clients
   const progressQuery = useList<ChallengeProgress>({
     resource: "challenge_progress",
+    filters: [{ field: "user_id", operator: "in", value: stableClientIds }],
     pagination: { mode: "off" },
+    meta: {
+      select:
+        "user_id, plan_cycle, day_number, logged_date, steps, water_liters, floors_climbed, protein_grams, sleep_hours, points_earned",
+    },
     queryOptions: {
-      enabled: clients.length > 0 && !isLoading,
+      enabled: stableClientIds.length > 0 && !isLoading,
     },
   });
 

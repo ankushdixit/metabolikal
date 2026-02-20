@@ -49,6 +49,10 @@ export default function ClientsPage() {
     filters: [{ field: "role", operator: "eq", value: "client" }],
     sorters: [{ field: "full_name", order: "asc" }],
     pagination: { mode: "off" },
+    meta: {
+      select:
+        "id, full_name, email, phone, avatar_url, role, plan_start_date, plan_duration_days, is_deactivated, invited_at, invitation_accepted_at, date_of_birth, gender, address, created_at",
+    },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -59,6 +63,9 @@ export default function ClientsPage() {
     resource: "check_ins",
     sorters: [{ field: "submitted_at", order: "desc" }],
     pagination: { mode: "off" },
+    meta: {
+      select: "id, client_id, submitted_at, reviewed_at, flagged_for_followup",
+    },
     queryOptions: {
       enabled: !!adminId,
     },
