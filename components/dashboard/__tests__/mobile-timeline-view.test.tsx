@@ -23,12 +23,12 @@ jest.mock("../timeline-mobile-header", () => ({
       <span data-testid="header-completed">
         {String(props.completedCount)}/{String(props.totalCount)}
       </span>
-      {props.canGoPrevious && (
+      {Boolean(props.canGoPrevious) && (
         <button data-testid="prev-day-btn" onClick={props.onPreviousDay as () => void}>
           Previous
         </button>
       )}
-      {props.canGoNext && (
+      {Boolean(props.canGoNext) && (
         <button data-testid="next-day-btn" onClick={props.onNextDay as () => void}>
           Next
         </button>
@@ -68,7 +68,7 @@ jest.mock("../timeline-item-sheet", () => ({
       data-is-completed={props.isCompleted}
       data-read-only={props.readOnly}
     >
-      {props.isOpen && (
+      {Boolean(props.isOpen) && (
         <>
           <span data-testid="sheet-item-title">
             {(props.item as ExtendedTimelineItem | null)?.title ?? ""}

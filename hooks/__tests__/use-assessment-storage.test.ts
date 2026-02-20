@@ -384,7 +384,7 @@ describe("useAssessmentStorage", () => {
     beforeEach(() => {
       // Make the isLocalStorageAvailable check fail by throwing on setItem
       originalSetItem = mockLocalStorage.setItem;
-      mockLocalStorage.setItem = jest.fn(() => {
+      mockLocalStorage.setItem = jest.fn((_key: string, _value: string) => {
         throw new Error("SecurityError: localStorage is disabled");
       });
     });

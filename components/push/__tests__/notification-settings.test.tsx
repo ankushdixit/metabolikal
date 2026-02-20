@@ -37,7 +37,7 @@ const defaultPushHook = {
   isLoading: false,
   subscribe: mockSubscribe,
   unsubscribe: mockUnsubscribe,
-  error: null,
+  error: null as string | null,
 };
 
 let pushHookOverrides: Partial<typeof defaultPushHook> = {};

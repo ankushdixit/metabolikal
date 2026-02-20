@@ -6,10 +6,14 @@ import {
 import { createClient } from "@supabase/supabase-js";
 
 // Mock @supabase/supabase-js
-const mockLimit = jest.fn(() => Promise.resolve({ error: null }));
+const mockLimit = jest.fn(() =>
+  Promise.resolve({ error: null as { code: string; message: string } | null })
+);
 const mockSelect = jest.fn(() => ({ limit: mockLimit }));
 const mockFrom = jest.fn(() => ({ select: mockSelect }));
-const mockRpc = jest.fn(() => Promise.resolve({ error: null }));
+const mockRpc = jest.fn(() =>
+  Promise.resolve({ error: null as { code: string; message: string } | null })
+);
 
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({

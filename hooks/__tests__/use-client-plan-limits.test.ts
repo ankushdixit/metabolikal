@@ -709,6 +709,7 @@ describe("useClientPlanLimits hook", () => {
             start_date: "2026-05-10",
             end_date: "2026-05-20",
             max_calories_per_day: 1800,
+            min_protein_per_day: 100,
           });
         })
       ).rejects.toThrow("Date range overlaps with existing range");
@@ -730,6 +731,7 @@ describe("useClientPlanLimits hook", () => {
             start_date: "2026-06-01",
             end_date: "2026-06-15",
             max_calories_per_day: 2200,
+            min_protein_per_day: 100,
           });
         })
       ).rejects.toThrow("DB error");

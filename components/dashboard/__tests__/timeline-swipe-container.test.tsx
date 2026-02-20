@@ -26,7 +26,8 @@ let mockSwipeState = {
 jest.mock("@/hooks/use-swipe-navigation", () => ({
   useSwipeNavigation: jest.fn((options: Record<string, unknown>) => {
     // Store the options so tests can inspect them
-    (useSwipeNavigationMock as jest.Mock).lastOptions = options;
+    (useSwipeNavigationMock as jest.Mock & { lastOptions: Record<string, unknown> }).lastOptions =
+      options;
     return mockSwipeState;
   }),
 }));
