@@ -5,7 +5,7 @@ import { ClipboardList, Plus, History, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { CheckInHistoryItem } from "@/components/dashboard/checkin-history-item";
 import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
-import { usePlanCycle } from "@/contexts/plan-cycle-context";
+import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 import type { CheckIn } from "@/lib/database.types";
 
 /**
@@ -13,7 +13,7 @@ import type { CheckIn } from "@/lib/database.types";
  * Lists all past check-ins with expandable details
  */
 export default function CheckInHistoryPage() {
-  const { userId, selectedCycle } = usePlanCycle();
+  const { userId, selectedCycle } = usePlanCycleData();
 
   // Fetch check-in history (scoped to selected plan cycle)
   const checkInsQuery = useList<CheckIn>({

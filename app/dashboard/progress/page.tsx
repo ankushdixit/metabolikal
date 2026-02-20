@@ -14,7 +14,7 @@ import Link from "next/link";
 import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
 import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
-import { usePlanCycle } from "@/contexts/plan-cycle-context";
+import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 import { cn } from "@/lib/utils";
 import type { CheckIn } from "@/lib/database.types";
 
@@ -25,7 +25,7 @@ type Tab = "charts" | "photos";
  * Displays progress charts and photos for the logged-in client
  */
 export default function ProgressPage() {
-  const { userId, selectedCycle } = usePlanCycle();
+  const { userId, selectedCycle } = usePlanCycleData();
   const [activeTab, setActiveTab] = useState<Tab>("charts");
 
   // Fetch check-ins for the logged-in client (scoped to selected plan cycle)
