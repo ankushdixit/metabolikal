@@ -23,20 +23,25 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
 
-    const supabase = createBrowserSupabaseClient();
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-    if (error) {
-      console.error("Error fetching notifications:", error);
-    } else {
-      setNotifications(data || []);
+      if (error) {
+        console.error("Error fetching notifications:", error);
+      } else {
+        setNotifications(data || []);
+      }
+    } catch (err) {
+      console.error("Notifications fetch threw:", err);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [userId]);
 
   useEffect(() => {

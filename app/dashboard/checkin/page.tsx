@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Check,
   AlertTriangle,
+  AlertCircle,
+  RefreshCw,
   History,
 } from "lucide-react";
 import Link from "next/link";
@@ -236,6 +238,7 @@ export default function CheckInPage() {
   });
 
   const isLoading = authLoading || profileQuery.query.isLoading;
+  const isError = profileQuery.query.isError || existingCheckInQuery.query.isError;
   const isSubmitting = createMutation.mutation.isPending;
 
   // Render step content
@@ -340,8 +343,28 @@ export default function CheckInPage() {
         </div>
       </div>
 
+      {/* Error State */}
+      {isError && (
+        <div className="athletic-card p-8 pl-10 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold mb-4">
+            Failed to load check-in data. Please try again.
+          </p>
+          <button
+            onClick={() => {
+              profileQuery.query.refetch();
+              existingCheckInQuery.query.refetch();
+            }}
+            className="btn-athletic inline-flex items-center gap-2 px-5 py-3 bg-secondary text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Loading State */}
-      {isLoading && (
+      {!isError && isLoading && (
         <div className="athletic-card p-8 pl-10 animate-pulse">
           <div className="h-4 w-48 bg-secondary mb-6" />
           <div className="space-y-4">
@@ -366,7 +389,7 @@ export default function CheckInPage() {
       )}
 
       {/* Form Content */}
-      {!isLoading && !submitSuccess && (
+      {!isError && !isLoading && !submitSuccess && (
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="athletic-card p-6 pl-8">{renderStep()}</div>
 

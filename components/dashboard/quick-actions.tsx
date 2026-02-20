@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Utensils, Dumbbell, ClipboardList, Plus, ChevronRight } from "lucide-react";
+import { Utensils, ClipboardList, Plus, ChevronRight } from "lucide-react";
 
 interface QuickActionsProps {
   onLogFood: () => void;
@@ -15,16 +15,10 @@ interface QuickActionsProps {
 export function QuickActions({ onLogFood }: QuickActionsProps) {
   const actions = [
     {
-      label: "View Today's Meals",
-      href: "/dashboard/diet",
+      label: "View Today's Plan",
+      href: "/dashboard",
       icon: Utensils,
-      description: "Check your meal plan",
-    },
-    {
-      label: "View Today's Workout",
-      href: "/dashboard/workout",
-      icon: Dumbbell,
-      description: "See your exercises",
+      description: "Check your meal & workout plan",
     },
     {
       label: "Submit Check-In",

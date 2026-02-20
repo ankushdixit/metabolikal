@@ -151,6 +151,7 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
 
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
+  const syncQueueRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // Load queue and last sync time on mount
   useEffect(() => {
@@ -167,12 +168,12 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      // Trigger sync when coming back online
+      // Trigger sync when coming back online — use ref to avoid stale closure
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
       syncTimeoutRef.current = setTimeout(() => {
-        syncQueueInternal();
+        syncQueueRef.current();
       }, SYNC_DEBOUNCE_MS);
     };
 
@@ -305,6 +306,11 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
     }
   }, [queue, isSyncing]);
 
+  // Keep ref in sync with latest syncQueueInternal
+  useEffect(() => {
+    syncQueueRef.current = syncQueueInternal;
+  }, [syncQueueInternal]);
+
   // Queue a completion action
   const queueCompletion = useCallback(
     (
@@ -347,17 +353,17 @@ export function useOfflineCompletions(): OfflineCompletionsReturn {
         return [...prevQueue, newItem];
       });
 
-      // Trigger sync if online (with debounce)
+      // Trigger sync if online (with debounce) — use ref for latest closure
       if (navigator.onLine) {
         if (syncTimeoutRef.current) {
           clearTimeout(syncTimeoutRef.current);
         }
         syncTimeoutRef.current = setTimeout(() => {
-          syncQueueInternal();
+          syncQueueRef.current();
         }, SYNC_DEBOUNCE_MS);
       }
     },
-    [syncQueueInternal]
+    []
   );
 
   // Get pending action for an item
