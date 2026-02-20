@@ -3,6 +3,7 @@ import {
   validateCSVRow,
   checkDuplicates,
   generateCSVTemplate,
+  downloadCSVTemplate,
   getValidFoodItems,
   CSV_HEADERS,
   type RawCSVRow,
@@ -235,6 +236,288 @@ describe("csv-parser", () => {
       expect(result.transformedData?.cooked_quantity).toBeNull();
       expect(result.transformedData?.meal_types).toBeNull();
     });
+
+    it("should detect carbs out of range (negative)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        carbs: "-5",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.field === "carbs")).toBe(true);
+    });
+
+    it("should detect carbs out of range (above 500)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        carbs: "501",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.field === "carbs")).toBe(true);
+    });
+
+    it("should detect fats out of range (negative)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        fats: "-1",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.field === "fats")).toBe(true);
+    });
+
+    it("should detect fats out of range (above 500)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        fats: "501",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.field === "fats")).toBe(true);
+    });
+
+    it("should detect serving_size out of range (below 1)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "0",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "serving_size" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect serving_size out of range (above 5000)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "5001",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "serving_size" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect non-numeric raw_quantity", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        raw_quantity: "abc",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "raw_quantity" && e.message.includes("number"))
+      ).toBe(true);
+    });
+
+    it("should detect raw_quantity out of range (below 1)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        raw_quantity: "0",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "raw_quantity" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect raw_quantity out of range (above 5000)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        raw_quantity: "5001",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "raw_quantity" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect non-numeric cooked_quantity", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        cooked_quantity: "xyz",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "cooked_quantity" && e.message.includes("number"))
+      ).toBe(true);
+    });
+
+    it("should detect cooked_quantity out of range (below 1)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        cooked_quantity: "0",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "cooked_quantity" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect cooked_quantity out of range (above 5000)", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+        cooked_quantity: "5001",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "cooked_quantity" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect negative calories", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "-10",
+        protein: "10",
+        serving_size: "100",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "calories" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should detect negative protein", () => {
+      const row: RawCSVRow = {
+        name: "Test",
+        calories: "100",
+        protein: "-5",
+        serving_size: "100",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(
+        result.errors.some((e) => e.field === "protein" && e.message.includes("between"))
+      ).toBe(true);
+    });
+
+    it("should handle valid row with all optional fields populated", () => {
+      const row: RawCSVRow = {
+        name: "Full Item",
+        calories: "200",
+        protein: "20",
+        carbs: "30",
+        fats: "10",
+        serving_size: "150",
+        is_vegetarian: "true",
+        raw_quantity: "120",
+        cooked_quantity: "100",
+        meal_types: "lunch|dinner",
+        avoid_for_conditions: "type2-diabetes|pcos",
+      };
+
+      const result = validateCSVRow(row, 5);
+
+      expect(result.isValid).toBe(true);
+      expect(result.transformedData).toBeDefined();
+      expect(result.transformedData?.carbs).toBe(30);
+      expect(result.transformedData?.fats).toBe(10);
+      expect(result.transformedData?.is_vegetarian).toBe(true);
+      expect(result.transformedData?.raw_quantity).toBe("120");
+      expect(result.transformedData?.cooked_quantity).toBe("100");
+      expect(result.transformedData?.meal_types).toEqual(["lunch", "dinner"]);
+      expect(result.conditionSlugs).toEqual(["type2-diabetes", "pcos"]);
+    });
+
+    it("should not produce transformedData for invalid rows", () => {
+      const row: RawCSVRow = {
+        name: "",
+        calories: "abc",
+        protein: "",
+        serving_size: "",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.transformedData).toBeUndefined();
+    });
+
+    it("should handle empty name (whitespace only)", () => {
+      const row: RawCSVRow = {
+        name: "   ",
+        calories: "100",
+        protein: "10",
+        serving_size: "100",
+      };
+
+      const result = validateCSVRow(row, 2);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.field === "name")).toBe(true);
+    });
   });
 
   describe("checkDuplicates", () => {
@@ -317,6 +600,53 @@ describe("csv-parser", () => {
       expect(result[0].isValid).toBe(true);
       expect(result[1].isValid).toBe(false);
     });
+
+    it("should handle rows with no name", () => {
+      const rows: ValidatedCSVRow[] = [
+        {
+          rowNumber: 2,
+          data: {},
+          errors: [{ field: "name", message: "Name is required" }],
+          isValid: false,
+        },
+        {
+          rowNumber: 3,
+          data: { name: "Apple" },
+          errors: [],
+          isValid: true,
+        },
+      ];
+
+      const result = checkDuplicates(rows, []);
+
+      // Row without name should pass through unchanged
+      expect(result[0].isValid).toBe(false);
+      expect(result[1].isValid).toBe(true);
+    });
+
+    it("should preserve existing errors when adding duplicate errors", () => {
+      const rows: ValidatedCSVRow[] = [
+        {
+          rowNumber: 2,
+          data: { name: "Apple" },
+          errors: [],
+          isValid: true,
+        },
+        {
+          rowNumber: 3,
+          data: { name: "Apple" },
+          errors: [{ field: "calories", message: "Calories is required" }],
+          isValid: false,
+        },
+      ];
+
+      const result = checkDuplicates(rows, []);
+
+      // Second row should have both original error and duplicate error
+      expect(result[1].errors.length).toBe(2);
+      expect(result[1].errors.some((e) => e.field === "calories")).toBe(true);
+      expect(result[1].errors.some((e) => e.message.includes("Duplicate"))).toBe(true);
+    });
   });
 
   describe("parseCSV", () => {
@@ -378,6 +708,84 @@ Rice,130,3,1 cup`;
       expect(result.validRows).toBe(1);
       expect(result.invalidRows).toBe(1);
       expect(result.rows[0].errors.some((e) => e.message.includes("already exists"))).toBe(true);
+    });
+
+    it("should use row numbers starting at 2 (1-indexed plus header)", () => {
+      const content = `name,calories,protein,serving_size
+Chicken,165,31,100g
+Rice,130,3,1 cup`;
+
+      const result = parseCSV(content);
+
+      expect(result.rows[0].rowNumber).toBe(2);
+      expect(result.rows[1].rowNumber).toBe(3);
+    });
+  });
+
+  describe("downloadBlob", () => {
+    it("should create and trigger a download link", () => {
+      const { downloadBlob } = require("../csv-parser");
+
+      const mockClick = jest.fn();
+      const mockAppendChild = jest.fn();
+      const mockRemoveChild = jest.fn();
+      const mockCreateObjectURL = jest.fn().mockReturnValue("blob:test-url");
+      const mockRevokeObjectURL = jest.fn();
+
+      const mockLink = {
+        href: "",
+        download: "",
+        click: mockClick,
+      };
+
+      jest.spyOn(document, "createElement").mockReturnValue(mockLink as unknown as HTMLElement);
+      jest.spyOn(document.body, "appendChild").mockImplementation(mockAppendChild);
+      jest.spyOn(document.body, "removeChild").mockImplementation(mockRemoveChild);
+      global.URL.createObjectURL = mockCreateObjectURL;
+      global.URL.revokeObjectURL = mockRevokeObjectURL;
+
+      downloadBlob("test content", "test.csv", "text/csv");
+
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+      expect(mockLink.href).toBe("blob:test-url");
+      expect(mockLink.download).toBe("test.csv");
+      expect(mockAppendChild).toHaveBeenCalledWith(mockLink);
+      expect(mockClick).toHaveBeenCalled();
+      expect(mockRemoveChild).toHaveBeenCalledWith(mockLink);
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:test-url");
+
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe("downloadCSVTemplate", () => {
+    it("should create a download link with template content", () => {
+      // Mock DOM methods used by downloadBlob (called internally)
+      const mockClick = jest.fn();
+      const mockAppendChild = jest
+        .spyOn(document.body, "appendChild")
+        .mockImplementation((node) => node);
+      const mockRemoveChild = jest
+        .spyOn(document.body, "removeChild")
+        .mockImplementation((node) => node);
+      const mockCreateObjectURL = jest.fn().mockReturnValue("blob:test-url");
+      const mockRevokeObjectURL = jest.fn();
+      global.URL.createObjectURL = mockCreateObjectURL;
+      global.URL.revokeObjectURL = mockRevokeObjectURL;
+
+      const mockLink = { href: "", download: "", click: mockClick };
+      jest.spyOn(document, "createElement").mockReturnValue(mockLink as unknown as HTMLElement);
+
+      downloadCSVTemplate();
+
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+      expect(mockLink.download).toBe("food_items_template.csv");
+      expect(mockClick).toHaveBeenCalled();
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:test-url");
+
+      mockAppendChild.mockRestore();
+      mockRemoveChild.mockRestore();
+      jest.restoreAllMocks();
     });
   });
 

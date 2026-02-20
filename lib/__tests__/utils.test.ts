@@ -1,4 +1,4 @@
-import { cn } from "../utils";
+import { cn, generateUUID } from "../utils";
 
 describe("cn utility function", () => {
   it("merges class names correctly", () => {
@@ -40,5 +40,111 @@ describe("cn utility function", () => {
     expect(cn("px-2", { "py-1": true }, ["bg-blue"], isHidden && "hidden")).toBe(
       "px-2 py-1 bg-blue"
     );
+  });
+});
+
+describe("generateUUID", () => {
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  describe("when crypto.randomUUID is available", () => {
+    it("uses crypto.randomUUID and returns a valid UUID", () => {
+      // In Node/jsdom, crypto.randomUUID is available
+      const uuid = generateUUID();
+      expect(uuid).toMatch(UUID_REGEX);
+    });
+
+    it("returns unique values on each call", () => {
+      const uuid1 = generateUUID();
+      const uuid2 = generateUUID();
+      expect(uuid1).not.toBe(uuid2);
+    });
+  });
+
+  describe("when only crypto.getRandomValues is available (no randomUUID)", () => {
+    let originalRandomUUID: typeof crypto.randomUUID;
+
+    beforeEach(() => {
+      originalRandomUUID = crypto.randomUUID;
+      // Remove randomUUID to force getRandomValues fallback
+      Object.defineProperty(crypto, "randomUUID", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(crypto, "randomUUID", {
+        value: originalRandomUUID,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("falls back to getRandomValues and produces a valid UUID v4", () => {
+      const uuid = generateUUID();
+      expect(uuid).toMatch(UUID_REGEX);
+    });
+
+    it("sets version nibble to 4", () => {
+      const uuid = generateUUID();
+      // The 13th character (index 14 in the dashed format) is the version
+      expect(uuid[14]).toBe("4");
+    });
+
+    it("sets variant bits correctly (8, 9, a, or b)", () => {
+      const uuid = generateUUID();
+      // The 17th character (index 19 in the dashed format) should be 8, 9, a, or b
+      expect(["8", "9", "a", "b"]).toContain(uuid[19]);
+    });
+
+    it("returns unique values on each call", () => {
+      const uuid1 = generateUUID();
+      const uuid2 = generateUUID();
+      expect(uuid1).not.toBe(uuid2);
+    });
+  });
+
+  describe("when crypto is unavailable (Math.random fallback)", () => {
+    let originalCrypto: Crypto;
+
+    beforeEach(() => {
+      originalCrypto = global.crypto;
+      // Remove crypto entirely to force Math.random fallback
+      Object.defineProperty(global, "crypto", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(global, "crypto", {
+        value: originalCrypto,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("falls back to Math.random and produces a valid UUID v4 format", () => {
+      const uuid = generateUUID();
+      expect(uuid).toMatch(UUID_REGEX);
+    });
+
+    it("sets version nibble to 4", () => {
+      const uuid = generateUUID();
+      expect(uuid[14]).toBe("4");
+    });
+
+    it("sets variant bits correctly (8, 9, a, or b)", () => {
+      const uuid = generateUUID();
+      expect(["8", "9", "a", "b"]).toContain(uuid[19]);
+    });
+
+    it("returns unique values on each call", () => {
+      const uuid1 = generateUUID();
+      const uuid2 = generateUUID();
+      expect(uuid1).not.toBe(uuid2);
+    });
   });
 });
