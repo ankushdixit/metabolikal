@@ -48,6 +48,16 @@ describe("ClientRefineWrapper Component", () => {
       </ClientRefineWrapper>
     );
     const loadingText = screen.getByText("Loading...");
-    expect(loadingText).toHaveClass("text-lg");
+    expect(loadingText).toHaveClass("text-sm");
+  });
+
+  it("renders spinner in loading state", () => {
+    const { container } = render(
+      <ClientRefineWrapper>
+        <div>Child content</div>
+      </ClientRefineWrapper>
+    );
+    const spinner = container.querySelector(".animate-spin");
+    expect(spinner).toBeInTheDocument();
   });
 });

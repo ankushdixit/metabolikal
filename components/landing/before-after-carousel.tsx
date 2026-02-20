@@ -24,8 +24,8 @@ const FALLBACK_TRANSFORMATIONS: BeforeAfterTransformation[] = [
     profession: "",
     duration: "12 weeks",
     result: "Amazing transformation",
-    beforeImage: "/images/transformations/client1-before.jpg",
-    afterImage: "/images/transformations/client1-after.jpg",
+    beforeImage: "/images/transformations/client1-before.webp",
+    afterImage: "/images/transformations/client1-after.webp",
   },
 ];
 
@@ -190,6 +190,7 @@ export function BeforeAfterCarousel({
                       src={currentTransformation.beforeImage}
                       alt={`${currentTransformation.clientName} before transformation`}
                       fill
+                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 25vw"
                       className="object-cover grayscale-[30%]"
                       onError={() => handleImageError(`${currentTransformation.id}-before`)}
                     />
@@ -217,6 +218,7 @@ export function BeforeAfterCarousel({
                       src={currentTransformation.afterImage}
                       alt={`${currentTransformation.clientName} after transformation`}
                       fill
+                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 25vw"
                       className="object-cover"
                       onError={() => handleImageError(`${currentTransformation.id}-after`)}
                     />

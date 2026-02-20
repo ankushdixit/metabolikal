@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useList } from "@refinedev/core";
+import dynamic from "next/dynamic";
 import {
   LineChart,
   Image as ImageIcon,
@@ -11,8 +12,19 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-import { ProgressCharts } from "@/components/admin/progress-charts";
 import { PhotosGallery } from "@/components/admin/photos-gallery";
+
+const ProgressCharts = dynamic(
+  () =>
+    import("@/components/admin/progress-charts").then((mod) => ({ default: mod.ProgressCharts })),
+  {
+    loading: () => (
+      <div className="athletic-card p-6 pl-8 animate-pulse">
+        <div className="h-80 bg-secondary" />
+      </div>
+    ),
+  }
+);
 import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
 import { usePlanCycleData } from "@/contexts/plan-cycle-context";
 import { cn } from "@/lib/utils";

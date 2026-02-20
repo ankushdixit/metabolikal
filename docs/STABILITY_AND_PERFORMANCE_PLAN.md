@@ -979,7 +979,7 @@ Only the modal rendering component uses `useModalState()`.
 
 ---
 
-### Task 5.1: Install and run bundle analyzer
+### Task 5.1: Install and run bundle analyzer — DONE
 
 **Problem**: No visibility into actual bundle composition.
 
@@ -998,7 +998,7 @@ Only the modal rendering component uses `useModalState()`.
 
 ---
 
-### Task 5.2: Dynamic import heavy libraries
+### Task 5.2: Dynamic import heavy libraries — DONE
 
 **Problem**:
 
@@ -1027,7 +1027,7 @@ Only the modal rendering component uses `useModalState()`.
 
 ---
 
-### Task 5.3: Lazy-load third-party analytics
+### Task 5.3: Lazy-load third-party analytics — DONE
 
 **Problem**: PostHog and Facebook Pixel loaded in root layout, blocking TTI.
 
@@ -1049,7 +1049,7 @@ Only the modal rendering component uses `useModalState()`.
 
 ---
 
-### Task 5.4: Convert simple pages to Server Components
+### Task 5.4: Convert simple pages to Server Components — DONE
 
 **Problem**: 53 out of 72 page files have `"use client"`. Many are simple wrappers.
 
@@ -1072,7 +1072,7 @@ Do NOT convert pages that use hooks. Target: reduce from 74% client pages to ~40
 
 ---
 
-### Task 5.5: Optimize images
+### Task 5.5: Optimize images — DONE
 
 **Problem**: 14 transformation images total ~2.1MB. All JPG, no WebP.
 
@@ -1089,7 +1089,7 @@ Do NOT convert pages that use hooks. Target: reduce from 74% client pages to ~40
 
 ---
 
-### Task 5.6: Improve the `ssr: false` wrapper experience
+### Task 5.6: Improve the `ssr: false` wrapper experience — DONE
 
 **Problem**: `components/client-refine-wrapper.tsx` uses `dynamic(..., { ssr: false })` on the ENTIRE app. Users see plain "Loading..." text on every initial page load while the Refine JS chunk downloads and parses.
 

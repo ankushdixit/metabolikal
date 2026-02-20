@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Next.js Middleware for Route Protection
+ * Next.js Proxy for Route Protection
  *
  * Handles authentication and authorization:
  * - Unauthenticated users are redirected to /login for protected routes
@@ -21,7 +21,7 @@ const adminRoutes = ["/admin"];
 // Routes that require client or admin role (challengers cannot access)
 const clientRoutes = ["/dashboard"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
