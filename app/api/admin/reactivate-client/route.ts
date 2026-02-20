@@ -68,6 +68,31 @@ export async function POST(request: Request) {
     const oldCycle = profile.current_plan_cycle || 1;
     const newCycle = oldCycle + 1;
 
+    // Check for overlapping plan cycles before creating a new one
+    const newStart = new Date(plan_start_date);
+    const newEnd = new Date(newStart);
+    newEnd.setDate(newEnd.getDate() + plan_duration_days - 1);
+    const newEndStr = newEnd.toISOString().split("T")[0];
+
+    const { data: overlapping } = await supabase
+      .from("plan_cycles")
+      .select("cycle_number, start_date, end_date")
+      .eq("client_id", userId)
+      .lte("start_date", newEndStr)
+      .gte("end_date", plan_start_date)
+      .limit(1)
+      .single();
+
+    if (overlapping) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `New plan (${plan_start_date} to ${newEndStr}) overlaps with cycle ${overlapping.cycle_number} (${overlapping.start_date} to ${overlapping.end_date}). Choose a start date after ${overlapping.end_date}.`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Mark old cycle as completed
     await supabase
       .from("plan_cycles")
@@ -86,9 +111,13 @@ export async function POST(request: Request) {
 
     if (cycleError) {
       console.error("Error creating plan cycle:", cycleError);
+      const isOverlap = cycleError.message?.includes("overlaps");
       return NextResponse.json(
-        { success: false, error: "Failed to create new plan cycle" },
-        { status: 500 }
+        {
+          success: false,
+          error: isOverlap ? cycleError.message : "Failed to create new plan cycle",
+        },
+        { status: isOverlap ? 400 : 500 }
       );
     }
 
