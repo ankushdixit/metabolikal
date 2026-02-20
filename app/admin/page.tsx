@@ -20,16 +20,23 @@ export default function AdminDashboardPage() {
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "client" }],
     pagination: { mode: "off" },
+    meta: {
+      select:
+        "id, full_name, avatar_url, role, plan_start_date, plan_duration_days, is_deactivated, invited_at, invitation_accepted_at, created_at, current_plan_cycle",
+    },
     queryOptions: {
       enabled: !!adminId,
     },
   });
 
-  // Fetch all check-ins (we'll filter for pending in JS)
+  // Fetch check-ins with only needed columns
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
     sorters: [{ field: "submitted_at", order: "desc" }],
     pagination: { mode: "off" },
+    meta: {
+      select: "id, client_id, submitted_at, reviewed_at, flagged_for_followup",
+    },
     queryOptions: {
       enabled: !!adminId,
     },

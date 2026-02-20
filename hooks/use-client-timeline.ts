@@ -323,7 +323,7 @@ export function useClientTimeline({
       { field: "completed_date", operator: "eq", value: dateStr },
       { field: "plan_cycle", operator: "eq", value: currentPlanCycle },
     ],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 100 },
     queryOptions: {
       enabled: !!userId,
     },

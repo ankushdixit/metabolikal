@@ -697,7 +697,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.1: Fix admin dashboard unbounded queries
+### Task 3.1: Fix admin dashboard unbounded queries — DONE
 
 **Problem**: `app/admin/page.tsx` fetches ALL clients and ALL check-ins with `pagination: { mode: "off" }`. Then filters in JavaScript.
 
@@ -713,7 +713,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.2: Fix clients list page pagination
+### Task 3.2: Fix clients list page pagination — DONE
 
 **Problem**: `app/admin/clients/page.tsx` fetches ALL clients and ALL check-ins, then paginates in JavaScript.
 
@@ -728,7 +728,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.3: Fix TodaysChallengeActivity component
+### Task 3.3: Fix TodaysChallengeActivity component — DONE
 
 **Problem**: `components/admin/todays-challenge-activity.tsx` fetches ALL `challenge_progress` for ALL clients across ALL days, then groups in JavaScript. Grows as clients \* days.
 
@@ -748,7 +748,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.4: Fix timeline data hooks — safety limits and column selection
+### Task 3.4: Fix timeline data hooks — safety limits and column selection — DONE
 
 **Problem**: Multiple hooks fetch with `pagination: { mode: "off" }`:
 
@@ -770,7 +770,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.5: Fix challengers page — worst unbounded queries
+### Task 3.5: Fix challengers page — worst unbounded queries — DONE
 
 **Problem**: `app/admin/challengers/page.tsx` fetches ALL challenge_progress, ALL assessment_results, AND ALL calculator_results with no user filter and no pagination. These grow unboundedly with every new user.
 
@@ -785,7 +785,7 @@ window.location.href = redirectTo;
 
 ---
 
-### Task 3.6: Fix challenge dashboard page — bypasses React Query cache
+### Task 3.6: Fix challenge dashboard page — bypasses React Query cache — DONE
 
 **Problem**: `app/dashboard/challenge/page.tsx:81-136` uses raw Supabase client calls (`supabase.from(...).select("*")`) instead of Refine hooks. Bypasses React Query caching entirely and re-fetches on every mount.
 
@@ -812,7 +812,7 @@ const progressQuery = useList({
 
 ---
 
-### Task 3.7: Parallelize gamification hook queries
+### Task 3.7: Parallelize gamification hook queries — DONE
 
 **Problem**: `hooks/use-gamification.ts:240-320` has sequential queries: get user → fetch profile → fetch challenge data. Each step waits for the previous.
 
@@ -826,7 +826,7 @@ const progressQuery = useList({
 
 ---
 
-### Task 3.8: Reduce DeactivationGuard polling frequency
+### Task 3.8: Reduce DeactivationGuard polling frequency — DONE
 
 **Problem**: `hooks/use-deactivation-guard.ts` polls `getUser()` + `profiles` query every 30 seconds on every dashboard page. That's 2 network requests every 30 seconds per active user.
 
@@ -840,7 +840,7 @@ const progressQuery = useList({
 
 ---
 
-### Task 3.9: Add database indexes
+### Task 3.9: Add database indexes — DONE
 
 **Problem**: Common query patterns may not have proper indexes.
 

@@ -623,7 +623,7 @@ export function useTimelineData({
       { field: "client_id", operator: "eq", value: clientId },
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 100 },
     meta: {
       select: "*, food_items(*)",
     },
@@ -639,7 +639,7 @@ export function useTimelineData({
       { field: "client_id", operator: "eq", value: clientId },
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 100 },
     meta: {
       select: "*, supplements(*)",
     },
@@ -656,7 +656,7 @@ export function useTimelineData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 100 },
     meta: {
       select: "*, exercises(*)",
     },
@@ -673,7 +673,7 @@ export function useTimelineData({
       { field: "day_number", operator: "eq", value: dayNumber },
     ],
     sorters: [{ field: "display_order", order: "asc" }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 100 },
     meta: {
       select: "*, lifestyle_activity_types(*)",
     },
@@ -686,7 +686,7 @@ export function useTimelineData({
   const clientConditionsQuery = useList<ClientConditionWithDetails>({
     resource: "client_conditions",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
-    pagination: { mode: "off" },
+    pagination: { pageSize: 50 },
     meta: {
       select: "*, medical_conditions(id, name, slug)",
     },

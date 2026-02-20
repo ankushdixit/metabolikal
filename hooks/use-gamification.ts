@@ -157,10 +157,12 @@ export function useGamification() {
       if (!supabase) return null;
 
       try {
-        // Fetch all challenge progress for this user and current plan cycle
+        // Fetch challenge progress for this user and current plan cycle (with column selection)
         const { data: progressData, error } = await supabase
           .from("challenge_progress")
-          .select("*")
+          .select(
+            "day_number, logged_date, steps, water_liters, floors_climbed, protein_grams, sleep_hours, feeling, tomorrow_focus, points_earned"
+          )
           .eq("user_id", userId)
           .eq("plan_cycle", cycle)
           .order("day_number", { ascending: true });
@@ -240,6 +242,37 @@ export function useGamification() {
     [supabase]
   );
 
+  // Derive profile duration from AuthContext when available (Task 3.7)
+  // This avoids a separate profile query when inside AuthProvider.
+  const deriveProfileFromAuth = useCallback((): {
+    totalDays: number;
+    planStartDate: string;
+    planCycle: number;
+  } | null => {
+    const profile = auth?.profile;
+    if (!profile) return null;
+
+    const planDuration = profile.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
+    const planStart =
+      profile.plan_start_date || profile.created_at?.split("T")[0] || getDateString();
+    const challengeStart = profile.challenge_start_date;
+
+    if (challengeStart && challengeStart < planStart) {
+      const gapDays = daysBetween(challengeStart, planStart);
+      return {
+        totalDays: gapDays + planDuration,
+        planStartDate: challengeStart,
+        planCycle: profile.current_plan_cycle || 1,
+      };
+    }
+
+    return {
+      totalDays: planDuration,
+      planStartDate: planStart,
+      planCycle: profile.current_plan_cycle || 1,
+    };
+  }, [auth?.profile]);
+
   // Initialize when userId becomes available (Task 1.3)
   // Inside AuthProvider: reacts to auth.userId changes, no getUser()/onAuthStateChange needed.
   // Outside AuthProvider (public page): falls back to getUser() + onAuthStateChange.
@@ -269,7 +302,9 @@ export function useGamification() {
     const initializeGamification = async (userId: string) => {
       setIsLoading(true);
 
-      const profileResult = await loadProfileDuration(userId);
+      // Task 3.7: Use cached auth profile when available to skip the profile query
+      const cachedProfile = deriveProfileFromAuth();
+      const profileResult = cachedProfile ?? (await loadProfileDuration(userId));
       if (cancelled) return;
       setTotalDays(profileResult.totalDays);
       setPlanCycle(profileResult.planCycle);
@@ -333,7 +368,7 @@ export function useGamification() {
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [auth, localUserId, supabase, loadChallengeData, loadProfileDuration]);
+  }, [auth, localUserId, supabase, loadChallengeData, loadProfileDuration, deriveProfileFromAuth]);
 
   // Calculate current day
   const currentDay = useMemo(() => {

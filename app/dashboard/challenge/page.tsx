@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useList } from "@refinedev/core";
 import {
   Trophy,
   Flame,
@@ -12,54 +13,19 @@ import {
   Building2,
   Beef,
   Moon,
+  RefreshCw,
 } from "lucide-react";
-import { createBrowserSupabaseClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { getDaysSinceStart } from "@/lib/challenge-utils";
-import { getDateForDay } from "@/lib/challenge-utils";
+import {
+  getDaysSinceStart,
+  getDateForDay,
+  buildDayProgressMap,
+  calculateCumulativeStats,
+} from "@/lib/challenge-utils";
+import type { DayProgress } from "@/lib/challenge-utils";
 import { HistoricalCycleBanner } from "@/components/shared/historical-cycle-banner";
 import { usePlanCycle } from "@/contexts/plan-cycle-context";
-
-interface ChallengeProgressRow {
-  id: string;
-  user_id: string;
-  day_number: number;
-  logged_date: string;
-  steps: number;
-  water_liters: number;
-  floors_climbed: number;
-  protein_grams: number;
-  sleep_hours: number;
-  feeling: string | null;
-  tomorrow_focus: string | null;
-  points_earned: number;
-}
-
-interface DayProgress {
-  dayNumber: number;
-  loggedDate: string;
-  metrics: {
-    steps: number;
-    waterLiters: number;
-    floorsClimbed: number;
-    proteinGrams: number;
-    sleepHours: number;
-    feeling?: string;
-    tomorrowFocus?: string;
-  };
-  pointsEarned: number;
-  hasData: boolean;
-}
-
-interface CumulativeStats {
-  totalSteps: number;
-  totalWater: number;
-  totalFloors: number;
-  totalProtein: number;
-  totalSleepHours: number;
-  daysCompleted: number;
-  totalPoints: number;
-}
+import type { ChallengeProgress } from "@/lib/database.types";
 
 const DEFAULT_TOTAL_DAYS = 30;
 
@@ -70,9 +36,6 @@ const DEFAULT_TOTAL_DAYS = 30;
 export default function ChallengeHistoryPage() {
   const { userId, selectedCycle, cycleDetails } = usePlanCycle();
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<Record<number, DayProgress>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const totalDays = cycleDetails?.durationDays || DEFAULT_TOTAL_DAYS;
@@ -80,93 +43,46 @@ export default function ChallengeHistoryPage() {
   // Dependencies not yet available (parent contexts still loading)
   const isReady = !!userId && !!selectedCycle;
 
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  // Fetch challenge progress via React Query (replaces raw Supabase call)
+  const progressQuery = useList<ChallengeProgress>({
+    resource: "challenge_progress",
+    filters: [
+      { field: "user_id", operator: "eq", value: userId || "" },
+      { field: "plan_cycle", operator: "eq", value: selectedCycle || 0 },
+    ],
+    sorters: [{ field: "day_number", order: "asc" }],
+    pagination: { mode: "off" },
+    meta: {
+      select:
+        "day_number, logged_date, steps, water_liters, floors_climbed, protein_grams, sleep_hours, feeling, tomorrow_focus, points_earned",
+    },
+    queryOptions: { enabled: isReady },
+  });
 
-  // Fetch challenge progress for the selected cycle
+  const isLoading = progressQuery.query.isLoading;
+  const isError = progressQuery.query.isError;
+
+  // Convert raw DB rows to DayProgress map using shared utility
+  const progress = useMemo<Record<number, DayProgress>>(() => {
+    const rows = progressQuery.query.data?.data;
+    if (!rows?.length) return {};
+    return buildDayProgressMap(rows as ChallengeProgress[]);
+  }, [progressQuery.query.data?.data]);
+
+  // Reset selected day when cycle changes
   useEffect(() => {
-    if (!isReady) return;
+    setSelectedDay(null);
+  }, [selectedCycle]);
 
-    const fetchProgress = async () => {
-      setIsLoading(true);
-      setError(null);
-      setSelectedDay(null);
-
-      try {
-        const progressResult = await supabase
-          .from("challenge_progress")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("plan_cycle", selectedCycle)
-          .order("day_number", { ascending: true });
-
-        if (progressResult.error) {
-          throw progressResult.error;
-        }
-
-        // Convert to DayProgress records
-        const progressMap: Record<number, DayProgress> = {};
-        (progressResult.data || []).forEach((row: ChallengeProgressRow) => {
-          if (row.day_number !== null) {
-            progressMap[row.day_number] = {
-              dayNumber: row.day_number,
-              loggedDate: row.logged_date,
-              metrics: {
-                steps: row.steps || 0,
-                waterLiters: Number(row.water_liters) || 0,
-                floorsClimbed: row.floors_climbed || 0,
-                proteinGrams: row.protein_grams || 0,
-                sleepHours: Number(row.sleep_hours) || 0,
-                feeling: row.feeling || undefined,
-                tomorrowFocus: row.tomorrow_focus || undefined,
-              },
-              pointsEarned: row.points_earned || 0,
-              hasData: true,
-            };
-          }
-        });
-
-        setProgress(progressMap);
-      } catch (err) {
-        console.error("Error fetching challenge progress:", err);
-        setError("Failed to load challenge history. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProgress();
-  }, [isReady, userId, selectedCycle, supabase]);
-
-  // Calculate cumulative stats
-  const cumulativeStats = useMemo((): CumulativeStats => {
-    let totalSteps = 0;
-    let totalWater = 0;
-    let totalFloors = 0;
-    let totalProtein = 0;
-    let totalSleepHours = 0;
-    let totalPoints = 0;
-    let daysCompleted = 0;
-
-    Object.values(progress).forEach((day) => {
-      if (day.hasData) {
-        totalSteps += day.metrics.steps;
-        totalWater += day.metrics.waterLiters;
-        totalFloors += day.metrics.floorsClimbed;
-        totalProtein += day.metrics.proteinGrams;
-        totalSleepHours += day.metrics.sleepHours;
-        totalPoints += day.pointsEarned;
-        daysCompleted++;
-      }
-    });
-
+  // Calculate cumulative stats using shared utility + totalPoints
+  const cumulativeStats = useMemo(() => {
+    const stats = calculateCumulativeStats(progress);
+    const totalPoints = Object.values(progress).reduce((sum, day) => sum + day.pointsEarned, 0);
     return {
-      totalSteps,
-      totalWater: Math.round(totalWater * 10) / 10,
-      totalFloors,
-      totalProtein,
-      totalSleepHours: Math.round(totalSleepHours * 10) / 10,
+      ...stats,
+      totalWater: Math.round(stats.totalWater * 10) / 10,
+      totalSleepHours: Math.round(stats.totalSleepHours * 10) / 10,
       totalPoints,
-      daysCompleted,
     };
   }, [progress]);
 
@@ -194,7 +110,8 @@ export default function ChallengeHistoryPage() {
 
   const selectedDayProgress = selectedDay ? progress[selectedDay] : null;
   const showSkeleton = !isReady || isLoading;
-  const isEmpty = !showSkeleton && cumulativeStats.daysCompleted === 0;
+  const hasError = isError && !isLoading;
+  const isEmpty = !showSkeleton && !hasError && cumulativeStats.daysCompleted === 0;
 
   const summaryStats = [
     {
@@ -302,12 +219,19 @@ export default function ChallengeHistoryPage() {
       )}
 
       {/* Error State */}
-      {error && (
+      {hasError && (
         <div className="athletic-card p-6 pl-8">
-          <div className="flex items-center gap-3 text-red-500">
+          <div className="flex items-center gap-3 text-red-500 mb-3">
             <AlertCircle className="h-5 w-5" />
-            <span className="font-bold">{error}</span>
+            <span className="font-bold">Failed to load challenge history. Please try again.</span>
           </div>
+          <button
+            onClick={() => progressQuery.query.refetch()}
+            className="btn-athletic inline-flex items-center gap-2 px-4 py-2 bg-secondary text-foreground text-sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </button>
         </div>
       )}
 
@@ -328,7 +252,7 @@ export default function ChallengeHistoryPage() {
       )}
 
       {/* Content */}
-      {!showSkeleton && !error && !isEmpty && (
+      {!showSkeleton && !hasError && !isEmpty && (
         <>
           {/* Summary Stats */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
