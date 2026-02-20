@@ -39,6 +39,7 @@ export interface PlanInfo {
   durationDays?: number;
   dayNumber?: number;
   daysRemaining?: number;
+  daysUntilStart?: number;
   progressPercent?: number;
   isBeforeStart?: boolean;
   isCompleted?: boolean;
@@ -108,9 +109,29 @@ export function calculatePlanInfo(profile: Profile | null | undefined): PlanInfo
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const dayNumber = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const isBeforeStart = today < startDate;
+  const rawDayNumber =
+    Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-  const daysRemaining = Math.max(0, durationDays - dayNumber + 1);
+  if (isBeforeStart) {
+    const daysUntil = Math.ceil((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      isConfigured: true,
+      startDate,
+      endDate,
+      durationDays,
+      dayNumber: 0,
+      daysRemaining: durationDays,
+      daysUntilStart: daysUntil,
+      progressPercent: 0,
+      isBeforeStart: true,
+      isCompleted: false,
+    };
+  }
+
+  const isCompleted = rawDayNumber > durationDays;
+  const dayNumber = Math.min(rawDayNumber, durationDays);
+  const daysRemaining = isCompleted ? 0 : Math.max(0, durationDays - rawDayNumber + 1);
   const progressPercent = Math.min(100, Math.max(0, Math.round((dayNumber / durationDays) * 100)));
 
   return {
@@ -118,11 +139,12 @@ export function calculatePlanInfo(profile: Profile | null | undefined): PlanInfo
     startDate,
     endDate,
     durationDays,
-    dayNumber: Math.max(1, dayNumber),
+    dayNumber,
     daysRemaining,
+    daysUntilStart: 0,
     progressPercent,
-    isBeforeStart: today < startDate,
-    isCompleted: dayNumber > durationDays,
+    isBeforeStart: false,
+    isCompleted,
   };
 }
 

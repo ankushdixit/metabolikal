@@ -21,12 +21,12 @@ describe("useDailyPlanData", () => {
       expect(result).toBe(6); // Day 6 (0 + 5 + 1)
     });
 
-    it("returns 1 when today is before start date", () => {
+    it("returns 0 when today is before start date", () => {
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       startDate.setDate(startDate.getDate() + 5); // 5 days in future
       const result = calculateCurrentDay(startDate, 30);
-      expect(result).toBe(1);
+      expect(result).toBe(0);
     });
 
     it("returns last day when today is after plan end", () => {

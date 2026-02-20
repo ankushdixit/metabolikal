@@ -5,10 +5,20 @@ import { Calendar, Target } from "lucide-react";
 interface DayCounterTrayProps {
   currentDay: number;
   totalDays: number;
+  isBeforeStart?: boolean;
+  daysUntilPlanStart?: number;
   onOpenChallengeHub: () => void;
 }
 
-export function DayCounterTray({ currentDay, totalDays, onOpenChallengeHub }: DayCounterTrayProps) {
+export function DayCounterTray({
+  currentDay,
+  totalDays,
+  isBeforeStart,
+  daysUntilPlanStart,
+  onOpenChallengeHub,
+}: DayCounterTrayProps) {
+  const notStarted = isBeforeStart || currentDay === 0;
+
   return (
     <div className="fixed right-4 bottom-4 z-40 hidden md:block">
       <div className="bg-card border border-border shadow-lg w-48">
@@ -24,10 +34,23 @@ export function DayCounterTray({ currentDay, totalDays, onOpenChallengeHub }: Da
 
         {/* Day Number */}
         <div className="p-4 text-center">
-          <div className="text-4xl font-black gradient-athletic">Day {currentDay}</div>
-          <div className="text-xs font-bold text-muted-foreground mt-1">
-            {totalDays - currentDay} days remaining
-          </div>
+          {notStarted ? (
+            <>
+              <div className="text-2xl font-black text-amber-500">Starting Soon</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1">
+                {daysUntilPlanStart
+                  ? `Starts in ${daysUntilPlanStart} day${daysUntilPlanStart === 1 ? "" : "s"}`
+                  : `${totalDays} days total`}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl font-black gradient-athletic">Day {currentDay}</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1">
+                {totalDays - currentDay} days remaining
+              </div>
+            </>
+          )}
         </div>
 
         {/* Action Button */}

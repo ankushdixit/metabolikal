@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Trophy, Flame, Check } from "lucide-react";
 import {
   getDaysSinceStart,
+  daysUntilStart,
   calculateStreak,
   buildDayProgressMap,
   DEFAULT_CHALLENGE_DAYS,
@@ -21,6 +22,8 @@ interface ClientChallengeStatus {
   client: Profile;
   currentDay: number;
   totalDays: number;
+  isBeforeStart: boolean;
+  daysUntil: number;
   loggedToday: boolean;
   todayPoints: number;
   streak: number;
@@ -70,6 +73,8 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
           client,
           currentDay,
           totalDays,
+          isBeforeStart: currentDay === 0,
+          daysUntil: daysUntilStart(startDate),
           loggedToday: false,
           todayPoints: 0,
           streak: 0,
@@ -90,21 +95,24 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
       const totalDays = client.plan_duration_days || DEFAULT_CHALLENGE_DAYS;
       const startDate = client.plan_start_date || client.created_at?.split("T")[0] || "";
       const currentDay = getDaysSinceStart(startDate, totalDays);
+      const isNotStarted = currentDay === 0;
       const clientPlanCycle = client.current_plan_cycle ?? 1;
 
       // Only include rows from the client's current plan cycle
       const rows = (byUser[client.id] || []).filter((r) => r.plan_cycle === clientPlanCycle);
       const progress = buildDayProgressMap(rows);
 
-      const todayEntry = progress[currentDay];
+      const todayEntry = isNotStarted ? undefined : progress[currentDay];
       const loggedToday = todayEntry?.hasData ?? false;
       const todayPoints = todayEntry?.pointsEarned ?? 0;
-      const streak = calculateStreak(progress, currentDay);
+      const streak = isNotStarted ? 0 : calculateStreak(progress, currentDay);
 
       return {
         client,
         currentDay,
         totalDays,
+        isBeforeStart: isNotStarted,
+        daysUntil: daysUntilStart(startDate),
         loggedToday,
         todayPoints,
         streak,
@@ -156,7 +164,16 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
 
       <div className="space-y-2">
         {sortedStatuses.map(
-          ({ client, currentDay, totalDays, loggedToday, todayPoints, streak }) => (
+          ({
+            client,
+            currentDay,
+            totalDays,
+            isBeforeStart: notStarted,
+            daysUntil,
+            loggedToday,
+            todayPoints,
+            streak,
+          }) => (
             <Link
               key={client.id}
               href={`/admin/clients/${client.id}?tab=challenge`}
@@ -173,7 +190,9 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
                 <div>
                   <p className="font-bold text-sm text-foreground">{client.full_name}</p>
                   <p className="text-xs text-muted-foreground font-bold">
-                    Day {currentDay} of {totalDays}
+                    {notStarted
+                      ? `Starts in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`
+                      : `Day ${currentDay} of ${totalDays}`}
                   </p>
                 </div>
               </div>
@@ -185,7 +204,11 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
                     {streak}
                   </span>
                 )}
-                {loggedToday ? (
+                {notStarted ? (
+                  <span className="px-2 py-1 bg-amber-500/20 text-amber-500 text-xs font-bold uppercase">
+                    Not started
+                  </span>
+                ) : loggedToday ? (
                   <span className="flex items-center gap-1 px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-bold uppercase">
                     <Check className="h-3.5 w-3.5" />
                     {todayPoints} pts

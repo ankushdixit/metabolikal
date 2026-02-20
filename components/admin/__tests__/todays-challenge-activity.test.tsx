@@ -55,12 +55,13 @@ jest.mock("@refinedev/core", () => ({
   }),
 }));
 
-// Mock getDaysSinceStart to return a controlled value
+// Mock getDaysSinceStart and daysUntilStart to return controlled values
 jest.mock("@/lib/challenge-utils", () => {
   const actual = jest.requireActual("@/lib/challenge-utils");
   return {
     ...actual,
     getDaysSinceStart: jest.fn().mockReturnValue(3),
+    daysUntilStart: jest.fn().mockReturnValue(0),
   };
 });
 

@@ -6,6 +6,7 @@ import { useOptionalAuth } from "@/contexts/auth-context";
 import {
   getDateString,
   getDaysSinceStart,
+  daysUntilStart,
   calculateStreak,
   calculateWeekUnlocked,
   calculateCompletionPercent,
@@ -57,6 +58,8 @@ export interface GamificationState {
   currentDay: number;
   totalDays: number;
   startDate: string;
+  isBeforeStart: boolean;
+  daysUntilPlanStart: number;
   totalPoints: number;
   dayStreak: number;
   weekUnlocked: number;
@@ -370,22 +373,40 @@ export function useGamification() {
     };
   }, [auth, localUserId, supabase, loadChallengeData, loadProfileDuration, deriveProfileFromAuth]);
 
-  // Calculate current day
+  // Calculate current day (0 = plan hasn't started yet)
   const currentDay = useMemo(() => {
     return getDaysSinceStart(startDate, totalDays);
   }, [startDate, totalDays]);
 
-  // Get today's progress
-  const todayProgress = useMemo(() => {
-    if (!challengeData) return null;
-    return challengeData.dailyProgress[currentDay] || getEmptyDayProgress(currentDay);
-  }, [challengeData, currentDay]);
+  const isBeforeStart = currentDay === 0;
+  const daysUntilPlanStart = useMemo(() => daysUntilStart(startDate), [startDate]);
 
-  // Calculate total points
+  // Filter progress to only include days that have actually occurred (day <= currentDay).
+  // Prevents stale DB rows for future dates from polluting stats, points, and display.
+  const validProgress = useMemo<Record<number, DayProgress>>(() => {
+    if (!challengeData || isBeforeStart) return {};
+    const raw = challengeData.dailyProgress;
+    const filtered: Record<number, DayProgress> = {};
+    for (const key of Object.keys(raw)) {
+      const dayNum = Number(key);
+      if (dayNum >= 1 && dayNum <= currentDay) {
+        filtered[dayNum] = raw[dayNum];
+      }
+    }
+    return filtered;
+  }, [challengeData, currentDay, isBeforeStart]);
+
+  // Get today's progress (null when plan hasn't started)
+  const todayProgress = useMemo(() => {
+    if (!challengeData || isBeforeStart) return null;
+    return validProgress[currentDay] || getEmptyDayProgress(currentDay);
+  }, [challengeData, currentDay, isBeforeStart, validProgress]);
+
+  // Calculate total points (only from days that have occurred)
   const totalPoints = useMemo(() => {
     if (!challengeData) return 0;
 
-    const progressPoints = Object.values(challengeData.dailyProgress).reduce(
+    const progressPoints = Object.values(validProgress).reduce(
       (sum, day) => sum + day.pointsEarned,
       0
     );
@@ -396,29 +417,29 @@ export function useGamification() {
       challengeData.calculatorPoints +
       dailyVisitPoints
     );
-  }, [challengeData, dailyVisitPoints]);
+  }, [challengeData, validProgress, dailyVisitPoints]);
 
   // Calculate day streak
   const dayStreak = useMemo(() => {
-    if (!challengeData) return 0;
-    return calculateStreak(challengeData.dailyProgress, currentDay);
-  }, [challengeData, currentDay]);
+    if (!challengeData || isBeforeStart) return 0;
+    return calculateStreak(validProgress, currentDay);
+  }, [challengeData, validProgress, currentDay, isBeforeStart]);
 
   // Calculate week unlocked
   const weekUnlocked = useMemo(() => {
-    if (!challengeData) return 1;
-    return calculateWeekUnlocked(challengeData.dailyProgress, totalDays);
-  }, [challengeData, totalDays]);
+    if (!challengeData || isBeforeStart) return 1;
+    return calculateWeekUnlocked(validProgress, totalDays);
+  }, [challengeData, validProgress, totalDays, isBeforeStart]);
 
   // Calculate completion percent
   const completionPercent = useMemo(() => {
-    if (!challengeData) return 0;
-    return calculateCompletionPercent(challengeData.dailyProgress, totalDays);
-  }, [challengeData, totalDays]);
+    if (!challengeData || isBeforeStart) return 0;
+    return calculateCompletionPercent(validProgress, totalDays);
+  }, [challengeData, validProgress, totalDays, isBeforeStart]);
 
   // Calculate cumulative stats
   const cumulativeStats = useMemo(() => {
-    if (!challengeData)
+    if (!challengeData || isBeforeStart)
       return {
         totalSteps: 0,
         totalWater: 0,
@@ -427,13 +448,13 @@ export function useGamification() {
         totalSleepHours: 0,
         daysCompleted: 0,
       };
-    return calculateCumulativeStats(challengeData.dailyProgress);
-  }, [challengeData]);
+    return calculateCumulativeStats(validProgress);
+  }, [challengeData, validProgress, isBeforeStart]);
 
   // Save today's progress to database
   const saveTodayProgress = useCallback(
     async (metrics: DailyMetrics): Promise<boolean> => {
-      if (!authUserId || !challengeData || !supabase) return false;
+      if (!authUserId || !challengeData || !supabase || isBeforeStart) return false;
 
       const points = calculateDailyPoints(metrics, true);
       const today = getDateString();
@@ -498,15 +519,16 @@ export function useGamification() {
 
   // Check if editing a specific day is allowed
   // All past days and the current day are editable — week-lock is visual only
+  // No days are editable before the plan starts
   const canEditDay = useCallback(
-    (dayNumber: number): boolean => dayNumber >= 1 && dayNumber <= currentDay,
-    [currentDay]
+    (dayNumber: number): boolean => !isBeforeStart && dayNumber >= 1 && dayNumber <= currentDay,
+    [currentDay, isBeforeStart]
   );
 
   // Save progress for any editable day
   const saveDayProgress = useCallback(
     async (dayNumber: number, metrics: DailyMetrics): Promise<boolean> => {
-      if (!authUserId || !supabase) return false;
+      if (!authUserId || !supabase || isBeforeStart) return false;
 
       try {
         const points = calculateDailyPoints(metrics, true);
@@ -650,6 +672,8 @@ export function useGamification() {
     currentDay,
     totalDays,
     startDate,
+    isBeforeStart,
+    daysUntilPlanStart,
     totalPoints,
     dayStreak,
     weekUnlocked,
@@ -658,7 +682,7 @@ export function useGamification() {
     calculatorPoints: challengeData?.calculatorPoints || 0,
     dailyVisitPoints,
     todayProgress,
-    allProgress: challengeData?.dailyProgress || {},
+    allProgress: validProgress,
     cumulativeStats,
   };
 

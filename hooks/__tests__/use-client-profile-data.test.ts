@@ -89,7 +89,10 @@ describe("useClientProfileData utilities", () => {
       expect(result.isConfigured).toBe(true);
       expect(result.isBeforeStart).toBe(true);
       expect(result.isCompleted).toBe(false);
-      expect(result.dayNumber).toBe(1); // Clamped to min 1
+      expect(result.dayNumber).toBe(0);
+      expect(result.daysUntilStart).toBe(5); // Jan 20 - Jan 15 = 5 days
+      expect(result.daysRemaining).toBe(14); // Full duration remaining
+      expect(result.progressPercent).toBe(0);
     });
 
     it("identifies completed plan", () => {

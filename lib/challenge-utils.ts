@@ -46,7 +46,20 @@ export function getDaysSinceStart(startDate: string, totalDays: number): number 
   now.setHours(0, 0, 0, 0);
   const diffTime = now.getTime() - start.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return Math.min(Math.max(diffDays + 1, 1), totalDays);
+  // Returns 0 when start date is in the future (plan hasn't started yet)
+  return Math.min(Math.max(diffDays + 1, 0), totalDays);
+}
+
+/**
+ * How many days until the plan starts. Returns 0 if already started.
+ */
+export function daysUntilStart(startDate: string): number {
+  const start = new Date(startDate);
+  const now = new Date();
+  start.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffMs = start.getTime() - now.getTime();
+  return diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
 }
 
 export function calculateStreak(progress: Record<number, DayProgress>, currentDay: number): number {

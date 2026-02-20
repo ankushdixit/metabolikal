@@ -228,4 +228,19 @@ describe("DayCounterTray", () => {
 
     expect(screen.getByText("0 days remaining")).toBeInTheDocument();
   });
+
+  it("shows 'Starting Soon' when plan has not started", () => {
+    render(
+      <DayCounterTray
+        {...defaultProps}
+        currentDay={0}
+        isBeforeStart={true}
+        daysUntilPlanStart={5}
+      />
+    );
+
+    expect(screen.getByText("Starting Soon")).toBeInTheDocument();
+    expect(screen.getByText("Starts in 5 days")).toBeInTheDocument();
+    expect(screen.queryByText("Day 0")).not.toBeInTheDocument();
+  });
 });
