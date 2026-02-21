@@ -1,9 +1,21 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Header } from "../header";
-import { ModalProvider } from "@/contexts/modal-context";
+import { ModalProvider, useModalState } from "@/contexts/modal-context";
+
+// Helper component to observe which modal was opened
+function ModalSpy() {
+  const { activeModal } = useModalState();
+  return <div data-testid="modal-spy">{activeModal ?? "none"}</div>;
+}
 
 const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<ModalProvider>{ui}</ModalProvider>);
+  return render(
+    <ModalProvider>
+      {ui}
+      <ModalSpy />
+    </ModalProvider>
+  );
 };
 
 // Mock next/image
@@ -19,11 +31,23 @@ jest.mock("next/image", () => ({
   },
 }));
 
-// Mock next/link
+// Mock next/link - pass through onClick so mobile menu close works
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    children,
+    href,
+    onClick,
+    className,
+  }: {
+    children: React.ReactNode;
+    href: string;
+    onClick?: React.MouseEventHandler;
+    className?: string;
+  }) => (
+    <a href={href} onClick={onClick} className={className}>
+      {children}
+    </a>
   ),
 }));
 
@@ -135,5 +159,81 @@ describe("Landing Header Component", () => {
 
     const challengeLink = screen.getByRole("link", { name: "Challenge" });
     expect(challengeLink).toHaveAttribute("href", "#challenge");
+  });
+
+  describe("CTA button handlers", () => {
+    it("opens assessment modal when Take Assessment is clicked (desktop)", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Header />);
+
+      // Click the first Take Assessment button (desktop)
+      const assessmentButtons = screen.getAllByRole("button", { name: /Take Assessment/i });
+      await user.click(assessmentButtons[0]);
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("assessment");
+    });
+
+    it("opens calendly modal when Book a Call is clicked (desktop)", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Header />);
+
+      // Click the first Book a Call button (desktop)
+      const bookCallButtons = screen.getAllByRole("button", { name: /Book a Call/i });
+      await user.click(bookCallButtons[0]);
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("calendly");
+    });
+
+    it("opens assessment modal and closes mobile menu when Take Assessment is clicked in mobile menu", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Header />);
+
+      // Open mobile menu
+      const menuButton = screen.getByLabelText(/Open menu/i);
+      await user.click(menuButton);
+
+      // Now click the mobile Take Assessment button (last one)
+      const assessmentButtons = screen.getAllByRole("button", { name: /Take Assessment/i });
+      await user.click(assessmentButtons[assessmentButtons.length - 1]);
+
+      // Modal should be opened
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("assessment");
+      // Mobile menu should be closed
+      expect(screen.getByLabelText(/Open menu/i)).toBeInTheDocument();
+    });
+
+    it("opens calendly modal and closes mobile menu when Book a Call is clicked in mobile menu", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Header />);
+
+      // Open mobile menu
+      const menuButton = screen.getByLabelText(/Open menu/i);
+      await user.click(menuButton);
+
+      // Now click the mobile Book a Call button (last one)
+      const bookCallButtons = screen.getAllByRole("button", { name: /Book a Call/i });
+      await user.click(bookCallButtons[bookCallButtons.length - 1]);
+
+      // Modal should be opened
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("calendly");
+      // Mobile menu should be closed
+      expect(screen.getByLabelText(/Open menu/i)).toBeInTheDocument();
+    });
+
+    it("closes mobile menu when a navigation link is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Header />);
+
+      // Open mobile menu
+      await user.click(screen.getByLabelText(/Open menu/i));
+      expect(screen.getByLabelText(/Close menu/i)).toBeInTheDocument();
+
+      // Click a mobile nav link (pick the last "About" link which is in mobile menu)
+      const aboutLinks = screen.getAllByRole("link", { name: "About" });
+      await user.click(aboutLinks[aboutLinks.length - 1]);
+
+      // Menu should close
+      expect(screen.getByLabelText(/Open menu/i)).toBeInTheDocument();
+    });
   });
 });

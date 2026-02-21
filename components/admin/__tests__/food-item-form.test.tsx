@@ -6,7 +6,7 @@ import { foodItemSchema, type FoodItemFormData } from "@/lib/validations";
 
 // Mock the meal types hook to avoid needing Refine context
 jest.mock("@/hooks/use-meal-types", () => ({
-  useMealTypes: () => ({
+  useMealTypes: jest.fn(() => ({
     mealTypes: [
       { id: "1", slug: "breakfast", name: "Breakfast", display_order: 1, is_active: true },
       { id: "2", slug: "lunch", name: "Lunch", display_order: 2, is_active: true },
@@ -18,7 +18,7 @@ jest.mock("@/hooks/use-meal-types", () => ({
     isLoading: false,
     error: null,
     refetch: jest.fn(),
-  }),
+  })),
   DEFAULT_MEAL_TYPES: [
     { name: "Breakfast", slug: "breakfast" },
     { name: "Lunch", slug: "lunch" },
@@ -364,5 +364,95 @@ describe("FoodItemForm Component", () => {
     expect(
       screen.getByText(/Add food items that can substitute for this one in diet plans/)
     ).toBeInTheDocument();
+  });
+
+  it("deselects a meal type when clicked twice", () => {
+    render(<TestWrapper />);
+
+    const breakfastButton = screen.getByText("Breakfast");
+
+    // Click to select
+    fireEvent.click(breakfastButton);
+    expect(breakfastButton).toHaveClass("gradient-electric");
+
+    // Click again to deselect
+    fireEvent.click(breakfastButton);
+    expect(breakfastButton).toHaveClass("bg-secondary");
+  });
+
+  it("passes foodItemId to alternatives selector", () => {
+    render(<TestWrapper foodItemId="food-123" />);
+    // Should render without error; foodItemId is passed through to FoodAlternativesSelector
+    expect(screen.getByText("Alternatives")).toBeInTheDocument();
+  });
+
+  describe("meal types loading state", () => {
+    const mockUseMealTypes = require("@/hooks/use-meal-types").useMealTypes as jest.Mock;
+
+    afterEach(() => {
+      // Restore the default mock after each test in this block
+      mockUseMealTypes.mockImplementation(() => ({
+        mealTypes: [
+          { id: "1", slug: "breakfast", name: "Breakfast", display_order: 1, is_active: true },
+          { id: "2", slug: "lunch", name: "Lunch", display_order: 2, is_active: true },
+          { id: "3", slug: "dinner", name: "Dinner", display_order: 3, is_active: true },
+          { id: "4", slug: "snack", name: "Snack", display_order: 4, is_active: true },
+          { id: "5", slug: "pre-workout", name: "Pre-Workout", display_order: 5, is_active: true },
+          {
+            id: "6",
+            slug: "post-workout",
+            name: "Post-Workout",
+            display_order: 6,
+            is_active: true,
+          },
+        ],
+        isLoading: false,
+        error: null,
+        refetch: jest.fn(),
+      }));
+    });
+
+    it("shows loading spinner when meal types are loading", () => {
+      mockUseMealTypes.mockImplementation(() => ({
+        mealTypes: [],
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+      }));
+
+      render(<TestWrapper />);
+
+      expect(screen.getByText("Loading meal types...")).toBeInTheDocument();
+    });
+
+    it("shows error when meal types fail to load", () => {
+      mockUseMealTypes.mockImplementation(() => ({
+        mealTypes: [],
+        isLoading: false,
+        error: new Error("Network error"),
+        refetch: jest.fn(),
+      }));
+
+      render(<TestWrapper />);
+
+      expect(screen.getByText("Failed to load meal types")).toBeInTheDocument();
+      expect(
+        screen.getByText("Please ensure the database is running and seeded.")
+      ).toBeInTheDocument();
+    });
+
+    it("shows warning when no meal types found", () => {
+      mockUseMealTypes.mockImplementation(() => ({
+        mealTypes: [],
+        isLoading: false,
+        error: null,
+        refetch: jest.fn(),
+      }));
+
+      render(<TestWrapper />);
+
+      expect(screen.getByText("No meal types found")).toBeInTheDocument();
+      expect(screen.getByText("Please seed the database with meal types.")).toBeInTheDocument();
+    });
   });
 });

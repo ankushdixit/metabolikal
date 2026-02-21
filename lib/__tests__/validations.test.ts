@@ -3,6 +3,15 @@ import {
   assessmentResultsSchema,
   foodItemSchema,
   createClientSchema,
+  checkInSchema,
+  supplementSchema,
+  exerciseSchema,
+  updateClientSchema,
+  uuidSchema,
+  planTemplateSchema,
+  testimonialVideoSchema,
+  testimonialPhotoSchema,
+  lifestyleActivityTypeSchema,
 } from "../validations";
 
 describe("calculatorFormSchema", () => {
@@ -671,5 +680,466 @@ describe("createClientSchema", () => {
       const result = createClientSchema.safeParse({ ...validData, address: "" });
       expect(result.success).toBe(true);
     });
+  });
+
+  describe("phone validation", () => {
+    it("accepts valid E.164 phone number", () => {
+      const result = createClientSchema.safeParse({ ...validData, phone: "+1234567890" });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts empty string for phone", () => {
+      const result = createClientSchema.safeParse({ ...validData, phone: "" });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid phone number", () => {
+      const result = createClientSchema.safeParse({ ...validData, phone: "abc123" });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("plan_start_date validation", () => {
+    it("accepts valid plan start date", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_start_date: "2026-03-01",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid plan start date", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_start_date: "not-a-date",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("plan_duration_days validation", () => {
+    it("accepts valid duration", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_duration_days: 30,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects duration below 1", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_duration_days: 0,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects duration above 365", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_duration_days: 366,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects non-integer duration", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        plan_duration_days: 30.5,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("condition_ids validation", () => {
+    it("accepts valid condition UUIDs", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        condition_ids: ["550e8400-e29b-41d4-a716-446655440000"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid condition UUIDs", () => {
+      const result = createClientSchema.safeParse({
+        ...validData,
+        condition_ids: ["not-a-uuid"],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+});
+
+describe("uuidSchema", () => {
+  it("accepts valid UUID", () => {
+    const result = uuidSchema.safeParse("550e8400-e29b-41d4-a716-446655440000");
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts test UUID with all zeros", () => {
+    const result = uuidSchema.safeParse("00000000-0000-0000-0000-000000000206");
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid UUID format", () => {
+    const result = uuidSchema.safeParse("not-a-uuid");
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty string", () => {
+    const result = uuidSchema.safeParse("");
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("checkInSchema", () => {
+  const validData = {
+    weight: 80,
+    energy_rating: 7,
+    sleep_rating: 7,
+    stress_rating: 5,
+    mood_rating: 8,
+    diet_adherence: 90,
+    workout_adherence: 85,
+  };
+
+  it("validates correct data", () => {
+    const result = checkInSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects weight below 20", () => {
+    const result = checkInSchema.safeParse({ ...validData, weight: 19 });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects weight above 300", () => {
+    const result = checkInSchema.safeParse({ ...validData, weight: 301 });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts optional nullable fields", () => {
+    const result = checkInSchema.safeParse({
+      ...validData,
+      body_fat_percent: null,
+      chest_cm: null,
+      waist_cm: null,
+      hips_cm: null,
+      arms_cm: null,
+      thighs_cm: null,
+      challenges: null,
+      progress_notes: null,
+      questions: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("validates measurement bounds", () => {
+    // body_fat min/max
+    expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 0 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 61 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 15 }).success).toBe(true);
+
+    // chest_cm min/max
+    expect(checkInSchema.safeParse({ ...validData, chest_cm: 49 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, chest_cm: 201 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, chest_cm: 100 }).success).toBe(true);
+  });
+
+  it("validates rating bounds", () => {
+    expect(checkInSchema.safeParse({ ...validData, energy_rating: 0 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, energy_rating: 11 }).success).toBe(false);
+  });
+
+  it("validates adherence bounds", () => {
+    expect(checkInSchema.safeParse({ ...validData, diet_adherence: -1 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, diet_adherence: 101 }).success).toBe(false);
+  });
+
+  it("rejects too-long text fields", () => {
+    expect(checkInSchema.safeParse({ ...validData, challenges: "a".repeat(1001) }).success).toBe(
+      false
+    );
+    expect(
+      checkInSchema.safeParse({ ...validData, progress_notes: "a".repeat(1001) }).success
+    ).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, questions: "a".repeat(1001) }).success).toBe(
+      false
+    );
+  });
+});
+
+describe("supplementSchema", () => {
+  const validData = {
+    name: "Fish Oil",
+    category: "fatty_acid" as const,
+    default_dosage: 1000,
+    dosage_unit: "mg",
+    is_active: true,
+  };
+
+  it("validates correct data", () => {
+    const result = supplementSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects name shorter than 2 chars", () => {
+    expect(supplementSchema.safeParse({ ...validData, name: "A" }).success).toBe(false);
+  });
+
+  it("rejects invalid category", () => {
+    expect(supplementSchema.safeParse({ ...validData, category: "invalid" }).success).toBe(false);
+  });
+
+  it("rejects non-positive dosage", () => {
+    expect(supplementSchema.safeParse({ ...validData, default_dosage: 0 }).success).toBe(false);
+    expect(supplementSchema.safeParse({ ...validData, default_dosage: -1 }).success).toBe(false);
+  });
+
+  it("accepts optional nullable fields", () => {
+    const result = supplementSchema.safeParse({
+      ...validData,
+      instructions: null,
+      notes: null,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("exerciseSchema", () => {
+  const validData = {
+    name: "Push-ups",
+    category: "strength" as const,
+    muscle_group: "chest" as const,
+  };
+
+  it("validates correct data", () => {
+    const result = exerciseSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("validates with all optional fields", () => {
+    const result = exerciseSchema.safeParse({
+      ...validData,
+      equipment: "None",
+      default_sets: 3,
+      default_reps: 12,
+      default_duration_seconds: 60,
+      rest_seconds: 30,
+      instructions: "Keep core tight",
+      video_url: "https://example.com/video",
+      thumbnail_url: "https://example.com/thumb.jpg",
+      difficulty_level: 3,
+      is_active: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid muscle group", () => {
+    expect(exerciseSchema.safeParse({ ...validData, muscle_group: "invalid" }).success).toBe(false);
+  });
+
+  it("accepts empty string for video_url", () => {
+    const result = exerciseSchema.safeParse({ ...validData, video_url: "" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid URL for video_url", () => {
+    const result = exerciseSchema.safeParse({ ...validData, video_url: "not-a-url" });
+    expect(result.success).toBe(false);
+  });
+
+  it("validates difficulty_level bounds", () => {
+    expect(exerciseSchema.safeParse({ ...validData, difficulty_level: 0 }).success).toBe(false);
+    expect(exerciseSchema.safeParse({ ...validData, difficulty_level: 6 }).success).toBe(false);
+    expect(exerciseSchema.safeParse({ ...validData, difficulty_level: 5 }).success).toBe(true);
+  });
+});
+
+describe("updateClientSchema", () => {
+  const validData = {
+    full_name: "John Doe",
+    email: "john@example.com",
+  };
+
+  it("validates correct data", () => {
+    const result = updateClientSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable phone", () => {
+    const result = updateClientSchema.safeParse({ ...validData, phone: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable date_of_birth", () => {
+    const result = updateClientSchema.safeParse({ ...validData, date_of_birth: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable gender", () => {
+    const result = updateClientSchema.safeParse({ ...validData, gender: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable plan_start_date", () => {
+    const result = updateClientSchema.safeParse({ ...validData, plan_start_date: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable plan_duration_days", () => {
+    const result = updateClientSchema.safeParse({ ...validData, plan_duration_days: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid plan_start_date", () => {
+    const result = updateClientSchema.safeParse({
+      ...validData,
+      plan_start_date: "not-a-date",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects future date_of_birth", () => {
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    const result = updateClientSchema.safeParse({
+      ...validData,
+      date_of_birth: futureDate.toISOString().split("T")[0],
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("planTemplateSchema", () => {
+  it("validates correct data", () => {
+    const result = planTemplateSchema.safeParse({
+      name: "Weight Loss Plan",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts all fields", () => {
+    const result = planTemplateSchema.safeParse({
+      name: "Weight Loss Plan",
+      description: "A plan for losing weight",
+      category: "weight_loss",
+      is_active: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects name shorter than 2 chars", () => {
+    const result = planTemplateSchema.safeParse({ name: "A" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid category", () => {
+    const result = planTemplateSchema.safeParse({ name: "Plan", category: "invalid" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("testimonialVideoSchema", () => {
+  const validData = {
+    youtube_video_id: "abc123xyz",
+    title: "Amazing Results",
+    video_type: "short" as const,
+    is_active: true,
+  };
+
+  it("validates correct data", () => {
+    const result = testimonialVideoSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty youtube_video_id", () => {
+    const result = testimonialVideoSchema.safeParse({ ...validData, youtube_video_id: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid video_type", () => {
+    const result = testimonialVideoSchema.safeParse({ ...validData, video_type: "invalid" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts landscape video type", () => {
+    const result = testimonialVideoSchema.safeParse({ ...validData, video_type: "landscape" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts optional client_name", () => {
+    const result = testimonialVideoSchema.safeParse({ ...validData, client_name: "John" });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("testimonialPhotoSchema", () => {
+  const validData = {
+    client_name: "Jane Doe",
+    duration: "3 months",
+    result: "Lost 10kg",
+    before_image_url: "https://example.com/before.jpg",
+    after_image_url: "https://example.com/after.jpg",
+    is_active: true,
+  };
+
+  it("validates correct data", () => {
+    const result = testimonialPhotoSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty client_name", () => {
+    const result = testimonialPhotoSchema.safeParse({ ...validData, client_name: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty before_image_url", () => {
+    const result = testimonialPhotoSchema.safeParse({ ...validData, before_image_url: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts optional fields", () => {
+    const result = testimonialPhotoSchema.safeParse({
+      ...validData,
+      profession: "Engineer",
+      display_order: 1,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("lifestyleActivityTypeSchema", () => {
+  const validData = {
+    name: "Walking",
+    category: "movement" as const,
+  };
+
+  it("validates correct data", () => {
+    const result = lifestyleActivityTypeSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("validates with all optional fields", () => {
+    const result = lifestyleActivityTypeSchema.safeParse({
+      ...validData,
+      default_target_value: 10000,
+      target_unit: "steps",
+      description: "Daily walking target",
+      rationale: "Walking improves metabolic health",
+      icon: "footprints",
+      is_active: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid category", () => {
+    const result = lifestyleActivityTypeSchema.safeParse({ ...validData, category: "invalid" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects name shorter than 2 chars", () => {
+    const result = lifestyleActivityTypeSchema.safeParse({ ...validData, name: "A" });
+    expect(result.success).toBe(false);
   });
 });

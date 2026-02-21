@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ClientTable } from "../client-table";
 
@@ -498,6 +499,180 @@ describe("ClientTable Component", () => {
 
       // Only non-invited clients (2 and 3) should be selected
       expect(onSelectionChange).toHaveBeenCalledWith(["2", "3"]);
+    });
+  });
+
+  describe("Invited status", () => {
+    it("shows Invited status for clients with pending invitation", () => {
+      const invitedClients = [
+        {
+          ...mockClients[0],
+          invited_at: "2025-01-01T00:00:00Z",
+          invitation_accepted_at: null,
+        },
+      ];
+      render(<ClientTable {...defaultProps} clients={invitedClients} />);
+      expect(screen.getByText("Invited")).toBeInTheDocument();
+    });
+  });
+
+  describe("No check-in state", () => {
+    it("shows 'No check-ins' when client has no lastCheckIn", () => {
+      const clientsNoCheckIn = [
+        {
+          ...mockClients[0],
+          lastCheckIn: null,
+        },
+      ];
+      render(<ClientTable {...defaultProps} clients={clientsNoCheckIn} />);
+      expect(screen.getByText("No check-ins")).toBeInTheDocument();
+    });
+  });
+
+  describe("Action buttons", () => {
+    it("shows message button when onSendMessage provided and client is not deactivated", () => {
+      const onSendMessage = jest.fn();
+      render(<ClientTable {...defaultProps} onSendMessage={onSendMessage} />);
+      const messageButtons = screen.getAllByTitle("Send message");
+      expect(messageButtons.length).toBe(3); // 3 active clients
+    });
+
+    it("calls onSendMessage when message button clicked", () => {
+      const onSendMessage = jest.fn();
+      render(<ClientTable {...defaultProps} onSendMessage={onSendMessage} />);
+      const messageButton = screen.getAllByTitle("Send message")[0];
+      fireEvent.click(messageButton);
+      expect(onSendMessage).toHaveBeenCalledWith(mockClients[0]);
+    });
+
+    it("does not show message button for deactivated clients", () => {
+      const onSendMessage = jest.fn();
+      const deactivatedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+      ];
+      render(
+        <ClientTable {...defaultProps} clients={deactivatedClients} onSendMessage={onSendMessage} />
+      );
+      expect(screen.queryByTitle("Send message")).not.toBeInTheDocument();
+    });
+
+    it("shows resend invite button for invited clients", () => {
+      const onResendInvite = jest.fn(() => Promise.resolve());
+      const invitedClients = [
+        {
+          ...mockClients[0],
+          invited_at: "2025-01-01T00:00:00Z",
+          invitation_accepted_at: null,
+        },
+      ];
+      render(
+        <ClientTable {...defaultProps} clients={invitedClients} onResendInvite={onResendInvite} />
+      );
+      expect(screen.getByTitle("Resend invitation email")).toBeInTheDocument();
+    });
+
+    it("calls onResendInvite when resend button clicked", async () => {
+      const onResendInvite = jest.fn(() => Promise.resolve());
+      const invitedClients = [
+        {
+          ...mockClients[0],
+          invited_at: "2025-01-01T00:00:00Z",
+          invitation_accepted_at: null,
+        },
+      ];
+      render(
+        <ClientTable {...defaultProps} clients={invitedClients} onResendInvite={onResendInvite} />
+      );
+      const resendButton = screen.getByTitle("Resend invitation email");
+      fireEvent.click(resendButton);
+      expect(onResendInvite).toHaveBeenCalled();
+    });
+
+    it("shows deactivate button for non-deactivated clients", () => {
+      const onDeactivateClient = jest.fn(() => Promise.resolve());
+      render(<ClientTable {...defaultProps} onDeactivateClient={onDeactivateClient} />);
+      const deactivateButtons = screen.getAllByTitle("Deactivate client");
+      expect(deactivateButtons.length).toBe(3);
+    });
+
+    it("calls onDeactivateClient when deactivate button clicked", () => {
+      const onDeactivateClient = jest.fn(() => Promise.resolve());
+      render(<ClientTable {...defaultProps} onDeactivateClient={onDeactivateClient} />);
+      const deactivateButton = screen.getAllByTitle("Deactivate client")[0];
+      fireEvent.click(deactivateButton);
+      expect(onDeactivateClient).toHaveBeenCalled();
+    });
+
+    it("shows reactivate button for deactivated clients", () => {
+      const onReactivateClient = jest.fn(() => Promise.resolve());
+      const deactivatedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+      ];
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={deactivatedClients}
+          onReactivateClient={onReactivateClient}
+        />
+      );
+      expect(screen.getByTitle("Reactivate client")).toBeInTheDocument();
+    });
+
+    it("calls onReactivateClient when reactivate button clicked", () => {
+      const onReactivateClient = jest.fn(() => Promise.resolve());
+      const deactivatedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+      ];
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={deactivatedClients}
+          onReactivateClient={onReactivateClient}
+        />
+      );
+      const reactivateButton = screen.getByTitle("Reactivate client");
+      fireEvent.click(reactivateButton);
+      expect(onReactivateClient).toHaveBeenCalled();
+    });
+
+    it("does not show deactivate button for already deactivated clients", () => {
+      const onDeactivateClient = jest.fn(() => Promise.resolve());
+      const deactivatedClients = [
+        {
+          ...mockClients[0],
+          is_deactivated: true,
+        },
+      ];
+      render(
+        <ClientTable
+          {...defaultProps}
+          clients={deactivatedClients}
+          onDeactivateClient={onDeactivateClient}
+        />
+      );
+      expect(screen.queryByTitle("Deactivate client")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Client initial fallback", () => {
+    it("shows ? when full_name is null", () => {
+      const clientsNoName = [
+        {
+          ...mockClients[0],
+          full_name: null,
+        },
+      ];
+      render(<ClientTable {...defaultProps} clients={clientsNoName as any} />);
+      expect(screen.getByText("?")).toBeInTheDocument();
     });
   });
 });

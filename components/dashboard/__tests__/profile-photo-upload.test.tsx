@@ -228,4 +228,280 @@ describe("ProfilePhotoUpload", () => {
     const cameraButtons = screen.getAllByRole("button", { name: /upload photo/i });
     expect(cameraButtons.length).toBeGreaterThan(0);
   });
+
+  it("does nothing when file input change fires with no files", async () => {
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+
+    // Fire change with no files selected
+    Object.defineProperty(input, "files", { value: [] });
+    fireEvent.change(input);
+
+    // Should still be in idle state — upload buttons visible
+    expect(screen.getAllByRole("button", { name: /upload photo/i }).length).toBeGreaterThan(0);
+  });
+
+  it("shows error when upload to Supabase Storage fails", async () => {
+    mockUpload.mockResolvedValue({ data: null, error: { message: "Storage bucket full" } });
+
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "test.png", { type: "image/png" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    global.URL.createObjectURL = jest.fn(() => "blob:test-url");
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save photo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save photo/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Storage bucket full/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when profile update fails after upload", async () => {
+    mockUpdate.mockReturnValue({
+      eq: jest.fn().mockResolvedValue({ data: null, error: { message: "Profile update failed" } }),
+    });
+
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "test.jpg", { type: "image/jpeg" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    global.URL.createObjectURL = jest.fn(() => "blob:test-url");
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save photo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save photo/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Profile update failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows generic error when upload throws a non-Error", async () => {
+    mockUpload.mockRejectedValue("unknown error string");
+
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "test.jpg", { type: "image/jpeg" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    global.URL.createObjectURL = jest.fn(() => "blob:test-url");
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save photo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save photo/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to upload photo/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("remove photo", () => {
+    it("calls onPhotoUpdated after successful removal", async () => {
+      const onPhotoUpdated = jest.fn();
+      render(
+        <ProfilePhotoUpload
+          {...defaultProps}
+          currentAvatarUrl="https://example.com/existing.jpg"
+          onPhotoUpdated={onPhotoUpdated}
+        />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+
+      await waitFor(() => {
+        expect(onPhotoUpdated).toHaveBeenCalled();
+      });
+    });
+
+    it("shows success message after removal", async () => {
+      render(
+        <ProfilePhotoUpload {...defaultProps} currentAvatarUrl="https://example.com/existing.jpg" />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Photo removed successfully/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when profile update fails during removal", async () => {
+      mockUpdate.mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ data: null, error: { message: "DB error on remove" } }),
+      });
+
+      render(
+        <ProfilePhotoUpload {...defaultProps} currentAvatarUrl="https://example.com/existing.jpg" />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/DB error on remove/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows generic error when removal throws a non-Error", async () => {
+      mockUpdate.mockReturnValue({
+        eq: jest.fn().mockRejectedValue("non-Error thrown"),
+      });
+
+      render(
+        <ProfilePhotoUpload {...defaultProps} currentAvatarUrl="https://example.com/existing.jpg" />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to remove photo/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  it("revokes object URL when cancel is clicked during preview", async () => {
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "test.jpg", { type: "image/jpeg" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    const revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = jest.fn(() => "blob:preview-url");
+    global.URL.revokeObjectURL = revokeObjectURL;
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-url");
+  });
+
+  it("triggers file input when camera button is clicked", () => {
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = jest.spyOn(fileInput, "click");
+
+    // The camera icon button has aria-label "Upload photo"
+    const cameraButton = screen.getByRole("button", { name: "Upload photo" });
+    fireEvent.click(cameraButton);
+
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it("resets to idle after successful upload timeout", async () => {
+    jest.useFakeTimers();
+
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "test.jpg", { type: "image/jpeg" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    global.URL.createObjectURL = jest.fn(() => "blob:test-url");
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save photo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save photo/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Photo uploaded successfully/i)).toBeInTheDocument();
+    });
+
+    // Advance past the 3s timeout
+    jest.advanceTimersByTime(3001);
+
+    await waitFor(() => {
+      // After timeout, success message should be gone and Upload Photo button visible
+      expect(screen.queryByText(/Photo uploaded successfully/i)).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /upload photo/i }).length).toBeGreaterThan(0);
+    });
+
+    jest.useRealTimers();
+  });
+
+  it("resets to idle after successful removal timeout", async () => {
+    jest.useFakeTimers();
+
+    render(
+      <ProfilePhotoUpload {...defaultProps} currentAvatarUrl="https://example.com/existing.jpg" />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /remove photo/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Photo removed successfully/i)).toBeInTheDocument();
+    });
+
+    // Advance past the 3s timeout
+    jest.advanceTimersByTime(3001);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Photo removed successfully/i)).not.toBeInTheDocument();
+    });
+
+    jest.useRealTimers();
+  });
+
+  it("extracts correct file extension for upload path", async () => {
+    const { container } = render(<ProfilePhotoUpload {...defaultProps} />);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(["test"], "photo.webp", { type: "image/webp" });
+    Object.defineProperty(input, "files", { value: [validFile] });
+    Object.defineProperty(validFile, "size", { value: 1024 });
+
+    global.URL.createObjectURL = jest.fn(() => "blob:test-url");
+
+    fireEvent.change(input);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save photo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /save photo/i }));
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalledWith(
+        "user-123/profile.webp",
+        expect.any(File),
+        expect.objectContaining({ cacheControl: "3600", upsert: true })
+      );
+    });
+  });
 });

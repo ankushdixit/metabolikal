@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { POST } from "../route";
 import * as authServerModule from "@/lib/auth-server";

@@ -1,20 +1,40 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ProgressCharts } from "../progress-charts";
 
-// Mock Recharts components
+// Capture formatter callbacks so we can invoke them directly for coverage
+const capturedTooltipFormatters: Array<(value: number, name: string) => [string, string]> = [];
+const capturedYAxisFormatters: Array<(value: number) => string> = [];
+let legendFormatter: ((value: string) => React.ReactNode) | null = null;
+
+// Mock Recharts components, capturing formatter props
 jest.mock("recharts", () => ({
   LineChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="line-chart">{children}</div>
   ),
   Line: () => null,
   XAxis: () => null,
-  YAxis: () => null,
+  YAxis: (props: { tickFormatter?: (value: number) => string }) => {
+    if (props.tickFormatter) {
+      capturedYAxisFormatters.push(props.tickFormatter);
+    }
+    return null;
+  },
   CartesianGrid: () => null,
-  Tooltip: () => null,
+  Tooltip: (props: { formatter?: (value: number, name: string) => [string, string] }) => {
+    if (props.formatter) {
+      capturedTooltipFormatters.push(props.formatter);
+    }
+    return null;
+  },
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  Legend: () => null,
+  Legend: (props: { formatter?: (value: string) => React.ReactNode }) => {
+    if (props.formatter) {
+      legendFormatter = props.formatter;
+    }
+    return null;
+  },
 }));
 
 describe("ProgressCharts Component", () => {
@@ -143,5 +163,120 @@ describe("ProgressCharts Component", () => {
     const { container } = render(<ProgressCharts checkIns={mockCheckIns} />);
     const rulerIcon = container.querySelector("svg.lucide-ruler");
     expect(rulerIcon).toBeInTheDocument();
+  });
+
+  describe("Date Range Filtering", () => {
+    it("filters to 30 days when Last 30 Days is selected", () => {
+      // Create check-ins spanning more than 30 days
+      const now = new Date();
+      const recentCheckIn = {
+        ...mockCheckIns[0],
+        id: "recent",
+        submitted_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+      const oldCheckIn = {
+        ...mockCheckIns[1],
+        id: "old",
+        submitted_at: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      render(<ProgressCharts checkIns={[recentCheckIn, oldCheckIn]} />);
+
+      // Click 30 days
+      fireEvent.click(screen.getByText("Last 30 Days"));
+
+      // The 30 days button should now be active
+      expect(screen.getByText("Last 30 Days")).toHaveClass("gradient-electric");
+    });
+
+    it("filters to 90 days when Last 90 Days is selected", () => {
+      const now = new Date();
+      const recentCheckIn = {
+        ...mockCheckIns[0],
+        id: "recent",
+        submitted_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+      const midCheckIn = {
+        ...mockCheckIns[1],
+        id: "mid",
+        submitted_at: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      render(<ProgressCharts checkIns={[recentCheckIn, midCheckIn]} />);
+
+      // Click 90 days
+      fireEvent.click(screen.getByText("Last 90 Days"));
+
+      expect(screen.getByText("Last 90 Days")).toHaveClass("gradient-electric");
+    });
+  });
+
+  describe("Tooltip and Legend Formatters", () => {
+    beforeEach(() => {
+      capturedTooltipFormatters.length = 0;
+      capturedYAxisFormatters.length = 0;
+      legendFormatter = null;
+    });
+
+    it("weight tooltip formatter returns value with kg suffix and 'Weight' label", () => {
+      render(<ProgressCharts checkIns={mockCheckIns} />);
+
+      // First tooltip is the weight chart
+      expect(capturedTooltipFormatters.length).toBeGreaterThanOrEqual(1);
+      const weightFormatter = capturedTooltipFormatters[0];
+      const result = weightFormatter(85, "weight");
+      expect(result[0]).toBe("85kg");
+      expect(result[1]).toBe("Weight");
+    });
+
+    it("measurements tooltip formatter capitalizes name and adds cm suffix", () => {
+      render(<ProgressCharts checkIns={mockCheckIns} />);
+
+      // Second tooltip is the measurements chart
+      expect(capturedTooltipFormatters.length).toBeGreaterThanOrEqual(2);
+      const measurementsFormatter = capturedTooltipFormatters[1];
+      const result = measurementsFormatter(95, "chest");
+      expect(result[0]).toBe("95cm");
+      expect(result[1]).toBe("Chest");
+    });
+
+    it("legend formatter capitalizes value name", () => {
+      render(<ProgressCharts checkIns={mockCheckIns} />);
+
+      expect(legendFormatter).not.toBeNull();
+      const result = legendFormatter!("waist");
+      // The formatter returns a <span> element with capitalized text
+      expect(result).toBeTruthy();
+    });
+
+    it("YAxis weight formatter adds kg suffix", () => {
+      render(<ProgressCharts checkIns={mockCheckIns} />);
+
+      expect(capturedYAxisFormatters.length).toBeGreaterThanOrEqual(1);
+      expect(capturedYAxisFormatters[0](85)).toBe("85kg");
+    });
+
+    it("YAxis measurements formatter adds cm suffix", () => {
+      render(<ProgressCharts checkIns={mockCheckIns} />);
+
+      expect(capturedYAxisFormatters.length).toBeGreaterThanOrEqual(2);
+      expect(capturedYAxisFormatters[1](95)).toBe("95cm");
+    });
+  });
+
+  describe("No measurements data", () => {
+    it("does not render measurements section when no measurement data", () => {
+      const checkInsNoMeasurements = mockCheckIns.map((c) => ({
+        ...c,
+        chest_cm: null,
+        waist_cm: null,
+        arms_cm: null,
+        thighs_cm: null,
+      }));
+
+      render(<ProgressCharts checkIns={checkInsNoMeasurements} />);
+
+      expect(screen.queryByText("Measurements")).not.toBeInTheDocument();
+    });
   });
 });

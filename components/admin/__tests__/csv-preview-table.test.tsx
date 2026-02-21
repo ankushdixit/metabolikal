@@ -131,4 +131,143 @@ describe("CSVPreviewTable", () => {
     rerender(<CSVPreviewTable rows={[vegRow]} />);
     expect(screen.getByText("Yes")).toBeInTheDocument();
   });
+
+  it("navigates back to previous page when Previous button is clicked", () => {
+    const rows: ValidatedCSVRow[] = Array.from({ length: 15 }, (_, i) => ({
+      rowNumber: i + 2,
+      data: {
+        name: `Food ${i + 1}`,
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+      },
+      errors: [],
+      isValid: true,
+    }));
+
+    render(<CSVPreviewTable rows={rows} />);
+
+    // Go to page 2
+    const nextButton = screen.getByLabelText("Next page");
+    fireEvent.click(nextButton);
+    expect(screen.getByText(/Page 2 of 2/)).toBeInTheDocument();
+
+    // Go back to page 1
+    const prevButton = screen.getByLabelText("Previous page");
+    fireEvent.click(prevButton);
+    expect(screen.getByText(/Page 1 of 2/)).toBeInTheDocument();
+    expect(screen.getByText("Food 1")).toBeInTheDocument();
+  });
+
+  it("disables Previous button on first page", () => {
+    const rows: ValidatedCSVRow[] = Array.from({ length: 15 }, (_, i) => ({
+      rowNumber: i + 2,
+      data: {
+        name: `Food ${i + 1}`,
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+      },
+      errors: [],
+      isValid: true,
+    }));
+
+    render(<CSVPreviewTable rows={rows} />);
+
+    const prevButton = screen.getByLabelText("Previous page");
+    expect(prevButton).toBeDisabled();
+  });
+
+  it("disables Next button on last page", () => {
+    const rows: ValidatedCSVRow[] = Array.from({ length: 15 }, (_, i) => ({
+      rowNumber: i + 2,
+      data: {
+        name: `Food ${i + 1}`,
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+      },
+      errors: [],
+      isValid: true,
+    }));
+
+    render(<CSVPreviewTable rows={rows} />);
+
+    // Go to page 2
+    fireEvent.click(screen.getByLabelText("Next page"));
+    expect(screen.getByLabelText("Next page")).toBeDisabled();
+  });
+
+  it("shows 'yes' for vegetarian status with 'yes' string", () => {
+    const vegRow: ValidatedCSVRow = {
+      ...validRow,
+      data: { ...validRow.data, is_vegetarian: "yes" },
+    };
+
+    render(<CSVPreviewTable rows={[vegRow]} />);
+    expect(screen.getByText("Yes")).toBeInTheDocument();
+  });
+
+  it("shows 'yes' for vegetarian status with '1' string", () => {
+    const vegRow: ValidatedCSVRow = {
+      ...validRow,
+      data: { ...validRow.data, is_vegetarian: "1" },
+    };
+
+    render(<CSVPreviewTable rows={[vegRow]} />);
+    expect(screen.getByText("Yes")).toBeInTheDocument();
+  });
+
+  it("shows avoid_for_conditions when present", () => {
+    const rowWithConditions: ValidatedCSVRow = {
+      ...validRow,
+      data: { ...validRow.data, avoid_for_conditions: "diabetes, hypertension" },
+    };
+
+    render(<CSVPreviewTable rows={[rowWithConditions]} />);
+    expect(screen.getByText("diabetes, hypertension")).toBeInTheDocument();
+  });
+
+  it("shows dash for missing avoid_for_conditions", () => {
+    render(<CSVPreviewTable rows={[validRow]} />);
+    // The avoid_for_conditions column should show "-" when not present
+    const dashes = screen.getAllByText("-");
+    expect(dashes.length).toBeGreaterThan(0);
+  });
+
+  it("shows Empty for rows with missing name", () => {
+    render(<CSVPreviewTable rows={[invalidRow]} />);
+    expect(screen.getByText("Empty")).toBeInTheDocument();
+  });
+
+  it("does not show pagination when 10 or fewer rows", () => {
+    const rows: ValidatedCSVRow[] = Array.from({ length: 5 }, (_, i) => ({
+      rowNumber: i + 2,
+      data: {
+        name: `Food ${i + 1}`,
+        calories: "100",
+        protein: "10",
+        serving_size: "100g",
+      },
+      errors: [],
+      isValid: true,
+    }));
+
+    render(<CSVPreviewTable rows={rows} />);
+
+    expect(screen.queryByLabelText("Next page")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Previous page")).not.toBeInTheDocument();
+  });
+
+  it("shows protein with dash when not present", () => {
+    const rowNoProtein: ValidatedCSVRow = {
+      ...validRow,
+      data: { ...validRow.data, protein: "" },
+    };
+
+    render(<CSVPreviewTable rows={[rowNoProtein]} />);
+    // protein column should show "-"
+    const dashes = screen.getAllByText("-");
+    expect(dashes.length).toBeGreaterThan(0);
+  });
 });

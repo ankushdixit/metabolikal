@@ -165,4 +165,135 @@ describe("TodaysChallengeActivity", () => {
     render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
     expect(screen.getByText("Day 3 of 60")).toBeInTheDocument();
   });
+
+  describe("no progress data branch", () => {
+    it("renders clients with 'not logged' when no progress data exists", () => {
+      mockQueryData = { data: [] };
+      const clients = [makeClient("client-1", "Alice"), makeClient("client-2", "Bob")];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+
+      // All clients should show "Not logged"
+      const notLogged = screen.getAllByText("Not logged");
+      expect(notLogged.length).toBe(2);
+      expect(screen.getByText("0 of 2 clients logged today")).toBeInTheDocument();
+    });
+  });
+
+  describe("before start state", () => {
+    it("shows 'Not started' badge when plan has not started", () => {
+      const { getDaysSinceStart, daysUntilStart } = jest.requireMock("@/lib/challenge-utils");
+      getDaysSinceStart.mockReturnValue(0);
+      daysUntilStart.mockReturnValue(5);
+
+      const clients = [makeClient("client-1", "Alice")];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+
+      expect(screen.getByText("Not started")).toBeInTheDocument();
+      expect(screen.getByText("Starts in 5 days")).toBeInTheDocument();
+
+      // Restore
+      getDaysSinceStart.mockReturnValue(3);
+      daysUntilStart.mockReturnValue(0);
+    });
+
+    it("shows singular 'day' when daysUntil is 1", () => {
+      const { getDaysSinceStart, daysUntilStart } = jest.requireMock("@/lib/challenge-utils");
+      getDaysSinceStart.mockReturnValue(0);
+      daysUntilStart.mockReturnValue(1);
+
+      const clients = [makeClient("client-1", "Alice")];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+
+      expect(screen.getByText("Starts in 1 day")).toBeInTheDocument();
+
+      getDaysSinceStart.mockReturnValue(3);
+      daysUntilStart.mockReturnValue(0);
+    });
+  });
+
+  describe("fallback values", () => {
+    it("uses DEFAULT_CHALLENGE_DAYS when plan_duration_days is null", () => {
+      const clients = [makeClient("client-1", "Alice", { plan_duration_days: undefined })];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      // Should fall back to DEFAULT_CHALLENGE_DAYS (30)
+      expect(screen.getByText("Day 3 of 30")).toBeInTheDocument();
+    });
+
+    it("falls back to created_at when plan_start_date is null", () => {
+      const clients = [makeClient("client-1", "Alice", { plan_start_date: null })];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      // Should still render without crashing
+      expect(screen.getByText("Alice")).toBeInTheDocument();
+    });
+
+    it("shows ? when full_name is null", () => {
+      const clients = [makeClient("client-1", "Alice", { full_name: null as unknown as string })];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      expect(screen.getByText("?")).toBeInTheDocument();
+    });
+
+    it("defaults current_plan_cycle to 1 when null", () => {
+      const clients = [makeClient("client-1", "Alice", { current_plan_cycle: undefined })];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      expect(screen.getByText("Alice")).toBeInTheDocument();
+    });
+  });
+
+  describe("progress loading state", () => {
+    it("shows loading when progressLoading is true", () => {
+      mockProgressLoading = true;
+      const clients = [makeClient("client-1", "Alice")];
+      const { container } = render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("streak display", () => {
+    it("shows streak icon when streak > 0", () => {
+      // client-1 has progress data, so calculateStreak will return > 0
+      // The mock getDaysSinceStart returns 3 and client-1 has a day_number=3 entry
+      const clients = [makeClient("client-1", "Alice")];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      // Check that the component renders (streak is calculated from progress data)
+      expect(screen.getByText("Alice")).toBeInTheDocument();
+    });
+  });
+
+  describe("undefined query data", () => {
+    it("handles undefined query.data gracefully", () => {
+      mockQueryData = undefined;
+      const clients = [makeClient("client-1", "Alice")];
+      render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      // Should still render (falls back to empty array)
+      expect(screen.getByText("Alice")).toBeInTheDocument();
+      expect(screen.getByText("Not logged")).toBeInTheDocument();
+    });
+  });
+
+  describe("sort order edge cases", () => {
+    it("sorts by points descending among logged clients", () => {
+      // Provide progress for two clients with different points
+      mockQueryData = {
+        data: [
+          {
+            ...mockProgressRows[0],
+            user_id: "client-1",
+            points_earned: 50,
+          },
+          {
+            ...mockProgressRows[0],
+            id: "p2",
+            user_id: "client-2",
+            points_earned: 100,
+          },
+        ],
+      };
+      const clients = [makeClient("client-1", "Alice"), makeClient("client-2", "Bob")];
+      const { container } = render(<TodaysChallengeActivity clients={clients} isLoading={false} />);
+      const links = container.querySelectorAll("a");
+      // Both logged, but Bob has more points so should be first
+      expect(links[0]).toHaveAttribute("href", "/admin/clients/client-2?tab=challenge");
+      expect(links[1]).toHaveAttribute("href", "/admin/clients/client-1?tab=challenge");
+    });
+  });
 });

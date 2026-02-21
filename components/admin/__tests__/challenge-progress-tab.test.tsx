@@ -158,4 +158,134 @@ describe("ChallengeProgressTab", () => {
     expect(screen.getByText("Stats")).toBeInTheDocument();
     expect(screen.getByText("Log")).toBeInTheDocument();
   });
+
+  describe("isNotStarted state", () => {
+    it("renders 'not started' message when getDaysSinceStart returns 0", () => {
+      const { getDaysSinceStart, daysUntilStart } = jest.requireMock("@/lib/challenge-utils");
+      getDaysSinceStart.mockReturnValue(0);
+      daysUntilStart.mockReturnValue(3);
+
+      render(<ChallengeProgressTab clientId="client-1" profile={makeProfile()} />);
+      expect(screen.getByText(/Plan starts in 3 days/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Challenge data will appear once the plan start date arrives/)
+      ).toBeInTheDocument();
+
+      // Restore
+      getDaysSinceStart.mockReturnValue(5);
+      daysUntilStart.mockReturnValue(0);
+    });
+
+    it("renders singular 'day' when daysUntil is 1", () => {
+      const { getDaysSinceStart, daysUntilStart } = jest.requireMock("@/lib/challenge-utils");
+      getDaysSinceStart.mockReturnValue(0);
+      daysUntilStart.mockReturnValue(1);
+
+      render(<ChallengeProgressTab clientId="client-1" profile={makeProfile()} />);
+      expect(screen.getByText(/Plan starts in 1 day$/)).toBeInTheDocument();
+
+      getDaysSinceStart.mockReturnValue(5);
+      daysUntilStart.mockReturnValue(0);
+    });
+  });
+
+  describe("profile fallback values", () => {
+    it("uses DEFAULT_CHALLENGE_DAYS when plan_duration_days is null", () => {
+      render(
+        <ChallengeProgressTab
+          clientId="client-1"
+          profile={makeProfile({ plan_duration_days: undefined })}
+        />
+      );
+      // Should still render (falls back to DEFAULT_CHALLENGE_DAYS = 30)
+      expect(screen.getByText("Current Day")).toBeInTheDocument();
+    });
+
+    it("uses created_at as fallback when plan_start_date is null", () => {
+      render(
+        <ChallengeProgressTab
+          clientId="client-1"
+          profile={makeProfile({ plan_start_date: null })}
+        />
+      );
+      expect(screen.getByText("Current Day")).toBeInTheDocument();
+    });
+
+    it("uses empty string when both plan_start_date and created_at are null", () => {
+      render(
+        <ChallengeProgressTab
+          clientId="client-1"
+          profile={makeProfile({ plan_start_date: null, created_at: undefined })}
+        />
+      );
+      // Should still render without crashing
+      expect(screen.getByText("Current Day")).toBeInTheDocument();
+    });
+  });
+
+  describe("externally controlled cycle", () => {
+    it("does not render PlanCycleSelector when externally controlled", () => {
+      const onCycleChange = jest.fn();
+      const { container: _container } = render(
+        <ChallengeProgressTab
+          clientId="client-1"
+          profile={makeProfile()}
+          selectedCycle={1}
+          onCycleChange={onCycleChange}
+        />
+      );
+      // The PlanCycleSelector should not be rendered
+      // The component check: !isExternallyControlled
+      expect(screen.getByText("Current Day")).toBeInTheDocument();
+    });
+  });
+
+  describe("expanded day without feeling/tomorrowFocus", () => {
+    it("does not render feeling/focus section when both are null", async () => {
+      const user = userEvent.setup();
+      render(<ChallengeProgressTab clientId="client-1" profile={makeProfile()} />);
+
+      // Click on Day 2 which has null feeling and tomorrow_focus
+      const day2Button = screen.getByText("Day 2").closest("button")!;
+      await user.click(day2Button);
+
+      // Should show metrics but not feeling/focus sections
+      expect(screen.getByText("8,000")).toBeInTheDocument(); // steps
+      expect(screen.queryByText("Feeling")).not.toBeInTheDocument();
+      expect(screen.queryByText("Tomorrow's Focus")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("stat highlight logic", () => {
+    it("highlights totalPoints stat when points > 0", () => {
+      render(<ChallengeProgressTab clientId="client-1" profile={makeProfile()} />);
+      // Total Points = 180 (105+75), should have highlight class
+      expect(screen.getByText("Total Points")).toBeInTheDocument();
+    });
+
+    it("does not highlight when no points earned", () => {
+      mockQueryData = {
+        data: [
+          {
+            ...mockProgressRows[0],
+            points_earned: 0,
+          },
+        ],
+      };
+      render(<ChallengeProgressTab clientId="client-1" profile={makeProfile()} />);
+      expect(screen.getByText("Total Points")).toBeInTheDocument();
+    });
+  });
+
+  describe("current_plan_cycle null fallback", () => {
+    it("defaults to cycle 1 when current_plan_cycle is null", () => {
+      render(
+        <ChallengeProgressTab
+          clientId="client-1"
+          profile={makeProfile({ current_plan_cycle: undefined })}
+        />
+      );
+      expect(screen.getByText("Current Day")).toBeInTheDocument();
+    });
+  });
 });

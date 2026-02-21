@@ -336,4 +336,211 @@ describe("FoodLogForm Component", () => {
       })
     );
   });
+
+  it("does not call onLogFood when isLogging is true", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+        isLogging={true}
+      />
+    );
+
+    fireEvent.click(screen.getByText("Logging..."));
+    expect(mockOnLogFood).not.toHaveBeenCalled();
+  });
+
+  it("calls onClose when dialog is closed via onOpenChange", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    // Radix Dialog renders a close button (X) by default in DialogContent
+    // We can simulate closing by clicking the close button
+    const closeButton = screen.getByRole("button", { name: /close/i });
+    fireEvent.click(closeButton);
+
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("switches to cooked quantity type when cooked button is clicked", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    // Click the "Cooked" button
+    fireEvent.click(screen.getByText("Cooked"));
+
+    // Log food and verify quantityType is now "cooked"
+    fireEvent.click(screen.getByText("Log Food"));
+
+    expect(mockOnLogFood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quantity_type: "cooked",
+      })
+    );
+  });
+
+  it("switches to raw quantity type when raw button is clicked after cooked", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    // Switch to cooked first
+    fireEvent.click(screen.getByText("Cooked"));
+    // Then switch back to raw
+    fireEvent.click(screen.getByText("Raw"));
+
+    fireEvent.click(screen.getByText("Log Food"));
+
+    expect(mockOnLogFood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quantity_type: "raw",
+      })
+    );
+  });
+
+  it("updates quantity note input", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    const noteInput = screen.getByPlaceholderText("Note (e.g., 2 chapatis)");
+    fireEvent.change(noteInput, { target: { value: "3 pieces" } });
+
+    fireEvent.click(screen.getByText("Log Food"));
+
+    expect(mockOnLogFood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quantity_note: "3 pieces",
+      })
+    );
+  });
+
+  it("sends null quantity_note when note is empty", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    // Don't enter any note, just log
+    fireEvent.click(screen.getByText("Log Food"));
+
+    expect(mockOnLogFood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quantity_note: null,
+      })
+    );
+  });
+
+  it("uses custom mealLabel prop when provided", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+        mealLabel="Morning Meal"
+      />
+    );
+
+    expect(screen.getByText("Morning Meal")).toBeInTheDocument();
+  });
+
+  it("shows single quantity type label when only one type is available", () => {
+    const mockFoodItemOnlyCooked = {
+      id: "food-3",
+      name: "Cooked Rice",
+      calories: 130,
+      protein: 3,
+      serving_size: "100g",
+      raw_quantity: null,
+      cooked_quantity: "150g",
+    };
+
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItemOnlyCooked}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    // Should show the type label without toggle
+    expect(screen.getByText("(cooked)")).toBeInTheDocument();
+    // Should NOT show the toggle buttons
+    expect(screen.queryByText("Raw")).not.toBeInTheDocument();
+  });
+
+  it("does not show raw/cooked toggle when food has no quantity definitions", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItemNoQuantity}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    expect(screen.queryByText("Raw")).not.toBeInTheDocument();
+    expect(screen.queryByText("Cooked")).not.toBeInTheDocument();
+  });
+
+  it("handles quantity input set to 0", () => {
+    render(
+      <FoodLogForm
+        isOpen={true}
+        onClose={mockOnClose}
+        foodItem={mockFoodItem}
+        mealCategory="breakfast"
+        onLogFood={mockOnLogFood}
+      />
+    );
+
+    const quantityInput = screen.getByRole("spinbutton");
+    fireEvent.change(quantityInput, { target: { value: "0" } });
+    fireEvent.click(screen.getByText("Log Food"));
+
+    expect(mockOnLogFood).toHaveBeenCalledWith(
+      expect.objectContaining({
+        quantity_grams: 0,
+      })
+    );
+  });
 });
