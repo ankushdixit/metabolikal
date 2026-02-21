@@ -827,6 +827,8 @@ describe("checkInSchema", () => {
       hips_cm: null,
       arms_cm: null,
       thighs_cm: null,
+      neck_cm: null,
+      calves_cm: null,
       challenges: null,
       progress_notes: null,
       questions: null,
@@ -844,6 +846,16 @@ describe("checkInSchema", () => {
     expect(checkInSchema.safeParse({ ...validData, chest_cm: 49 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, chest_cm: 201 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, chest_cm: 100 }).success).toBe(true);
+
+    // neck_cm min/max
+    expect(checkInSchema.safeParse({ ...validData, neck_cm: 19 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, neck_cm: 61 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, neck_cm: 38 }).success).toBe(true);
+
+    // calves_cm min/max
+    expect(checkInSchema.safeParse({ ...validData, calves_cm: 19 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, calves_cm: 71 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, calves_cm: 40 }).success).toBe(true);
   });
 
   it("validates rating bounds", () => {

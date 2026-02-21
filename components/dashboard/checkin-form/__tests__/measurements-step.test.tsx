@@ -56,11 +56,13 @@ describe("MeasurementsStep Component", () => {
 
   it("renders all measurement input fields", () => {
     renderWithForm(currentDate);
+    expect(screen.getByLabelText(/Neck/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Chest/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Waist/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Hips/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Arms/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Thighs/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Calves/i)).toBeInTheDocument();
   });
 
   it("marks measurements as optional", () => {
@@ -79,11 +81,13 @@ describe("MeasurementsStep Component", () => {
     renderWithForm(currentDate);
     expect(screen.getByPlaceholderText("75.5")).toBeInTheDocument(); // weight
     expect(screen.getByPlaceholderText("15.0")).toBeInTheDocument(); // body fat
+    expect(screen.getByPlaceholderText("38")).toBeInTheDocument(); // neck
     expect(screen.getByPlaceholderText("100")).toBeInTheDocument(); // chest
     expect(screen.getByPlaceholderText("80")).toBeInTheDocument(); // waist
     expect(screen.getByPlaceholderText("95")).toBeInTheDocument(); // hips
     expect(screen.getByPlaceholderText("35")).toBeInTheDocument(); // arms
     expect(screen.getByPlaceholderText("55")).toBeInTheDocument(); // thighs
+    expect(screen.getByPlaceholderText("40")).toBeInTheDocument(); // calves
   });
 
   it("renders weight icon", () => {

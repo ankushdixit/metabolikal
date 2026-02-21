@@ -147,6 +147,18 @@ export const checkInSchema = z.object({
     .max(100, { message: "Thighs must be 100 cm or less" })
     .optional()
     .nullable(),
+  neck_cm: z
+    .number()
+    .min(20, { message: "Neck must be at least 20 cm" })
+    .max(60, { message: "Neck must be 60 cm or less" })
+    .optional()
+    .nullable(),
+  calves_cm: z
+    .number()
+    .min(20, { message: "Calves must be at least 20 cm" })
+    .max(70, { message: "Calves must be 70 cm or less" })
+    .optional()
+    .nullable(),
 
   // Step 2: Photos (URLs from storage)
   photo_front: z.string().optional().nullable(),
@@ -202,6 +214,8 @@ export const checkInStep1Schema = checkInSchema.pick({
   hips_cm: true,
   arms_cm: true,
   thighs_cm: true,
+  neck_cm: true,
+  calves_cm: true,
 });
 
 /**

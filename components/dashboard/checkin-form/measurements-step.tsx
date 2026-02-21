@@ -116,6 +116,24 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Neck */}
+          <div>
+            <label
+              htmlFor="neck_cm"
+              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
+            >
+              Neck
+            </label>
+            <input
+              id="neck_cm"
+              type="number"
+              step="0.1"
+              placeholder="38"
+              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+              {...register("neck_cm", { setValueAs: parseOptionalNumber })}
+            />
+          </div>
+
           {/* Chest */}
           <div>
             <label
@@ -203,6 +221,24 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
               placeholder="55"
               className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
               {...register("thighs_cm", { setValueAs: parseOptionalNumber })}
+            />
+          </div>
+
+          {/* Calves */}
+          <div>
+            <label
+              htmlFor="calves_cm"
+              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
+            >
+              Calves
+            </label>
+            <input
+              id="calves_cm"
+              type="number"
+              step="0.1"
+              placeholder="40"
+              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+              {...register("calves_cm", { setValueAs: parseOptionalNumber })}
             />
           </div>
         </div>

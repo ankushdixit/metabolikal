@@ -50,6 +50,8 @@ describe("ProgressCharts Component", () => {
       hips_cm: 95,
       arms_cm: 35,
       thighs_cm: 55,
+      neck_cm: 38,
+      calves_cm: 40,
       photo_front: null,
       photo_side: null,
       photo_back: null,
@@ -80,6 +82,8 @@ describe("ProgressCharts Component", () => {
       hips_cm: 94,
       arms_cm: 36,
       thighs_cm: 56,
+      neck_cm: 37.5,
+      calves_cm: 39.5,
       photo_front: null,
       photo_side: null,
       photo_back: null,
@@ -272,6 +276,8 @@ describe("ProgressCharts Component", () => {
         waist_cm: null,
         arms_cm: null,
         thighs_cm: null,
+        neck_cm: null,
+        calves_cm: null,
       }));
 
       render(<ProgressCharts checkIns={checkInsNoMeasurements} />);
