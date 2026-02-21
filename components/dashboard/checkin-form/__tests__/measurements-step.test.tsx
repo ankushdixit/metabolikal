@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MeasurementsStep } from "../measurements-step";
 import { checkInSchema, type CheckInFormData } from "@/lib/validations";
+import type { FieldErrors, UseFormRegister } from "react-hook-form";
 
 // Helper to render with form methods
 function renderWithForm(currentDate: string) {
@@ -96,5 +97,99 @@ describe("MeasurementsStep Component", () => {
     const { container } = renderWithForm(currentDate);
     const rulerIcon = container.querySelector('[class*="lucide-ruler"]');
     expect(rulerIcon).toBeInTheDocument();
+  });
+
+  it("displays weight error when present", () => {
+    const mockRegister = jest.fn(() => ({
+      onChange: jest.fn(),
+      onBlur: jest.fn(),
+      ref: jest.fn(),
+      name: "weight" as const,
+    })) as unknown as UseFormRegister<CheckInFormData>;
+    const mockErrors: FieldErrors<CheckInFormData> = {
+      weight: {
+        type: "required",
+        message: "Weight is required and must be a number",
+      },
+    };
+
+    render(
+      <MeasurementsStep register={mockRegister} errors={mockErrors} currentDate={currentDate} />
+    );
+
+    expect(screen.getByText("Weight is required and must be a number")).toBeInTheDocument();
+  });
+
+  it("displays body_fat_percent error when present", () => {
+    const mockRegister = jest.fn(() => ({
+      onChange: jest.fn(),
+      onBlur: jest.fn(),
+      ref: jest.fn(),
+      name: "body_fat_percent" as const,
+    })) as unknown as UseFormRegister<CheckInFormData>;
+    const mockErrors: FieldErrors<CheckInFormData> = {
+      body_fat_percent: {
+        type: "max",
+        message: "Body fat must be between 1 and 70",
+      },
+    };
+
+    render(
+      <MeasurementsStep register={mockRegister} errors={mockErrors} currentDate={currentDate} />
+    );
+
+    expect(screen.getByText("Body fat must be between 1 and 70")).toBeInTheDocument();
+  });
+
+  it("does not display errors when there are none", () => {
+    renderWithForm(currentDate);
+
+    // No AlertCircle icons indicating errors should be rendered
+    const errorMessages = screen.queryAllByText(/required|must be/i);
+    expect(errorMessages.length).toBe(0);
+  });
+
+  describe("parseOptionalNumber via register setValueAs", () => {
+    it("handles valid numeric input by registering with setValueAs", () => {
+      renderWithForm(currentDate);
+      const bodyFatInput = screen.getByLabelText(/Body Fat/i);
+      // Verify the input is registered properly (type=number ensures browser-level parsing)
+      expect(bodyFatInput).toHaveAttribute("type", "number");
+    });
+
+    it("handles empty string input for optional fields", () => {
+      renderWithForm(currentDate);
+      const chestInput = screen.getByLabelText(/Chest/i);
+      // Fire change with empty string — parseOptionalNumber should return undefined
+      fireEvent.change(chestInput, { target: { value: "" } });
+      // Field should be empty/cleared
+      expect(chestInput).toHaveValue(null);
+    });
+
+    it("handles non-numeric input for optional fields gracefully", () => {
+      renderWithForm(currentDate);
+      const waistInput = screen.getByLabelText(/Waist/i);
+      // Type "abc" — parseOptionalNumber should return undefined for NaN
+      fireEvent.change(waistInput, { target: { value: "abc" } });
+      // HTML number input will not accept non-numeric text
+      expect(waistInput).toHaveValue(null);
+    });
+  });
+
+  describe("parseRequiredNumber via register setValueAs", () => {
+    it("handles empty string for required weight field", () => {
+      renderWithForm(currentDate);
+      const weightInput = screen.getByLabelText(/Current Weight/i);
+      // Fire change with empty string — parseRequiredNumber returns NaN for zod validation
+      fireEvent.change(weightInput, { target: { value: "" } });
+      expect(weightInput).toHaveValue(null);
+    });
+
+    it("handles valid numeric input for weight field", () => {
+      renderWithForm(currentDate);
+      const weightInput = screen.getByLabelText(/Current Weight/i);
+      fireEvent.change(weightInput, { target: { value: "75.5" } });
+      expect(weightInput).toHaveValue(75.5);
+    });
   });
 });

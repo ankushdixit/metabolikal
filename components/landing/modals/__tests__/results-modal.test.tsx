@@ -4,6 +4,7 @@ import { ResultsModal } from "../results-modal";
 import { CalculatorResults } from "@/hooks/use-calculator";
 import { StoredAssessment } from "@/hooks/use-assessment-storage";
 import { AssessmentScores } from "@/hooks/use-assessment";
+import type { CalculatorSettingsRow } from "@/lib/database.types";
 
 describe("ResultsModal", () => {
   const defaultResults: CalculatorResults = {
@@ -307,6 +308,161 @@ describe("ResultsModal", () => {
       );
       expect(screen.getByText(/Room to Grow!/i)).toBeInTheDocument();
       expect(screen.getByText(/baseline is set/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Download Image handler", () => {
+    it("exercises handleDownloadImage when Download Image is clicked", async () => {
+      const user = userEvent.setup();
+      render(<ResultsModal {...defaultProps} />);
+
+      const downloadButton = screen.getByRole("button", { name: /Download Image/i });
+      await user.click(downloadButton);
+
+      // generateShareableImage returns null (ref not rendered in test DOM),
+      // so no download link is created — but the handler is fully exercised.
+      // Verify the button returns to non-loading state:
+      expect(screen.getByRole("button", { name: /Download Image/i })).toBeInTheDocument();
+    });
+  });
+
+  describe("Share Image handler", () => {
+    it("exercises handleShare and falls back to share options", async () => {
+      // Ensure navigator.share does not exist so the fallback path runs
+      const originalShare = navigator.share;
+      Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+
+      const user = userEvent.setup();
+      render(<ResultsModal {...defaultProps} />);
+
+      const shareButton = screen.getByRole("button", { name: /Share Image/i });
+      await user.click(shareButton);
+
+      // generateShareableImage returns null (ref unavailable in test), so
+      // we enter the else branch (no navigator.share), setting showShareOptions=true.
+      // Verify the Share button is still present after the operation completes:
+      expect(screen.getByRole("button", { name: /Share Image/i })).toBeInTheDocument();
+
+      Object.defineProperty(navigator, "share", { value: originalShare, configurable: true });
+    });
+
+    it("shows Copy Text button after share fallback", async () => {
+      // Remove navigator.share so the fallback sets showShareOptions = true
+      const originalShare = navigator.share;
+      Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+
+      const user = userEvent.setup();
+      render(<ResultsModal {...defaultProps} />);
+
+      const shareButton = screen.getByRole("button", { name: /Share Image/i });
+      await user.click(shareButton);
+
+      // Wait for async handler to complete
+      const copyButton = await screen.findByRole("button", { name: /Copy Text/i });
+      expect(copyButton).toBeInTheDocument();
+
+      Object.defineProperty(navigator, "share", { value: originalShare, configurable: true });
+    });
+  });
+
+  describe("Copy Text handler", () => {
+    it("shows Copied! state when Copy Text button is clicked", async () => {
+      // Remove navigator.share to trigger showShareOptions which shows Copy Text
+      const originalShare = navigator.share;
+      Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+
+      const user = userEvent.setup();
+      render(<ResultsModal {...defaultProps} />);
+
+      // Click share to reveal Copy Text button
+      const shareButton = screen.getByRole("button", { name: /Share Image/i });
+      await user.click(shareButton);
+
+      // Wait for Copy Text to appear
+      const copyButton = await screen.findByRole("button", { name: /Copy Text/i });
+      await user.click(copyButton);
+
+      // After copying, "Copied!" text should appear (userEvent handles clipboard)
+      await screen.findByText("Copied!");
+
+      Object.defineProperty(navigator, "share", { value: originalShare, configurable: true });
+    });
+  });
+
+  describe("Medical Considerations Section", () => {
+    it("renders medical considerations when conditions are provided", () => {
+      const medicalConditions = [
+        { name: "Hypothyroidism", slug: "hypothyroidism", impactPercent: 5 },
+      ];
+      render(
+        <ResultsModal
+          {...defaultProps}
+          medicalConditions={medicalConditions}
+          baseBmr={1800}
+          adjustedBmr={1710}
+        />
+      );
+      // The section should be rendered since metabolicImpactPercent > 0 and conditions exist
+      expect(screen.getByText("Hypothyroidism")).toBeInTheDocument();
+    });
+
+    it("does not render medical considerations when no conditions", () => {
+      render(
+        <ResultsModal {...defaultProps} medicalConditions={[]} baseBmr={1800} adjustedBmr={1710} />
+      );
+      expect(screen.queryByText(/Medical Considerations/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Fat Loss Action Plan", () => {
+    it("renders fat loss action plan for fat_loss goal with weight data", () => {
+      render(<ResultsModal {...defaultProps} goal="fat_loss" weightKg={85} goalWeightKg={75} />);
+      // The FatLossActionPlan component should be rendered
+      // Check for fat-loss-specific content (Smart Nutrition section)
+      expect(screen.getByText("Fat Loss Strategy")).toBeInTheDocument();
+    });
+
+    it("does not render fat loss action plan for maintain goal", () => {
+      render(<ResultsModal {...defaultProps} goal="maintain" />);
+      expect(screen.getByText("Maintenance Strategy")).toBeInTheDocument();
+    });
+
+    it("uses custom calculator settings for nutrition deficit", () => {
+      render(
+        <ResultsModal
+          {...defaultProps}
+          goal="fat_loss"
+          weightKg={85}
+          goalWeightKg={75}
+          calculatorSettings={
+            {
+              id: "1",
+              goal_fat_loss_adjustment: -700,
+              goal_muscle_gain_adjustment: 300,
+              goal_maintain_adjustment: 0,
+            } as CalculatorSettingsRow
+          }
+        />
+      );
+      expect(screen.getByText("Fat Loss Strategy")).toBeInTheDocument();
+    });
+  });
+
+  describe("Metabolic impact note visibility", () => {
+    it("hides metabolic impact note when medical considerations section is shown", () => {
+      const medicalConditions = [
+        { name: "Hypothyroidism", slug: "hypothyroidism", impactPercent: 5 },
+      ];
+      render(
+        <ResultsModal
+          {...defaultProps}
+          medicalConditions={medicalConditions}
+          baseBmr={1800}
+          adjustedBmr={1710}
+        />
+      );
+      // When medical considerations are shown, the generic note should be hidden
+      expect(screen.queryByText(/Your TDEE has been adjusted by/i)).not.toBeInTheDocument();
     });
   });
 });

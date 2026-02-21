@@ -226,4 +226,167 @@ describe("AlternativesLinker", () => {
     expect(screen.getByText(/pending changes/i)).toBeInTheDocument();
     expect(screen.getByText(/links to add/i)).toBeInTheDocument();
   });
+
+  it("shows remove count in pending changes when removing alternatives", () => {
+    render(
+      <AlternativesLinker
+        foodItems={mockFoods}
+        alternatives={mockAlternatives}
+        onChange={mockOnChange}
+      />
+    );
+
+    // Select chicken (which has Turkey Breast as alternative)
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Remove the existing alternative (Turkey Breast) using aria-label
+    const removeButton = screen.getByRole("button", { name: /remove turkey breast/i });
+    fireEvent.click(removeButton);
+
+    // Should show remove count
+    expect(screen.getByText(/pending changes/i)).toBeInTheDocument();
+    expect(screen.getByText(/links to remove/i)).toBeInTheDocument();
+  });
+
+  it("cancels a pending add when removing that alternative", () => {
+    render(
+      <AlternativesLinker
+        foodItems={mockFoods}
+        alternatives={[]} // No existing alternatives
+        onChange={mockOnChange}
+      />
+    );
+
+    // Select chicken
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Add Turkey Breast as alternative
+    const addButtons = screen.getAllByText("Add");
+    fireEvent.click(addButtons[0]);
+
+    expect(mockOnChange).toHaveBeenCalledTimes(1);
+    const firstChanges = mockOnChange.mock.calls[0][0];
+    expect(firstChanges.length).toBe(1);
+    expect(firstChanges[0].type).toBe("add");
+
+    // Now remove it (cancels the pending add) - Turkey Breast should now be in "selected" variant
+    const removeButton = screen.getByRole("button", { name: /remove turkey breast/i });
+    fireEvent.click(removeButton);
+
+    expect(mockOnChange).toHaveBeenCalledTimes(2);
+    const secondChanges = mockOnChange.mock.calls[1][0];
+    // The add should be cancelled, resulting in 0 changes
+    expect(secondChanges.length).toBe(0);
+  });
+
+  it("cancels a pending remove when re-adding that alternative", () => {
+    render(
+      <AlternativesLinker
+        foodItems={mockFoods}
+        alternatives={mockAlternatives}
+        onChange={mockOnChange}
+      />
+    );
+
+    // Select chicken (which has Turkey Breast as existing alternative)
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Remove existing alternative (Turkey Breast) using aria-label
+    const removeButton = screen.getByRole("button", { name: /remove turkey breast/i });
+    fireEvent.click(removeButton);
+
+    expect(mockOnChange).toHaveBeenCalledTimes(1);
+    const firstChanges = mockOnChange.mock.calls[0][0];
+    expect(firstChanges[0].type).toBe("remove");
+
+    // After removal, Turkey Breast should appear in available alternatives
+    // Find all Add buttons and click the one for Turkey Breast
+    const addButtons = screen.getAllByText("Add");
+    // Click each add button that's in the available alternatives panel
+    // (Turkey Breast should be among the selectable chips now)
+    for (const btn of addButtons) {
+      // Walk up to find the parent chip that contains "Turkey Breast"
+      let el: HTMLElement | null = btn;
+      while (el && !el.textContent?.includes("Turkey Breast")) {
+        el = el.parentElement;
+      }
+      if (el && el.textContent?.includes("Turkey Breast") && el.textContent?.includes("Add")) {
+        fireEvent.click(btn);
+        break;
+      }
+    }
+
+    expect(mockOnChange).toHaveBeenCalledTimes(2);
+    const secondChanges = mockOnChange.mock.calls[1][0];
+    // The remove should be cancelled, resulting in 0 changes
+    expect(secondChanges.length).toBe(0);
+  });
+
+  it("filters available alternatives by search text", () => {
+    render(<AlternativesLinker foodItems={mockFoods} alternatives={[]} onChange={mockOnChange} />);
+
+    // Select chicken
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Search for "tofu" in the alternatives panel
+    const searchInputs = screen.getAllByPlaceholderText(/search/i);
+    const alternativesSearch = searchInputs[1]; // Second search input is for alternatives
+    fireEvent.change(alternativesSearch, { target: { value: "tofu" } });
+
+    // Should still have Tofu visible (in both left panel and alternatives)
+    const tofuElements = screen.getAllByText("Tofu");
+    expect(tofuElements.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows empty message when alternative search has no results", () => {
+    render(<AlternativesLinker foodItems={mockFoods} alternatives={[]} onChange={mockOnChange} />);
+
+    // Select chicken
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Search for something that doesn't exist
+    const searchInputs = screen.getAllByPlaceholderText(/search/i);
+    const alternativesSearch = searchInputs[1];
+    fireEvent.change(alternativesSearch, { target: { value: "nonexistentfood" } });
+
+    expect(screen.getByText("No matching foods found")).toBeInTheDocument();
+  });
+
+  it("applies custom className", () => {
+    const { container } = render(
+      <AlternativesLinker
+        foodItems={mockFoods}
+        alternatives={[]}
+        onChange={mockOnChange}
+        className="custom-class"
+      />
+    );
+
+    expect(container.firstChild).toHaveClass("custom-class");
+  });
+
+  it("clears alternative search when selecting a different primary food", () => {
+    render(<AlternativesLinker foodItems={mockFoods} alternatives={[]} onChange={mockOnChange} />);
+
+    // Select chicken
+    const chickenButton = screen.getByText("Grilled Chicken").closest("button");
+    fireEvent.click(chickenButton!);
+
+    // Type in the alternatives search
+    const searchInputs = screen.getAllByPlaceholderText(/search/i);
+    const alternativesSearch = searchInputs[1];
+    fireEvent.change(alternativesSearch, { target: { value: "tofu" } });
+
+    // Switch to Turkey Breast
+    const turkeyButton = screen.getByText("Turkey Breast").closest("button");
+    fireEvent.click(turkeyButton!);
+
+    // Alternatives search should be reset
+    expect(alternativesSearch).toHaveValue("");
+  });
 });

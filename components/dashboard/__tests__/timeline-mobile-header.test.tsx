@@ -211,4 +211,139 @@ describe("TimelineMobileHeader", () => {
       expect(filterButtons.length).toBeGreaterThan(0);
     });
   });
+
+  describe("calorie display branches", () => {
+    it("should show calories without target when targets.calories is 0 but consumed > 0", () => {
+      const noTargets: MacroTargets = {
+        ...defaultTargets,
+        calories: 0,
+      };
+      const consumed: ConsumedTotals = {
+        ...defaultConsumed,
+        calories: 500,
+      };
+      render(<TimelineMobileHeader {...defaultProps} targets={noTargets} consumed={consumed} />);
+      // When targets.calories is 0 (falsy) and consumed > 0, just shows consumed
+      expect(screen.getByText("500")).toBeInTheDocument();
+    });
+
+    it("should not show calorie display when no targets and no consumption", () => {
+      const noTargets: MacroTargets = {
+        ...defaultTargets,
+        calories: 0,
+      };
+      const noConsumed: ConsumedTotals = {
+        ...defaultConsumed,
+        calories: 0,
+      };
+      render(<TimelineMobileHeader {...defaultProps} targets={noTargets} consumed={noConsumed} />);
+      // calorieDisplay is null when targets.calories is 0 and consumed.calories is 0
+      expect(screen.queryByText("cal")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("completion percentage color branches", () => {
+    it("should show yellow for 50-79% completion in historical view", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={false}
+          isViewingPast={true}
+          completionPercentage={60}
+        />
+      );
+
+      const completionBadge = screen.getByText("3/11").closest("div");
+      expect(completionBadge).toHaveClass("bg-yellow-500/20");
+    });
+
+    it("should show red for below 50% completion in historical view", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={false}
+          isViewingPast={true}
+          completionPercentage={30}
+        />
+      );
+
+      const completionBadge = screen.getByText("3/11").closest("div");
+      expect(completionBadge).toHaveClass("bg-red-500/20");
+    });
+
+    it("should show AlertTriangle icon for incomplete historical days", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={false}
+          isViewingPast={true}
+          completionPercentage={60}
+        />
+      );
+
+      // AlertTriangle icon is shown when viewing past and < 100% completion
+      // Check that the icon element is present in the completion badge
+      const completionBadge = screen.getByText("3/11").closest("div");
+      const svg = completionBadge?.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
+
+    it("should show Check icon for 100% historical completion", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={false}
+          isViewingPast={true}
+          completionPercentage={100}
+        />
+      );
+
+      const completionBadge = screen.getByText("3/11").closest("div");
+      const svg = completionBadge?.querySelector("svg");
+      expect(svg).toBeInTheDocument();
+    });
+  });
+
+  describe("plan progress display", () => {
+    it("should show week number when viewing today with planProgress", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={true}
+          planProgress={defaultPlanProgress}
+        />
+      );
+
+      expect(screen.getByText("Week 1")).toBeInTheDocument();
+    });
+
+    it("should not show week number when not viewing today", () => {
+      render(
+        <TimelineMobileHeader
+          {...defaultProps}
+          isViewingToday={false}
+          planProgress={defaultPlanProgress}
+        />
+      );
+
+      // When not viewing today, planProgress section is not rendered
+      expect(screen.queryByText("Week 1")).not.toBeInTheDocument();
+    });
+
+    it("should not show week number when planProgress is null", () => {
+      render(<TimelineMobileHeader {...defaultProps} isViewingToday={true} planProgress={null} />);
+
+      expect(screen.queryByText(/Week/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("className prop", () => {
+    it("should apply additional className", () => {
+      const { container } = render(
+        <TimelineMobileHeader {...defaultProps} className="custom-class" />
+      );
+
+      expect(container.firstChild).toHaveClass("custom-class");
+    });
+  });
 });

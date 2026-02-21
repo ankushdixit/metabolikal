@@ -133,4 +133,92 @@ describe("ConditionSelector", () => {
 
     expect(screen.getByText("Failed to load medical conditions")).toBeInTheDocument();
   });
+
+  it("shows empty state when no conditions found in database", () => {
+    const { useMedicalConditions } = require("@/hooks/use-medical-conditions");
+    useMedicalConditions.mockReturnValueOnce({
+      conditions: [],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    expect(screen.getByText("No medical conditions found")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Please seed the database with medical conditions/)
+    ).toBeInTheDocument();
+  });
+
+  it("does not show selected count when no conditions are selected", () => {
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    expect(screen.queryByText(/condition.*selected/i)).not.toBeInTheDocument();
+  });
+
+  it("handles keyboard activation with Enter key", () => {
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    const diabetesButton = screen.getByRole("button", { name: /type 2 diabetes/i });
+    fireEvent.keyDown(diabetesButton, { key: "Enter" });
+
+    expect(mockOnChange).toHaveBeenCalledWith(["cond-1"]);
+  });
+
+  it("handles keyboard activation with Space key", () => {
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    const diabetesButton = screen.getByRole("button", { name: /type 2 diabetes/i });
+    fireEvent.keyDown(diabetesButton, { key: " " });
+
+    expect(mockOnChange).toHaveBeenCalledWith(["cond-1"]);
+  });
+
+  it("does not trigger toggle on other keys", () => {
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    const diabetesButton = screen.getByRole("button", { name: /type 2 diabetes/i });
+    fireEvent.keyDown(diabetesButton, { key: "Tab" });
+
+    expect(mockOnChange).not.toHaveBeenCalled();
+  });
+
+  it("applies custom className", () => {
+    const { container } = render(
+      <ConditionSelector
+        selectedConditionIds={[]}
+        onChange={mockOnChange}
+        className="custom-class"
+      />
+    );
+
+    expect(container.firstChild).toHaveClass("custom-class");
+  });
+
+  it("filters out 'none' slug conditions from display", () => {
+    const { useMedicalConditions } = require("@/hooks/use-medical-conditions");
+    useMedicalConditions.mockReturnValueOnce({
+      conditions: [
+        {
+          id: "cond-1",
+          name: "Type 2 Diabetes",
+          slug: "type2-diabetes",
+          impact_percent: 12,
+        },
+        {
+          id: "cond-none",
+          name: "None",
+          slug: "none",
+          impact_percent: 0,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ConditionSelector selectedConditionIds={[]} onChange={mockOnChange} />);
+
+    expect(screen.getByText("Type 2 Diabetes")).toBeInTheDocument();
+    expect(screen.queryByText("None")).not.toBeInTheDocument();
+  });
 });

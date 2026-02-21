@@ -1,9 +1,21 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Footer } from "../footer";
-import { ModalProvider } from "@/contexts/modal-context";
+import { ModalProvider, useModalState } from "@/contexts/modal-context";
+
+// Helper component to observe which modal was opened
+function ModalSpy() {
+  const { activeModal } = useModalState();
+  return <div data-testid="modal-spy">{activeModal ?? "none"}</div>;
+}
 
 const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<ModalProvider>{ui}</ModalProvider>);
+  return render(
+    <ModalProvider>
+      {ui}
+      <ModalSpy />
+    </ModalProvider>
+  );
 };
 
 // Mock next/image
@@ -122,5 +134,52 @@ describe("Landing Footer Component", () => {
     const { container } = renderWithProvider(<Footer />);
     const accentBar = container.querySelector(".gradient-electric");
     expect(accentBar).toBeInTheDocument();
+  });
+
+  describe("button click handlers", () => {
+    it("opens elite-programs modal when Elite Programs is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Footer />);
+
+      await user.click(screen.getByRole("button", { name: /Elite Programs/i }));
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("elite-programs");
+    });
+
+    it("opens method modal when The Method is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Footer />);
+
+      await user.click(screen.getByRole("button", { name: /The Method/i }));
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("method");
+    });
+
+    it("opens challenge-hub modal when 30-Day Challenge is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Footer />);
+
+      await user.click(screen.getByRole("button", { name: /30-Day Challenge/i }));
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("challenge-hub");
+    });
+
+    it("opens assessment modal when Take Assessment is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Footer />);
+
+      await user.click(screen.getByRole("button", { name: /Take Assessment/i }));
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("assessment");
+    });
+
+    it("opens calendly modal when Book Strategy Call is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProvider(<Footer />);
+
+      await user.click(screen.getByRole("button", { name: /Book Strategy Call/i }));
+
+      expect(screen.getByTestId("modal-spy")).toHaveTextContent("calendly");
+    });
   });
 });

@@ -445,4 +445,207 @@ describe("FoodSearch Component", () => {
 
     expect(screen.getByText("Results (2)")).toBeInTheDocument();
   });
+
+  it("calls onClose and resets state when dialog is closed", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery=""
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // First go to manual entry mode so we can verify it gets reset
+    fireEvent.click(screen.getByText("Add Food Manually"));
+    expect(screen.getByPlaceholderText("e.g., Grilled Chicken Breast")).toBeInTheDocument();
+
+    // Close the dialog via the close button (Radix Dialog renders an X button)
+    const closeButton = screen.getByRole("button", { name: /close/i });
+    fireEvent.click(closeButton);
+
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("resets manual entry form after successful submission", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery=""
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // Go to manual entry
+    fireEvent.click(screen.getByText("Add Food Manually"));
+
+    // Fill in the form
+    fireEvent.change(screen.getByPlaceholderText("e.g., Grilled Chicken Breast"), {
+      target: { value: "Test Food" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("kcal"), {
+      target: { value: "200" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("grams"), {
+      target: { value: "15" },
+    });
+
+    // Submit
+    fireEvent.click(screen.getByText("Log Food"));
+
+    // After submit, form should be reset and manual entry hidden
+    // It should go back to search view
+    expect(screen.getByText("Add Food Manually")).toBeInTheDocument();
+  });
+
+  it("does not submit manual entry when isLogging is true", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery=""
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+        isLogging={true}
+      />
+    );
+
+    // Go to manual entry
+    fireEvent.click(screen.getByText("Add Food Manually"));
+
+    // Fill in the form
+    fireEvent.change(screen.getByPlaceholderText("e.g., Grilled Chicken Breast"), {
+      target: { value: "Test Food" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("kcal"), {
+      target: { value: "200" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("grams"), {
+      target: { value: "15" },
+    });
+
+    // Click Log Food (shows "Logging..." text)
+    fireEvent.click(screen.getByText("Logging..."));
+
+    // Should not have been called because isLogging is true
+    expect(mockOnLogCustomFood).not.toHaveBeenCalled();
+  });
+
+  it("does not submit manual entry when form is incomplete", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery=""
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // Go to manual entry
+    fireEvent.click(screen.getByText("Add Food Manually"));
+
+    // Only fill in name, leave calories and protein empty
+    fireEvent.change(screen.getByPlaceholderText("e.g., Grilled Chicken Breast"), {
+      target: { value: "Test Food" },
+    });
+
+    // The button should be disabled
+    const logButton = screen.getByText("Log Food").closest("button");
+    expect(logButton).toBeDisabled();
+
+    // Click it anyway — handleManualSubmit should return early
+    fireEvent.click(screen.getByText("Log Food"));
+    expect(mockOnLogCustomFood).not.toHaveBeenCalled();
+  });
+
+  it("switches to manual entry from no-results 'Add manually instead' link", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery="xyz"
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // The "Add manually instead" link appears in the no-results message
+    fireEvent.click(screen.getByText("Add manually instead"));
+
+    // Should now show the manual entry form
+    expect(screen.getByPlaceholderText("e.g., Grilled Chicken Breast")).toBeInTheDocument();
+    expect(screen.getByText("Enter nutrition information manually")).toBeInTheDocument();
+  });
+
+  it("goes back to search view when back button is clicked in manual entry", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery=""
+        onSearchChange={mockOnSearchChange}
+        searchResults={[]}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // Go to manual entry
+    fireEvent.click(screen.getByText("Add Food Manually"));
+    expect(screen.getByText("Enter nutrition information manually")).toBeInTheDocument();
+
+    // Click the back button (the ArrowLeft button in the title)
+    const addButton = screen.getByText("Add");
+    const backButton = addButton.closest("button");
+    if (backButton) {
+      fireEvent.click(backButton);
+    }
+
+    // Should be back to search view
+    expect(screen.getByText("Search for food or add manually")).toBeInTheDocument();
+  });
+
+  it("passes correct meal category with selected food item", () => {
+    render(
+      <FoodSearch
+        isOpen={true}
+        onClose={mockOnClose}
+        searchQuery="ch"
+        onSearchChange={mockOnSearchChange}
+        searchResults={mockSearchResults}
+        isSearching={false}
+        onSelectFood={mockOnSelectFood}
+        onLogCustomFood={mockOnLogCustomFood}
+      />
+    );
+
+    // Click on a search result
+    fireEvent.click(screen.getByText("Grilled Chicken"));
+
+    // Should be called with the food item and the default category "breakfast"
+    expect(mockOnSelectFood).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "food-1", name: "Grilled Chicken" }),
+      "breakfast"
+    );
+  });
 });

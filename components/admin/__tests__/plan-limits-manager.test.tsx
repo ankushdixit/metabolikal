@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PlanLimitsManager } from "../plan-limits-manager";
 import type { ClientPlanLimit } from "@/lib/database.types";
@@ -24,6 +24,15 @@ jest.mock("@/hooks/use-client-plan-limits", () => ({
     hasOverlap: mockHasOverlap,
   }),
   formatDateRange: (start: string, end: string) => `${start} - ${end}`,
+}));
+
+// Mock the modal so we can inspect its props
+let mockModalProps: Record<string, unknown> = {};
+jest.mock("../add-limit-range-modal", () => ({
+  AddLimitRangeModal: (props: Record<string, unknown>) => {
+    mockModalProps = props;
+    return props.isOpen ? <div data-testid="limit-range-modal">Modal Open</div> : null;
+  },
 }));
 
 // Mock variables that will be set in tests
@@ -69,6 +78,7 @@ describe("PlanLimitsManager", () => {
       past: [],
     };
     mockIsDeletable.mockReturnValue(true);
+    mockModalProps = {};
   });
 
   describe("Loading State", () => {
@@ -363,6 +373,101 @@ describe("PlanLimitsManager", () => {
       render(<PlanLimitsManager clientId={clientId} />);
 
       expect(screen.queryByText(/carbs/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Add Range (handleAddRange)", () => {
+    it("opens modal with no editingLimit when Add Range is clicked", async () => {
+      const user = userEvent.setup();
+      render(<PlanLimitsManager clientId={clientId} />);
+
+      const addButton = screen.getByRole("button", { name: /add range/i });
+      await user.click(addButton);
+
+      expect(screen.getByTestId("limit-range-modal")).toBeInTheDocument();
+      expect(mockModalProps.editingLimit).toBeNull();
+      expect(mockModalProps.isOpen).toBe(true);
+    });
+  });
+
+  describe("Edit Range (handleEditRange)", () => {
+    it("opens modal with editingLimit when Edit is clicked on current range", async () => {
+      const user = userEvent.setup();
+      const currentLimit = createMockLimit({
+        id: "current-1",
+        start_date: "2026-01-10",
+        end_date: "2026-01-31",
+      });
+      mockCategorizedLimits.current = currentLimit;
+
+      render(<PlanLimitsManager clientId={clientId} />);
+
+      const editButton = screen.getByTitle("Edit range");
+      await user.click(editButton);
+
+      expect(screen.getByTestId("limit-range-modal")).toBeInTheDocument();
+      expect(mockModalProps.editingLimit).toEqual(currentLimit);
+      expect(mockModalProps.isOpen).toBe(true);
+    });
+
+    it("opens modal with the correct future limit when Edit is clicked", async () => {
+      const user = userEvent.setup();
+      const futureLimit = createMockLimit({
+        id: "future-1",
+        start_date: "2026-03-01",
+        end_date: "2026-03-31",
+      });
+      mockCategorizedLimits.future = [futureLimit];
+
+      render(<PlanLimitsManager clientId={clientId} />);
+
+      const editButton = screen.getByTitle("Edit range");
+      await user.click(editButton);
+
+      expect(mockModalProps.editingLimit).toEqual(futureLimit);
+    });
+  });
+
+  describe("Modal Close (handleModalClose)", () => {
+    it("closes modal and resets editingLimit when onClose is called", async () => {
+      const user = userEvent.setup();
+      mockCategorizedLimits.current = createMockLimit({
+        id: "current-1",
+      });
+
+      render(<PlanLimitsManager clientId={clientId} />);
+
+      // First open modal via edit
+      const editButton = screen.getByTitle("Edit range");
+      await user.click(editButton);
+
+      expect(screen.getByTestId("limit-range-modal")).toBeInTheDocument();
+
+      // Now call the onClose prop wrapped in act
+      const onClose = mockModalProps.onClose as () => void;
+      act(() => {
+        onClose();
+      });
+
+      // Modal should close (isOpen becomes false, so modal returns null)
+      await waitFor(() => {
+        expect(screen.queryByTestId("limit-range-modal")).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Non-deletable current range", () => {
+    it("does not show delete button for current range when isDeletable returns false", () => {
+      mockIsDeletable.mockReturnValue(false);
+      mockCategorizedLimits.current = createMockLimit({
+        id: "current-1",
+      });
+
+      render(<PlanLimitsManager clientId={clientId} />);
+
+      // Should have edit button but no delete button
+      expect(screen.getByTitle("Edit range")).toBeInTheDocument();
+      expect(screen.queryByTitle("Delete range")).not.toBeInTheDocument();
     });
   });
 });

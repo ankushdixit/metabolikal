@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EditClientModal } from "../edit-client-modal";
@@ -32,12 +33,13 @@ jest.mock("@/contexts/auth-context", () => ({
 }));
 
 // Mock the Supabase client (still used for non-auth operations like plan_cycles update)
+let mockSupabaseCycleError: { message: string } | null = null;
 jest.mock("@/lib/auth", () => ({
   createBrowserSupabaseClient: () => ({
     from: () => ({
       update: () => ({
         eq: () => ({
-          eq: () => Promise.resolve({ error: null }),
+          eq: () => Promise.resolve({ error: mockSupabaseCycleError }),
         }),
       }),
     }),
@@ -75,11 +77,13 @@ const mockConditions = [
   },
 ];
 
+let mockConditionsOverride: typeof mockConditions | null = null;
+let mockConditionsLoading = false;
 jest.mock("@/hooks/use-medical-conditions", () => ({
   useMedicalConditions: () => ({
-    conditions: mockConditions,
-    allConditions: mockConditions,
-    isLoading: false,
+    conditions: mockConditionsOverride ?? mockConditions,
+    allConditions: mockConditionsOverride ?? mockConditions,
+    isLoading: mockConditionsLoading,
     error: null,
     refetch: jest.fn(),
   }),
@@ -147,6 +151,9 @@ describe("EditClientModal Component", () => {
     mockUpdateProfile.mockResolvedValue({ data: mockClient });
     mockCreateCondition.mockResolvedValue({ data: {} });
     mockDeleteConditions.mockResolvedValue({ data: {} });
+    mockSupabaseCycleError = null;
+    mockConditionsOverride = null;
+    mockConditionsLoading = false;
   });
 
   describe("Rendering", () => {
@@ -416,6 +423,237 @@ describe("EditClientModal Component", () => {
         expect(screen.getByText(/update failed/i)).toBeInTheDocument();
       });
     });
+
+    it("shows generic error message when error is not an Error instance", async () => {
+      const user = userEvent.setup();
+      mockUpdateProfile.mockRejectedValueOnce("string error");
+
+      await renderAndWait(defaultProps);
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/failed to update client profile\. please try again\./i)
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("logs error but does not fail when createCondition throws", async () => {
+      const user = userEvent.setup();
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      mockCreateCondition.mockRejectedValueOnce(new Error("duplicate"));
+
+      await renderAndWait({ ...defaultProps, clientConditions: [] });
+
+      // Open dropdown and select a condition
+      await user.click(screen.getByText(/add condition/i));
+      const diabetesLabel = screen.getByText("Diabetes Type 2");
+      await user.click(diabetesLabel.closest("label")!);
+
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(mockUpdateProfile).toHaveBeenCalled();
+      });
+
+      // Should have logged the error but still succeed (onClose called)
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith("Failed to add condition:", expect.any(Error));
+      });
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe("Conditions Removal on Submit", () => {
+    it("deletes removed conditions on submit", async () => {
+      const user = userEvent.setup();
+      await renderAndWait(defaultProps);
+
+      // Remove the existing Diabetes condition by clicking the X button
+      const removeButtons = screen.getAllByRole("button");
+      const removeButton = removeButtons.find((btn) => btn.querySelector('svg[class*="h-3 w-3"]'));
+      if (removeButton) {
+        await user.click(removeButton);
+      }
+
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(mockUpdateProfile).toHaveBeenCalled();
+      });
+
+      // Should have called deleteConditions for the removed condition
+      await waitFor(() => {
+        expect(mockDeleteConditions).toHaveBeenCalledWith(
+          expect.objectContaining({
+            resource: "client_conditions",
+            ids: ["e5f6a7b8-c9d0-4123-cdef-012345678912"],
+          })
+        );
+      });
+    });
+  });
+
+  describe("Conditions Dropdown Edge Cases", () => {
+    it("shows plural text when multiple conditions selected", async () => {
+      const user = userEvent.setup();
+      await renderAndWait(defaultProps);
+
+      // Currently 1 condition is selected, add another
+      await user.click(screen.getByText(/1 condition selected/i));
+      const hypertensionLabel = screen.getByText("Hypertension");
+      await user.click(hypertensionLabel.closest("label")!);
+
+      await waitFor(() => {
+        expect(screen.getByText(/2 conditions selected/i)).toBeInTheDocument();
+      });
+    });
+
+    it("toggles a condition off via the checkbox in the dropdown", async () => {
+      const user = userEvent.setup();
+      await renderAndWait(defaultProps);
+
+      // Open dropdown
+      await user.click(screen.getByText(/1 condition selected/i));
+
+      // Find the checkbox labels in the dropdown — they are inside <label> elements
+      const allLabels = document.querySelectorAll("label");
+      const diabetesDropdownLabel = Array.from(allLabels).find((label) =>
+        label.textContent?.includes("Diabetes Type 2")
+      );
+      expect(diabetesDropdownLabel).toBeTruthy();
+
+      if (diabetesDropdownLabel) {
+        await user.click(diabetesDropdownLabel);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/add condition/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Default Prop Values", () => {
+    it("renders with empty clientConditions showing 'Add condition' text", async () => {
+      await renderAndWait({
+        ...defaultProps,
+        clientConditions: [],
+      });
+
+      // Should show "Add condition..." since no conditions are selected
+      expect(screen.getByText(/add condition/i)).toBeInTheDocument();
+    });
+
+    it("renders client with null optional fields using fallback values", async () => {
+      const clientWithNulls: Profile = {
+        ...mockClient,
+        phone: null,
+        date_of_birth: null,
+        gender: null,
+        address: null,
+        plan_start_date: null,
+        plan_duration_days: null as any,
+        current_plan_cycle: null as any,
+      };
+
+      await renderAndWait({
+        ...defaultProps,
+        client: clientWithNulls,
+        clientConditions: [],
+      });
+
+      expect(screen.getByLabelText(/phone/i)).toHaveValue("");
+      expect(screen.getByLabelText(/address/i)).toHaveValue("");
+    });
+  });
+
+  describe("Empty Conditions List", () => {
+    it("shows 'No conditions available' when conditions list is empty", async () => {
+      const user = userEvent.setup();
+      mockConditionsOverride = [];
+
+      await renderAndWait({ ...defaultProps, clientConditions: [] });
+
+      // Open dropdown
+      await user.click(screen.getByText(/add condition/i));
+
+      await waitFor(() => {
+        expect(screen.getByText("No conditions available")).toBeInTheDocument();
+      });
+    });
+
+    it("shows 'Loading conditions...' when conditions are loading", async () => {
+      mockConditionsLoading = true;
+
+      await renderAndWait({ ...defaultProps, clientConditions: [] });
+
+      expect(screen.getByText("Loading conditions...")).toBeInTheDocument();
+    });
+  });
+
+  describe("Submitting State", () => {
+    it("shows saving spinner and disables submit button during submission", async () => {
+      const user = userEvent.setup();
+      // Make the update hang so we can check the submitting state
+      let resolveUpdate: (value: unknown) => void;
+      mockUpdateProfile.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveUpdate = resolve;
+          })
+      );
+
+      await renderAndWait(defaultProps);
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      // During submission, button should show "Saving..."
+      await waitFor(() => {
+        expect(screen.getByText("Saving...")).toBeInTheDocument();
+      });
+
+      // Resolve the update to clean up
+      resolveUpdate!({ data: mockClient });
+    });
+  });
+
+  describe("Plan Cycle Overlap Error", () => {
+    it("shows overlap error when plan_cycles update returns overlap message", async () => {
+      const user = userEvent.setup();
+      mockSupabaseCycleError = { message: "New cycle overlaps with existing cycle" };
+
+      await renderAndWait(defaultProps);
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/these plan dates overlap with another cycle/i)
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("logs non-overlap cycle error without throwing", async () => {
+      const user = userEvent.setup();
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      mockSupabaseCycleError = { message: "Some other database error" };
+      const onClose = jest.fn();
+
+      await renderAndWait({ ...defaultProps, onClose });
+      await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+      // Should still succeed (non-overlap errors are logged but not thrown)
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalled();
+      });
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Error syncing plan_cycles:",
+        expect.objectContaining({ message: "Some other database error" })
+      );
+
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("Modal Behavior", () => {
@@ -425,6 +663,18 @@ describe("EditClientModal Component", () => {
       await renderAndWait({ ...defaultProps, onClose });
 
       await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalled();
+      });
+    });
+
+    it("calls onClose when dialog is dismissed via Escape key", async () => {
+      const user = userEvent.setup();
+      const onClose = jest.fn();
+      await renderAndWait({ ...defaultProps, onClose });
+
+      await user.keyboard("{Escape}");
 
       await waitFor(() => {
         expect(onClose).toHaveBeenCalled();

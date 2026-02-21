@@ -211,4 +211,119 @@ describe("TimelineStats", () => {
       expect(percentageElement).toHaveClass("text-red-500");
     });
   });
+
+  describe("horizontal type layout", () => {
+    it("renders stats by type in horizontal layout", () => {
+      render(
+        <TimelineStats stats={mockStats} statsByType={mockStatsByType} typeLayout="horizontal" />
+      );
+
+      expect(screen.getByText("Meals")).toBeInTheDocument();
+      expect(screen.getByText("Supplements")).toBeInTheDocument();
+      expect(screen.getByText("Workouts")).toBeInTheDocument();
+      expect(screen.getByText("Lifestyle")).toBeInTheDocument();
+    });
+
+    it("renders completion counts in horizontal layout", () => {
+      render(
+        <TimelineStats stats={mockStats} statsByType={mockStatsByType} typeLayout="horizontal" />
+      );
+
+      expect(screen.getByText("3/4")).toBeInTheDocument();
+      expect(screen.getByText("2/3")).toBeInTheDocument();
+      expect(screen.getByText("2/2")).toBeInTheDocument();
+      expect(screen.getByText("0/1")).toBeInTheDocument();
+    });
+
+    it("renders percentages in horizontal layout", () => {
+      render(
+        <TimelineStats stats={mockStats} statsByType={mockStatsByType} typeLayout="horizontal" />
+      );
+
+      // Each type stat compact shows its own percentage
+      expect(screen.getByText("75%")).toBeInTheDocument();
+      expect(screen.getByText("67%")).toBeInTheDocument();
+      expect(screen.getByText("100%")).toBeInTheDocument();
+      expect(screen.getByText("0%")).toBeInTheDocument();
+    });
+  });
+
+  describe("progress bar color classes", () => {
+    it("uses bg-green-500 for high percentage (>=80)", () => {
+      const highStats = { total: 10, completed: 9, percentage: 90 };
+      const { container } = render(<TimelineStats stats={highStats} />);
+
+      const progressBar = container.querySelector(".bg-green-500.h-full");
+      expect(progressBar).toBeInTheDocument();
+    });
+
+    it("uses bg-yellow-500 for medium percentage (50-79)", () => {
+      const { container } = render(<TimelineStats stats={mockStats} />);
+
+      const progressBar = container.querySelector(".bg-yellow-500.h-full");
+      expect(progressBar).toBeInTheDocument();
+    });
+
+    it("uses bg-red-500 for low percentage (<50)", () => {
+      const lowStats = { total: 10, completed: 3, percentage: 30 };
+      const { container } = render(<TimelineStats stats={lowStats} />);
+
+      const progressBar = container.querySelector(".bg-red-500.h-full");
+      expect(progressBar).toBeInTheDocument();
+    });
+  });
+
+  describe("compact view edge cases", () => {
+    it("does not render streak in compact view when streak is zero", () => {
+      const zeroStreak: StreakInfo = { current: 0, longest: 0, lastCompletedDate: null };
+      render(<TimelineStats stats={mockStats} streak={zeroStreak} compact />);
+
+      expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    });
+
+    it("does not render streak in compact view when not provided", () => {
+      render(<TimelineStats stats={mockStats} compact />);
+
+      expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("full view without optional props", () => {
+    it("does not render streak section when not provided", () => {
+      render(<TimelineStats stats={mockStats} />);
+
+      expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    });
+
+    it("does not render trend section when not provided", () => {
+      render(<TimelineStats stats={mockStats} />);
+
+      expect(screen.queryByText("Improving")).not.toBeInTheDocument();
+      expect(screen.queryByText("Room to Grow")).not.toBeInTheDocument();
+      expect(screen.queryByText("Maintaining")).not.toBeInTheDocument();
+    });
+
+    it("does not render type breakdown when statsByType not provided", () => {
+      render(<TimelineStats stats={mockStats} />);
+
+      expect(screen.queryByText("Meals")).not.toBeInTheDocument();
+      expect(screen.queryByText("Supplements")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("custom className", () => {
+    it("applies custom className in full view", () => {
+      const { container } = render(<TimelineStats stats={mockStats} className="custom-class" />);
+
+      expect(container.firstChild).toHaveClass("custom-class");
+    });
+
+    it("applies custom className in compact view", () => {
+      const { container } = render(
+        <TimelineStats stats={mockStats} className="custom-class" compact />
+      );
+
+      expect(container.firstChild).toHaveClass("custom-class");
+    });
+  });
 });

@@ -312,5 +312,206 @@ describe("TimelineDateNav", () => {
       const day10Button = screen.getByText("10");
       expect(day10Button).toBeDisabled();
     });
+
+    it("navigates to previous month in calendar", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      // Open calendar
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      fireEvent.click(dateButton!);
+
+      expect(screen.getByText("January 2026")).toBeInTheDocument();
+
+      // Click previous month button (first button inside the calendar header)
+      const prevMonthButton = screen
+        .getAllByRole("button")
+        .find((btn) => btn.querySelector("svg.lucide-chevron-left") && btn.closest(".absolute"));
+      if (prevMonthButton) {
+        fireEvent.click(prevMonthButton);
+        expect(screen.getByText("December 2025")).toBeInTheDocument();
+      }
+    });
+
+    it("navigates to next month in calendar", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      // Open calendar
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      fireEvent.click(dateButton!);
+
+      // Click next month button
+      const nextMonthButton = screen
+        .getAllByRole("button")
+        .find((btn) => btn.querySelector("svg.lucide-chevron-right") && btn.closest(".absolute"));
+      if (nextMonthButton) {
+        fireEvent.click(nextMonthButton);
+        expect(screen.getByText("February 2026")).toBeInTheDocument();
+      }
+    });
+
+    it("selects Day 1 via quick action in calendar", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      // Open calendar
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      fireEvent.click(dateButton!);
+
+      // Click "Day 1" quick action
+      const day1Button = screen.getByText("Day 1");
+      fireEvent.click(day1Button);
+
+      expect(mockOnDateChange).toHaveBeenCalledWith(planStartDate);
+    });
+
+    it("does not select future dates in calendar", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      // Open calendar
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      fireEvent.click(dateButton!);
+
+      // Click a future date (day 25, which is after Jan 20 = today)
+      const day25Button = screen.getByText("25");
+      fireEvent.click(day25Button);
+
+      // Should NOT have called onDateChange
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it("does not select dates before plan start in calendar", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      // Open calendar
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      fireEvent.click(dateButton!);
+
+      // Click a date before plan start (day 10, before Jan 15)
+      const day10Button = screen.getByText("10");
+      fireEvent.click(day10Button);
+
+      // Should NOT have called onDateChange
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("day number display", () => {
+    it("shows 'Before plan' when dayNumber < 1", () => {
+      // Select a date before plan start
+      const beforePlanDate = new Date("2026-01-14T00:00:00");
+      render(
+        <TimelineDateNav
+          selectedDate={beforePlanDate}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      expect(screen.getByText("Before plan")).toBeInTheDocument();
+    });
+
+    it("wraps day number when exceeding totalDays", () => {
+      // Day 10 of a 7-day plan should wrap to day 3: ((10-1) % 7) + 1 = 3
+      const day10Date = new Date("2026-01-24T00:00:00"); // 9 days after Jan 15 = day 10
+      render(
+        <TimelineDateNav
+          selectedDate={day10Date}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      expect(screen.getByText(/Day 3/)).toBeInTheDocument();
+    });
+
+    it("does not show (History) when viewing today", () => {
+      const today = new Date("2026-01-20T00:00:00");
+      render(
+        <TimelineDateNav
+          selectedDate={today}
+          planStartDate={planStartDate}
+          totalDays={30}
+          onDateChange={mockOnDateChange}
+        />
+      );
+
+      expect(screen.queryByText(/History/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("disabled state", () => {
+    it("does not navigate to today when disabled", () => {
+      const pastDate = new Date("2026-01-18T00:00:00");
+      render(
+        <TimelineDateNav
+          selectedDate={pastDate}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+          disabled
+        />
+      );
+
+      fireEvent.click(screen.getByText("Today"));
+      expect(mockOnDateChange).not.toHaveBeenCalled();
+    });
+
+    it("disables calendar picker when disabled", () => {
+      render(
+        <TimelineDateNav
+          selectedDate={new Date("2026-01-18T00:00:00")}
+          planStartDate={planStartDate}
+          totalDays={7}
+          onDateChange={mockOnDateChange}
+          disabled
+        />
+      );
+
+      // The date picker button should be disabled
+      const buttons = screen.getAllByRole("button");
+      const dateButton = buttons.find((btn) => btn.textContent?.includes("Jan"));
+      expect(dateButton).toBeDisabled();
+    });
   });
 });

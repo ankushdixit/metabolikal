@@ -825,9 +825,18 @@ describe("useGamification hook", () => {
   });
 
   describe("challenge progress loading and computed values", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date("2026-02-20T12:00:00Z"));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it("computes streak correctly from consecutive days with data", async () => {
       // Note: getDaysSinceStart uses new Date() internally, not getDateString().
-      // Today is actually 2026-02-20, plan starts 2026-02-01, so currentDay = 20.
+      // Today is pinned to 2026-02-20, plan starts 2026-02-01, so currentDay = 20.
       // We build a streak ending at day 20: days 18, 19, 20 consecutive, gap at 17.
 
       mockUseOptionalAuth.mockReturnValue({

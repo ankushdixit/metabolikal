@@ -168,4 +168,73 @@ describe("RegisterPage", () => {
 
     expect(screen.getByRole("button", { name: /creating account/i })).toBeDisabled();
   });
+
+  // ── Branch coverage: generic auth error (not "already registered") ──
+  it("shows raw error message for non-duplicate-email errors", async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: "Password is too weak" },
+    });
+
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "John Doe");
+    await user.type(screen.getByLabelText(/email/i), "john@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Password is too weak")).toBeInTheDocument();
+    });
+  });
+
+  // ── Branch coverage: no user returned without error ──
+  it("shows registration failed when signUp returns no user and no error", async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: null },
+      error: null,
+    });
+
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "John Doe");
+    await user.type(screen.getByLabelText(/email/i), "john@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/registration failed/i)).toBeInTheDocument();
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  // ── Branch coverage: catch block for unexpected error ──
+  it("shows unexpected error when signUp throws", async () => {
+    mockSignUp.mockRejectedValueOnce(new Error("Network failure"));
+
+    const user = userEvent.setup();
+    render(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "John Doe");
+    await user.type(screen.getByLabelText(/email/i), "john@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/an unexpected error occurred/i)).toBeInTheDocument();
+    });
+  });
+
+  // ── Branch coverage: error banner not shown when no error ──
+  it("does not display error banner when there is no error", () => {
+    render(<RegisterPage />);
+
+    const errorBanners = document.querySelectorAll(".bg-destructive\\/10");
+    expect(errorBanners).toHaveLength(0);
+  });
 });

@@ -195,5 +195,18 @@ describe("AssessmentModal", () => {
       render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
       expect(screen.getByText(/Let's see your progress!/i)).toBeInTheDocument();
     });
+
+    it("does not show Welcome Back banner when previousAssessment is undefined", () => {
+      render(<AssessmentModal {...defaultProps} />);
+      expect(screen.queryByText(/Welcome Back/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("score rendering", () => {
+    it("renders waving hand emoji in Welcome Back banner", () => {
+      render(<AssessmentModal {...defaultProps} previousAssessment={mockPreviousAssessment} />);
+      const emoji = screen.getByRole("img", { name: /waving hand/i });
+      expect(emoji).toBeInTheDocument();
+    });
   });
 });

@@ -15,6 +15,7 @@ import {
   type TemplateLifestyleItemWithType,
 } from "@/hooks/use-template-data";
 import type { TimelineItemType } from "@/lib/database.types";
+import type { ExtendedTimelineItem } from "@/hooks/use-timeline-data";
 // Import grouped modals for templates (we'll create template-specific versions)
 import { TemplateGroupedMealModal } from "./template-grouped-meal-modal";
 import { TemplateGroupedWorkoutModal } from "./template-grouped-workout-modal";
@@ -570,9 +571,9 @@ export function TemplateEditor({ templateId }: TemplateEditorProps) {
           </div>
         ) : (
           <TimelineGrid
-            items={filteredItems as any}
+            items={filteredItems as unknown as ExtendedTimelineItem[]}
             packingItems={filteredPackingItems}
-            onItemClick={handleItemClick as any}
+            onItemClick={handleItemClick as unknown as (item: ExtendedTimelineItem) => void}
           />
         )}
       </div>
