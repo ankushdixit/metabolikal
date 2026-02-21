@@ -194,6 +194,8 @@ export default function CheckInPage() {
             hips_cm: data.hips_cm || null,
             arms_cm: data.arms_cm || null,
             thighs_cm: data.thighs_cm || null,
+            neck_cm: data.neck_cm || null,
+            calves_cm: data.calves_cm || null,
             photo_front: data.photo_front || null,
             photo_side: data.photo_side || null,
             photo_back: data.photo_back || null,

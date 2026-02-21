@@ -353,6 +353,8 @@ describe("Database Types", () => {
         hips_cm: 95,
         arms_cm: 35,
         thighs_cm: 55,
+        neck_cm: 38,
+        calves_cm: 40,
         photo_front: "front.jpg",
         photo_side: "side.jpg",
         photo_back: "back.jpg",

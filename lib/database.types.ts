@@ -858,6 +858,8 @@ export interface Database {
           hips_cm: number | null;
           arms_cm: number | null;
           thighs_cm: number | null;
+          neck_cm: number | null;
+          calves_cm: number | null;
           photo_front: string | null;
           photo_side: string | null;
           photo_back: string | null;
@@ -888,6 +890,8 @@ export interface Database {
           hips_cm?: number | null;
           arms_cm?: number | null;
           thighs_cm?: number | null;
+          neck_cm?: number | null;
+          calves_cm?: number | null;
           photo_front?: string | null;
           photo_side?: string | null;
           photo_back?: string | null;
@@ -918,6 +922,8 @@ export interface Database {
           hips_cm?: number | null;
           arms_cm?: number | null;
           thighs_cm?: number | null;
+          neck_cm?: number | null;
+          calves_cm?: number | null;
           photo_front?: string | null;
           photo_side?: string | null;
           photo_back?: string | null;

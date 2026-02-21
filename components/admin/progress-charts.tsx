@@ -65,11 +65,15 @@ export function ProgressCharts({ checkIns }: ProgressChartsProps) {
         waist: c.waist_cm,
         arms: c.arms_cm,
         thighs: c.thighs_cm,
+        neck: c.neck_cm,
+        calves: c.calves_cm,
       }));
   }, [filteredCheckIns]);
 
   // Check if there's measurement data
-  const hasMeasurements = measurementsData.some((d) => d.chest || d.waist || d.arms || d.thighs);
+  const hasMeasurements = measurementsData.some(
+    (d) => d.chest || d.waist || d.arms || d.thighs || d.neck || d.calves
+  );
 
   const dateRanges: { label: string; value: DateRange }[] = [
     { label: "Last 30 Days", value: "30days" },
@@ -239,6 +243,22 @@ export function ProgressCharts({ checkIns }: ProgressChartsProps) {
                     stroke="hsl(200 100% 50%)"
                     strokeWidth={2}
                     dot={{ fill: "hsl(200 100% 50%)", strokeWidth: 0, r: 4 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="neck"
+                    stroke="hsl(280 80% 60%)"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(280 80% 60%)", strokeWidth: 0, r: 4 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="calves"
+                    stroke="hsl(160 80% 45%)"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(160 80% 45%)", strokeWidth: 0, r: 4 }}
                     connectNulls
                   />
                 </LineChart>

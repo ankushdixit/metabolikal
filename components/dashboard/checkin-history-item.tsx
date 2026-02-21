@@ -190,6 +190,22 @@ export function CheckInHistoryItem({ checkIn }: CheckInHistoryItemProps) {
                     <span className="text-xl font-black">{checkIn.thighs_cm} cm</span>
                   </div>
                 )}
+                {checkIn.neck_cm && (
+                  <div className="p-3 bg-secondary">
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground block mb-1">
+                      Neck
+                    </span>
+                    <span className="text-xl font-black">{checkIn.neck_cm} cm</span>
+                  </div>
+                )}
+                {checkIn.calves_cm && (
+                  <div className="p-3 bg-secondary">
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground block mb-1">
+                      Calves
+                    </span>
+                    <span className="text-xl font-black">{checkIn.calves_cm} cm</span>
+                  </div>
+                )}
               </div>
             </div>
 

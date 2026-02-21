@@ -231,6 +231,8 @@ export function CheckInReview({ checkIn, previousCheckIn, adminId, onUpdate }: C
     { label: "Hips", value: checkIn.hips_cm, prev: previousCheckIn?.hips_cm, unit: "cm" },
     { label: "Arms", value: checkIn.arms_cm, prev: previousCheckIn?.arms_cm, unit: "cm" },
     { label: "Thighs", value: checkIn.thighs_cm, prev: previousCheckIn?.thighs_cm, unit: "cm" },
+    { label: "Neck", value: checkIn.neck_cm, prev: previousCheckIn?.neck_cm, unit: "cm" },
+    { label: "Calves", value: checkIn.calves_cm, prev: previousCheckIn?.calves_cm, unit: "cm" },
   ];
 
   const ratings = [
