@@ -53,9 +53,13 @@ jest.mock("vaul", () => ({
 }));
 
 // Mock quantity utility
-jest.mock("@/lib/utils/quantity", () => ({
-  formatQuantityDisplayWithEquivalent: jest.fn(() => null),
-}));
+jest.mock("@/lib/utils/quantity", () => {
+  const actual = jest.requireActual("@/lib/utils/quantity");
+  return {
+    formatQuantityDisplayWithEquivalent: jest.fn(() => null),
+    formatLegacyQuantityDisplay: actual.formatLegacyQuantityDisplay,
+  };
+});
 
 // =============================================================================
 // MOCK DATA FACTORIES
@@ -490,19 +494,19 @@ describe("TimelineItemSheet", () => {
       expect(eggsText).toHaveClass("line-through");
     });
 
-    it("should show raw/cooked quantities when formatQuantityDisplay returns null", () => {
+    it("should show computed quantities with units when no quantityDisplay", () => {
       const item = createMockMealItem();
       // Add raw/cooked quantities to food items
       const groupedItems = item.groupedItems as Array<{
         food_items: { raw_quantity: string | null; cooked_quantity: string | null };
       }>;
-      groupedItems[0].food_items.cooked_quantity = "150g cooked";
-      groupedItems[0].food_items.raw_quantity = "200g raw";
+      groupedItems[0].food_items.cooked_quantity = "150";
+      groupedItems[0].food_items.raw_quantity = "200";
 
       render(<TimelineItemSheet {...defaultProps} item={item} />);
 
-      expect(screen.getByText(/Cooked: 150g cooked/)).toBeInTheDocument();
-      expect(screen.getByText(/Raw: 200g raw/)).toBeInTheDocument();
+      // Should show clean format with units, not "Cooked: X | Raw: Y"
+      expect(screen.getByText(/150g \(cooked\) \/ 200g \(raw\)/)).toBeInTheDocument();
     });
   });
 

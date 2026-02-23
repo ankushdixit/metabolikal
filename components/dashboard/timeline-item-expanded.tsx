@@ -30,7 +30,10 @@ import type {
   LifestyleActivityPlanWithType,
 } from "@/hooks/use-timeline-data";
 import { getSchedulingDisplayText } from "@/lib/utils/timeline";
-import { formatQuantityDisplayWithEquivalent } from "@/lib/utils/quantity";
+import {
+  formatQuantityDisplayWithEquivalent,
+  formatLegacyQuantityDisplay,
+} from "@/lib/utils/quantity";
 
 // =============================================================================
 // TYPES
@@ -136,20 +139,14 @@ function MealDetails({
             const fats = Math.round((food?.fats || 0) * multiplier);
             const isCompleted = isSourceItemCompleted(plan.id);
 
-            // Build quantity display with equivalent - prefer stored quantity_grams, fall back to raw/cooked from food
-            const quantityDisplay = formatQuantityDisplayWithEquivalent(
-              plan.quantity_grams,
-              plan.quantity_type,
-              plan.quantity_note,
-              food
-            );
-
-            // Fallback to showing raw/cooked quantities from food item
-            const quantities: string[] = [];
-            if (!quantityDisplay) {
-              if (food?.cooked_quantity) quantities.push(`Cooked: ${food.cooked_quantity}`);
-              if (food?.raw_quantity) quantities.push(`Raw: ${food.raw_quantity}`);
-            }
+            // Build quantity display - prefer new system (quantity_grams), fall back to legacy (multiplier)
+            const quantityDisplay =
+              formatQuantityDisplayWithEquivalent(
+                plan.quantity_grams,
+                plan.quantity_type,
+                plan.quantity_note,
+                food
+              ) || formatLegacyQuantityDisplay(multiplier, food);
 
             return (
               <div
@@ -178,16 +175,8 @@ function MealDetails({
                     >
                       {food?.name || "Unknown"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {quantityDisplay || (
-                        <>
-                          {food?.serving_size}
-                          {multiplier !== 1 && ` × ${multiplier}`}
-                        </>
-                      )}
-                    </p>
-                    {quantities.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">{quantities.join(" | ")}</p>
+                    {quantityDisplay && (
+                      <p className="text-xs text-muted-foreground">{quantityDisplay}</p>
                     )}
                   </div>
                   {/* Swap button */}
