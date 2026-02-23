@@ -352,6 +352,96 @@ export function formatQuantityDisplayWithEquivalent(
 }
 
 /**
+ * Format quantity display for legacy diet plans that only have serving_multiplier
+ *
+ * Computes the actual quantities by multiplying the food item's reference
+ * raw/cooked quantities by the serving multiplier. Falls back to serving_size
+ * when raw/cooked are not defined.
+ *
+ * @param multiplier - The serving multiplier from the diet plan
+ * @param food - The food item with reference quantities
+ * @returns Formatted string like "150g (cooked) / 50g (raw)" or "150g"
+ *
+ * @example
+ * // Food with raw_quantity: "33.33", cooked_quantity: "100", multiplier: 1.5
+ * formatLegacyQuantityDisplay(1.5, food) // "150g (cooked) / 50g (raw)"
+ *
+ * // Food with only cooked_quantity: "100", multiplier: 1.7
+ * formatLegacyQuantityDisplay(1.7, food) // "170g (cooked)"
+ *
+ * // Food with no raw/cooked but serving_size: "100g"
+ * formatLegacyQuantityDisplay(1.5, food) // "150g"
+ */
+export function formatLegacyQuantityDisplay(
+  multiplier: number,
+  food: Pick<FoodItem, "serving_size" | "raw_quantity" | "cooked_quantity"> | null | undefined
+): string {
+  if (!food) return "";
+
+  const rawRef = parseQuantityString(food.raw_quantity);
+  const cookedRef = parseQuantityString(food.cooked_quantity);
+
+  if (cookedRef !== null && rawRef !== null) {
+    const actualCooked = Math.round(cookedRef * multiplier);
+    const actualRaw = Math.round(rawRef * multiplier * 10) / 10;
+    const rawStr = actualRaw % 1 === 0 ? `${actualRaw}` : `${actualRaw}`;
+    return `${actualCooked}g (cooked) / ${rawStr}g (raw)`;
+  }
+
+  if (cookedRef !== null) {
+    return `${Math.round(cookedRef * multiplier)}g (cooked)`;
+  }
+
+  if (rawRef !== null) {
+    const actualRaw = Math.round(rawRef * multiplier * 10) / 10;
+    const rawStr = actualRaw % 1 === 0 ? `${actualRaw}` : `${actualRaw}`;
+    return `${rawStr}g (raw)`;
+  }
+
+  // No raw/cooked defined, try to derive from serving_size if it's a gram value
+  const servingStr = (food.serving_size || "").trim();
+  const isGramValue = /^\d+(\.\d+)?\s*(g|grams?)?$/i.test(servingStr);
+  if (isGramValue) {
+    const servingQty = parseQuantityString(servingStr);
+    if (servingQty !== null) {
+      return `${Math.round(servingQty * multiplier)}g`;
+    }
+  }
+
+  // serving_size is descriptive (e.g., "2 eggs", "1 cup") - show as-is
+  return servingStr;
+}
+
+/**
+ * Format reference quantities from a food item for display (no multiplier context)
+ *
+ * Used in alternatives drawer where there's no plan/multiplier, just the food
+ * item's base reference quantities.
+ *
+ * @param food - The food item with reference quantities
+ * @returns Formatted string like "100g cooked / 33g raw" or ""
+ */
+export function formatReferenceQuantities(
+  food: Pick<FoodItem, "raw_quantity" | "cooked_quantity"> | null | undefined
+): string {
+  if (!food) return "";
+
+  const rawQty = parseQuantityString(food.raw_quantity);
+  const cookedQty = parseQuantityString(food.cooked_quantity);
+
+  const parts: string[] = [];
+  if (cookedQty !== null) {
+    parts.push(`${Math.round(cookedQty)}g cooked`);
+  }
+  if (rawQty !== null) {
+    const rawStr = rawQty % 1 === 0 ? `${rawQty}` : `${Math.round(rawQty * 10) / 10}`;
+    parts.push(`${rawStr}g raw`);
+  }
+
+  return parts.join(" / ");
+}
+
+/**
  * Check if a food item has any quantity definitions (raw or cooked)
  *
  * @param food - The food item to check

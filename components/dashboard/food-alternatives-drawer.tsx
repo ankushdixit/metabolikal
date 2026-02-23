@@ -14,6 +14,7 @@ import {
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getCalorieColor } from "@/lib/utils/calorie-colors";
+import { formatReferenceQuantities } from "@/lib/utils/quantity";
 import type { MealCategory } from "@/lib/database.types";
 import { getMealLabel } from "@/lib/utils/meal-labels";
 
@@ -209,10 +210,11 @@ function FoodAlternativeCard({
 }: FoodAlternativeCardProps) {
   const colorResult = getCalorieColor(foodItem.calories, targetCalories);
 
-  // Build quantity display
-  const quantities: string[] = [];
-  if (foodItem.cooked_quantity) quantities.push(`Cooked: ${foodItem.cooked_quantity}`);
-  if (foodItem.raw_quantity) quantities.push(`Raw: ${foodItem.raw_quantity}`);
+  // Build quantity display with proper units
+  const quantityInfo = formatReferenceQuantities({
+    raw_quantity: foodItem.raw_quantity ?? null,
+    cooked_quantity: foodItem.cooked_quantity ?? null,
+  });
 
   return (
     <button
@@ -235,9 +237,7 @@ function FoodAlternativeCard({
             {isSelected && <Check className="h-4 w-4 text-primary" />}
           </div>
           <p className="text-xs font-bold text-muted-foreground">{foodItem.serving_size}</p>
-          {quantities.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">{quantities.join(" | ")}</p>
-          )}
+          {quantityInfo && <p className="text-xs text-muted-foreground mt-1">{quantityInfo}</p>}
         </div>
         <span
           className={cn(

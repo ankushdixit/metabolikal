@@ -864,20 +864,24 @@ describe("TimelineItemExpanded", () => {
 
       render(<TimelineItemExpanded item={item} {...defaultProps} />);
 
-      expect(screen.getByText(/Cooked: 150g/)).toBeInTheDocument();
+      // Should show computed quantities with units in clean format
+      expect(screen.getByText(/150g \(cooked\) \/ 200g \(raw\)/)).toBeInTheDocument();
     });
 
-    it("should show multiplier text when not 1 and no quantityDisplay", () => {
+    it("should show computed quantity when multiplier is not 1 and no quantityDisplay", () => {
       const item = createMealItem();
       (item.groupedItems as any[])[0].serving_multiplier = 1.5;
       (item.groupedItems as any[])[0].quantity_grams = null;
       (item.groupedItems as any[])[0].quantity_type = null;
       (item.groupedItems as any[])[0].quantity_note = null;
+      // Add reference quantities so the multiplier can compute actual amounts
+      (item.groupedItems as any[])[0].food_items.cooked_quantity = "100";
+      (item.groupedItems as any[])[0].food_items.raw_quantity = "80";
 
       render(<TimelineItemExpanded item={item} {...defaultProps} />);
 
-      // Should show serving_size + multiplier
-      expect(screen.getByText(/× 1.5/)).toBeInTheDocument();
+      // Should show computed actual quantities, not "× 1.5"
+      expect(screen.getByText(/150g \(cooked\) \/ 120g \(raw\)/)).toBeInTheDocument();
     });
   });
 
