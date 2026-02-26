@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Check, Leaf, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +14,11 @@ import {
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getCalorieColor } from "@/lib/utils/calorie-colors";
-import { formatReferenceQuantities } from "@/lib/utils/quantity";
+import {
+  formatLegacyQuantityDisplay,
+  calculateEquivalentMultiplier,
+  parseQuantityString,
+} from "@/lib/utils/quantity";
 import type { MealCategory } from "@/lib/database.types";
 import { getMealLabel } from "@/lib/utils/meal-labels";
 
@@ -50,6 +54,8 @@ interface FoodAlternativesDrawerProps {
   isUpdating?: boolean;
   /** Display label for this meal category (from useMealTypes) */
   mealLabel?: string;
+  /** Serving multiplier from the diet plan (used to scale alternative displays) */
+  servingMultiplier?: number;
 }
 
 /**
@@ -66,7 +72,17 @@ export function FoodAlternativesDrawer({
   onSelectAlternative,
   isUpdating = false,
   mealLabel: mealLabelProp,
+  servingMultiplier = 1,
 }: FoodAlternativesDrawerProps) {
+  // Compute actual cooked grams from the current food item for scaling alternatives
+  const actualCookedGrams = useMemo(() => {
+    if (!currentFoodItem) return 0;
+    const cookedRef = parseQuantityString(currentFoodItem.cooked_quantity ?? null);
+    if (cookedRef !== null) return cookedRef * servingMultiplier;
+    const rawRef = parseQuantityString(currentFoodItem.raw_quantity ?? null);
+    if (rawRef !== null) return rawRef * servingMultiplier;
+    return 0;
+  }, [currentFoodItem, servingMultiplier]);
   const [showVegetarianOnly, setShowVegetarianOnly] = useState(false);
 
   // Filter alternatives based on vegetarian toggle
@@ -156,6 +172,7 @@ export function FoodAlternativesDrawer({
                 isSelected={true}
                 onClick={() => {}}
                 disabled={true}
+                displayMultiplier={servingMultiplier}
               />
             </div>
           )}
@@ -175,16 +192,26 @@ export function FoodAlternativesDrawer({
                 </p>
               </div>
             ) : (
-              filteredAlternatives.map((alt) => (
-                <FoodAlternativeCard
-                  key={alt.id}
-                  foodItem={alt.food_items}
-                  targetCalories={targetCalories}
-                  isSelected={currentFoodItem?.id === alt.food_items.id}
-                  onClick={() => handleSelect(alt.food_items.id)}
-                  disabled={isUpdating}
-                />
-              ))
+              filteredAlternatives.map((alt) => {
+                const altMultiplier =
+                  actualCookedGrams > 0
+                    ? calculateEquivalentMultiplier(actualCookedGrams, {
+                        raw_quantity: alt.food_items.raw_quantity ?? null,
+                        cooked_quantity: alt.food_items.cooked_quantity ?? null,
+                      })
+                    : 1;
+                return (
+                  <FoodAlternativeCard
+                    key={alt.id}
+                    foodItem={alt.food_items}
+                    targetCalories={targetCalories}
+                    isSelected={currentFoodItem?.id === alt.food_items.id}
+                    onClick={() => handleSelect(alt.food_items.id)}
+                    disabled={isUpdating}
+                    displayMultiplier={altMultiplier}
+                  />
+                );
+              })
             )}
           </div>
         </SheetPrimitive.Content>
@@ -199,6 +226,8 @@ interface FoodAlternativeCardProps {
   isSelected: boolean;
   onClick: () => void;
   disabled?: boolean;
+  /** Multiplier to apply for display (scales quantities and macros) */
+  displayMultiplier?: number;
 }
 
 function FoodAlternativeCard({
@@ -207,11 +236,19 @@ function FoodAlternativeCard({
   isSelected,
   onClick,
   disabled,
+  displayMultiplier = 1,
 }: FoodAlternativeCardProps) {
-  const colorResult = getCalorieColor(foodItem.calories, targetCalories);
+  // Scale macros by display multiplier
+  const scaledCalories = Math.round(foodItem.calories * displayMultiplier);
+  const scaledProtein = Math.round(foodItem.protein * displayMultiplier * 10) / 10;
+  const scaledCarbs = Math.round((foodItem.carbs || 0) * displayMultiplier * 10) / 10;
+  const scaledFats = Math.round((foodItem.fats || 0) * displayMultiplier * 10) / 10;
 
-  // Build quantity display with proper units
-  const quantityInfo = formatReferenceQuantities({
+  const colorResult = getCalorieColor(scaledCalories, targetCalories);
+
+  // Build scaled quantity display
+  const quantityInfo = formatLegacyQuantityDisplay(displayMultiplier, {
+    serving_size: foodItem.serving_size,
     raw_quantity: foodItem.raw_quantity ?? null,
     cooked_quantity: foodItem.cooked_quantity ?? null,
   });
@@ -236,8 +273,9 @@ function FoodAlternativeCard({
             {foodItem.is_vegetarian && <Leaf className="h-3 w-3 text-neon-green" />}
             {isSelected && <Check className="h-4 w-4 text-primary" />}
           </div>
-          <p className="text-xs font-bold text-muted-foreground">{foodItem.serving_size}</p>
-          {quantityInfo && <p className="text-xs text-muted-foreground mt-1">{quantityInfo}</p>}
+          {quantityInfo && (
+            <p className="text-xs font-bold text-muted-foreground">{quantityInfo}</p>
+          )}
         </div>
         <span
           className={cn(
@@ -252,19 +290,19 @@ function FoodAlternativeCard({
       {/* Macro grid */}
       <div className="grid grid-cols-4 gap-2 text-xs">
         <div className="text-center p-1.5 bg-secondary/50 rounded">
-          <p className={cn("font-bold", colorResult.textClass)}>{foodItem.calories}</p>
+          <p className={cn("font-bold", colorResult.textClass)}>{scaledCalories}</p>
           <p className="text-muted-foreground text-[10px]">cal</p>
         </div>
         <div className="text-center p-1.5 bg-secondary/50 rounded">
-          <p className="font-bold text-blue-400">{foodItem.protein}g</p>
+          <p className="font-bold text-blue-400">{scaledProtein}g</p>
           <p className="text-muted-foreground text-[10px]">protein</p>
         </div>
         <div className="text-center p-1.5 bg-secondary/50 rounded">
-          <p className="font-bold text-yellow-400">{foodItem.carbs || 0}g</p>
+          <p className="font-bold text-yellow-400">{scaledCarbs}g</p>
           <p className="text-muted-foreground text-[10px]">carbs</p>
         </div>
         <div className="text-center p-1.5 bg-secondary/50 rounded">
-          <p className="font-bold text-pink-400">{foodItem.fats || 0}g</p>
+          <p className="font-bold text-pink-400">{scaledFats}g</p>
           <p className="text-muted-foreground text-[10px]">fat</p>
         </div>
       </div>
