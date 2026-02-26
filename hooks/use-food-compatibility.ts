@@ -44,6 +44,7 @@ export function useFoodCompatibility(
   const { query: foodConditionsQuery } = useList<FoodItemConditionWithDetails>({
     resource: "food_item_conditions",
     filters: [{ field: "food_item_id", operator: "eq", value: foodItemId }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, medical_conditions(id, name)",
     },

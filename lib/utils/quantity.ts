@@ -442,6 +442,44 @@ export function formatReferenceQuantities(
 }
 
 /**
+ * Calculate the equivalent serving multiplier for an alternative food
+ * so that it matches the actual cooked grams of the current food.
+ *
+ * Used when swapping food items in a diet plan: the alternative should
+ * produce the same cooked portion size as the current item.
+ *
+ * @param actualCookedGrams - The actual cooked grams the client is eating
+ * @param alternativeFood - The alternative food item with reference quantities
+ * @returns The multiplier for the alternative food, or 1 if calculation not possible
+ *
+ * @example
+ * // Current food: 300g cooked base at 0.5x = 150g actual cooked
+ * // Alternative food: 100g cooked base
+ * // Result: 150 / 100 = 1.5x multiplier
+ * calculateEquivalentMultiplier(150, { cooked_quantity: "100", raw_quantity: "80" })
+ * // returns 1.5
+ */
+export function calculateEquivalentMultiplier(
+  actualCookedGrams: number,
+  alternativeFood: Pick<FoodItem, "raw_quantity" | "cooked_quantity"> | null | undefined
+): number {
+  if (!actualCookedGrams || actualCookedGrams <= 0 || !alternativeFood) return 1;
+
+  const altCookedRef = parseQuantityString(alternativeFood.cooked_quantity);
+  if (altCookedRef !== null && altCookedRef > 0) {
+    return Math.round((actualCookedGrams / altCookedRef) * 100) / 100;
+  }
+
+  // Fall back to raw quantity if no cooked quantity defined
+  const altRawRef = parseQuantityString(alternativeFood.raw_quantity);
+  if (altRawRef !== null && altRawRef > 0) {
+    return Math.round((actualCookedGrams / altRawRef) * 100) / 100;
+  }
+
+  return 1;
+}
+
+/**
  * Check if a food item has any quantity definitions (raw or cooked)
  *
  * @param food - The food item to check

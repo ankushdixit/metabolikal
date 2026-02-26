@@ -53,6 +53,7 @@ export function useClientProfileData({ userId }: UseClientProfileDataOptions) {
   const conditionsQuery = useList<ClientConditionWithDetails>({
     resource: "client_conditions",
     filters: [{ field: "client_id", operator: "eq", value: userId || "" }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, medical_conditions(id, name, description, impact_percent)",
     },
@@ -66,6 +67,7 @@ export function useClientProfileData({ userId }: UseClientProfileDataOptions) {
     resource: "client_plan_limits",
     filters: [{ field: "client_id", operator: "eq", value: userId || "" }],
     sorters: [{ field: "start_date", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!userId,
     },

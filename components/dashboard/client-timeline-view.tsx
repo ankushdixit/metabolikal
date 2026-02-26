@@ -36,6 +36,7 @@ import {
   calculateStatsByType,
   type TimelineItemWithCompletion,
 } from "@/lib/utils/completion-stats";
+import { calculateEquivalentMultiplier, parseQuantityString } from "@/lib/utils/quantity";
 import type { ExtendedTimelineItem, DietPlanWithFood } from "@/hooks/use-timeline-data";
 import type { MealCategory } from "@/lib/database.types";
 
@@ -101,6 +102,8 @@ function ClientTimelineViewInner() {
     dietPlanId: string;
     foodItemId: string;
     mealCategory: MealCategory;
+    servingMultiplier: number;
+    actualCookedGrams: number;
     currentFoodItem: {
       id: string;
       name: string;
@@ -108,6 +111,8 @@ function ClientTimelineViewInner() {
       protein: number;
       serving_size: string;
       is_vegetarian: boolean;
+      raw_quantity?: string | null;
+      cooked_quantity?: string | null;
     } | null;
   } | null>(null);
 
@@ -370,17 +375,53 @@ function ClientTimelineViewInner() {
 
       if (!dietPlan || !dietPlan.food_items) return;
 
+      const multiplier = dietPlan.serving_multiplier ?? 1;
+      const food = dietPlan.food_items;
+
+      // Compute actual cooked grams from the diet plan
+      let actualCookedGrams = 0;
+      if (dietPlan.quantity_grams && dietPlan.quantity_type) {
+        // New system: use stored quantity directly
+        if (dietPlan.quantity_type === "cooked") {
+          actualCookedGrams = dietPlan.quantity_grams;
+        } else {
+          // Raw grams — approximate cooked from the food's raw/cooked ratio
+          const rawRef = parseQuantityString(food.raw_quantity);
+          const cookedRef = parseQuantityString(food.cooked_quantity);
+          if (rawRef && cookedRef && rawRef > 0) {
+            actualCookedGrams = dietPlan.quantity_grams * (cookedRef / rawRef);
+          } else {
+            actualCookedGrams = dietPlan.quantity_grams;
+          }
+        }
+      } else {
+        // Legacy: derive from multiplier
+        const cookedRef = parseQuantityString(food.cooked_quantity);
+        if (cookedRef !== null) {
+          actualCookedGrams = cookedRef * multiplier;
+        } else {
+          const rawRef = parseQuantityString(food.raw_quantity);
+          if (rawRef !== null) {
+            actualCookedGrams = rawRef * multiplier;
+          }
+        }
+      }
+
       setSelectedDietPlanForSwap({
         dietPlanId: dietPlanId,
         foodItemId: dietPlan.food_items.id,
         mealCategory: dietPlan.meal_category as MealCategory,
+        servingMultiplier: multiplier,
+        actualCookedGrams,
         currentFoodItem: {
-          id: dietPlan.food_items.id,
-          name: dietPlan.food_items.name,
-          calories: dietPlan.food_items.calories,
-          protein: dietPlan.food_items.protein,
-          serving_size: dietPlan.food_items.serving_size,
-          is_vegetarian: dietPlan.food_items.is_vegetarian ?? false,
+          id: food.id,
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          serving_size: food.serving_size,
+          is_vegetarian: food.is_vegetarian ?? false,
+          raw_quantity: food.raw_quantity,
+          cooked_quantity: food.cooked_quantity,
         },
       });
     },
@@ -392,12 +433,26 @@ function ClientTimelineViewInner() {
     (newFoodItemId: string) => {
       if (!selectedDietPlanForSwap) return;
 
+      // Find the alternative food from the query results to compute new multiplier
+      const alternatives = alternativesQuery.query.data?.data ?? [];
+      const altEntry = alternatives.find((a) => a.food_items.id === newFoodItemId);
+      const altFood = altEntry?.food_items;
+
+      // Compute equivalent multiplier so the new food matches the same cooked portion
+      const equivalentMultiplier =
+        selectedDietPlanForSwap.actualCookedGrams > 0 && altFood
+          ? calculateEquivalentMultiplier(selectedDietPlanForSwap.actualCookedGrams, altFood)
+          : selectedDietPlanForSwap.servingMultiplier;
+
       setIsUpdatingSwap(true);
       updateMutation.mutate(
         {
           resource: "diet_plans",
           id: selectedDietPlanForSwap.dietPlanId,
-          values: { food_item_id: newFoodItemId },
+          values: {
+            food_item_id: newFoodItemId,
+            serving_multiplier: equivalentMultiplier,
+          },
         },
         {
           onSuccess: () => {
@@ -415,7 +470,7 @@ function ClientTimelineViewInner() {
         }
       );
     },
-    [selectedDietPlanForSwap, updateMutation, refetch]
+    [selectedDietPlanForSwap, updateMutation, refetch, alternativesQuery.query.data?.data]
   );
 
   // =============================================================================
@@ -736,6 +791,7 @@ function ClientTimelineViewInner() {
         targetCalories={targets.calories ?? 0}
         onSelectAlternative={handleSelectAlternative}
         isUpdating={isUpdatingSwap}
+        servingMultiplier={selectedDietPlanForSwap?.servingMultiplier ?? 1}
       />
     </div>
   );
