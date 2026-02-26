@@ -26,6 +26,7 @@ export default function PendingReviewsPage() {
   const clientsQuery = useList<Profile>({
     resource: "profiles",
     filters: [{ field: "role", operator: "eq", value: "client" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },
@@ -35,6 +36,7 @@ export default function PendingReviewsPage() {
   const checkInsQuery = useList<CheckIn>({
     resource: "check_ins",
     sorters: [{ field: "submitted_at", order: "desc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!adminId,
     },

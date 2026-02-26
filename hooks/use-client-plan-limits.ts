@@ -150,6 +150,7 @@ export function useClientPlanLimits({ clientId, enabled = true }: UseClientPlanL
     resource: "client_plan_limits",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
     sorters: [{ field: "start_date", order: "asc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: enabled && !!clientId,
     },

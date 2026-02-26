@@ -134,6 +134,7 @@ export default function ClientReviewPage() {
       { field: "plan_cycle", operator: "eq", value: effectiveCycle },
     ],
     sorters: [{ field: "submitted_at", order: "desc" }],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -145,6 +146,7 @@ export default function ClientReviewPage() {
   >({
     resource: "diet_plans",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, food_items(name, calories, protein)",
     },
@@ -161,6 +163,7 @@ export default function ClientReviewPage() {
       { field: "day_number", order: "asc" },
       { field: "display_order", order: "asc" },
     ],
+    pagination: { mode: "off" },
     queryOptions: {
       enabled: !!clientId,
     },
@@ -170,6 +173,7 @@ export default function ClientReviewPage() {
   const clientConditionsQuery = useList<ClientConditionWithDetails>({
     resource: "client_conditions",
     filters: [{ field: "client_id", operator: "eq", value: clientId }],
+    pagination: { mode: "off" },
     meta: {
       select: "*, medical_conditions(id, name, slug)",
     },
