@@ -7,10 +7,10 @@ import { Trophy, Flame, Check } from "lucide-react";
 import {
   getDaysSinceStart,
   daysUntilStart,
-  calculateStreak,
   buildDayProgressMap,
   DEFAULT_CHALLENGE_DAYS,
 } from "@/lib/challenge-utils";
+import type { DayProgress } from "@/lib/challenge-utils";
 import type { Profile, ChallengeProgress } from "@/lib/database.types";
 
 interface TodaysChallengeActivityProps {
@@ -26,7 +26,40 @@ interface ClientChallengeStatus {
   daysUntil: number;
   loggedToday: boolean;
   todayPoints: number;
-  streak: number;
+  progress: Record<number, DayProgress>;
+}
+
+function getFlameClass(points: number, hasData: boolean): string {
+  if (!hasData) return "text-muted-foreground/30";
+  if (points <= 45) return "text-primary/30";
+  if (points <= 100) return "text-primary/60";
+  return "text-primary";
+}
+
+function DayStrip({
+  progress,
+  currentDay,
+}: {
+  progress: Record<number, DayProgress>;
+  currentDay: number;
+}) {
+  const startDay = Math.max(1, currentDay - 9);
+  const days = Array.from({ length: currentDay - startDay + 1 }, (_, i) => startDay + i);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {days.map((day) => {
+        const entry = progress[day];
+        const hasData = entry?.hasData ?? false;
+        const points = entry?.pointsEarned ?? 0;
+        return (
+          <span key={day} title={hasData ? `Day ${day} — ${points} pts` : `Day ${day} — No data`}>
+            <Flame className={`h-6 w-6 ${getFlameClass(points, hasData)}`} />
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeActivityProps) {
@@ -77,7 +110,7 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
           daysUntil: daysUntilStart(startDate),
           loggedToday: false,
           todayPoints: 0,
-          streak: 0,
+          progress: {},
         };
       });
     }
@@ -105,8 +138,6 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
       const todayEntry = isNotStarted ? undefined : progress[currentDay];
       const loggedToday = todayEntry?.hasData ?? false;
       const todayPoints = todayEntry?.pointsEarned ?? 0;
-      const streak = isNotStarted ? 0 : calculateStreak(progress, currentDay);
-
       return {
         client,
         currentDay,
@@ -115,7 +146,7 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
         daysUntil: daysUntilStart(startDate),
         loggedToday,
         todayPoints,
-        streak,
+        progress,
       };
     });
   }, [clients, allProgressRows, progressLoading]);
@@ -172,7 +203,7 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
             daysUntil,
             loggedToday,
             todayPoints,
-            streak,
+            progress,
           }) => (
             <Link
               key={client.id}
@@ -198,11 +229,8 @@ export function TodaysChallengeActivity({ clients, isLoading }: TodaysChallengeA
               </div>
 
               <div className="flex items-center gap-3">
-                {streak > 0 && (
-                  <span className="flex items-center gap-1 text-xs font-bold text-primary">
-                    <Flame className="h-3.5 w-3.5" />
-                    {streak}
-                  </span>
+                {!notStarted && currentDay > 0 && (
+                  <DayStrip progress={progress} currentDay={currentDay} />
                 )}
                 {notStarted ? (
                   <span className="px-2 py-1 bg-amber-500/20 text-amber-500 text-xs font-bold uppercase">
