@@ -38,11 +38,11 @@ export function FoodWarningDialog({
 }: FoodWarningDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-card p-0">
+      <DialogContent className="sm:max-w-md bg-card p-0 flex flex-col overflow-hidden max-h-[85vh]">
         {/* Top accent - amber for warning */}
-        <div className="h-1 bg-gradient-to-r from-amber-500 to-amber-600" />
+        <div className="h-1 bg-gradient-to-r from-amber-500 to-amber-600 shrink-0" />
 
-        <DialogHeader className="p-6 pb-4">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-400" />
             Compatibility <span className="text-amber-400">Warning</span>
@@ -52,7 +52,7 @@ export function FoodWarningDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 pt-0 space-y-4">
+        <div className="p-6 pt-0 space-y-4 flex-1 overflow-y-auto">
           {/* Food name */}
           <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded">
             <p className="font-bold text-foreground">{foodName}</p>
@@ -84,7 +84,7 @@ export function FoodWarningDialog({
         </div>
 
         {/* Action Buttons */}
-        <div className="p-6 pt-0 flex gap-3">
+        <div className="p-6 pt-4 border-t border-border flex gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}

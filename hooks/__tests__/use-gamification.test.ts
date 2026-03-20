@@ -392,6 +392,8 @@ function setupSupabaseMocks(options: {
 describe("useGamification hook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(`${MOCK_TODAY}T12:00:00Z`));
     mockOnAuthStateChange.mockReturnValue({
       data: { subscription: { unsubscribe: mockUnsubscribe } },
     });
@@ -399,6 +401,10 @@ describe("useGamification hook", () => {
       data: { user: null },
       error: null,
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe("initial state when no user is authenticated", () => {

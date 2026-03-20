@@ -1,10 +1,8 @@
 name: Build
 
+# Disabled to save CI minutes — trigger manually if needed
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   bundle-analysis:

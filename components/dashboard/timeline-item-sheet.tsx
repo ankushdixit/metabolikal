@@ -22,6 +22,7 @@ import {
   RefreshCw,
   X,
   ArrowLeftRight,
+  Play,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -416,6 +417,18 @@ function WorkoutSheetContent({
                   </div>
                   {plan.instructions && (
                     <p className="text-xs text-muted-foreground mt-1">{plan.instructions}</p>
+                  )}
+                  {(plan.video_url || exercise?.video_url) && (
+                    <a
+                      href={plan.video_url || exercise?.video_url || ""}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-2 mt-2 px-3 py-2 bg-secondary hover:bg-secondary/80 rounded text-sm font-bold transition-colors"
+                    >
+                      <Play className="h-3 w-3 text-primary" />
+                      Watch Video
+                    </a>
                   )}
                 </div>
               </button>
