@@ -183,11 +183,11 @@ export function ClearDayDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md bg-card p-0">
+      <DialogContent className="sm:max-w-md bg-card p-0 flex flex-col overflow-hidden max-h-[85vh]">
         {/* Top accent - red for destructive action */}
-        <div className="h-1 bg-destructive" />
+        <div className="h-1 bg-destructive shrink-0" />
 
-        <DialogHeader className="p-6 pb-4 border-b border-border">
+        <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
           <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-destructive" />
             Clear Day <span className="text-destructive">{dayNumber}</span>
@@ -197,7 +197,7 @@ export function ClearDayDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
           {/* Warning */}
           <div className="flex items-start gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -257,7 +257,7 @@ export function ClearDayDialog({
         </div>
 
         {/* Action Buttons */}
-        <div className="p-6 pt-0 flex gap-3">
+        <div className="p-6 pt-4 border-t border-border flex gap-3 shrink-0">
           <button
             type="button"
             onClick={handleClose}

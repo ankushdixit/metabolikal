@@ -1,543 +1,583 @@
-# METABOLI-K-AL Project Context
+# Project Context: Metabolikal
 
-> **Purpose**: Use this document to provide Claude with comprehensive context about the project instead of running exploration each time.
+|               |                                     |
+| ------------- | ----------------------------------- |
+| **Version**   | v2.0                                |
+| **Generated** | 2026-03-20                          |
+| **Generator** | project-context skill (Claude Code) |
 
----
+> This file provides a comprehensive overview of the project for onboarding,
+> reference, and AI-assisted development. Re-run the project-context skill to
+> regenerate with updated information — increment the version number each time.
 
-## 1. Project Overview
+## Overview
 
-**METABOLI-K-AL** is a metabolic health transformation platform serving as an internal coaching dashboard. It's designed for high-performing professionals seeking structured lifestyle resets and metabolic transformation.
+**Metabolikal** is a metabolic health transformation platform serving as an internal coaching dashboard for high-performing professionals seeking structured lifestyle resets. It provides admin tools for coaches to manage client diet/workout/supplement plans, a client dashboard for daily tracking and check-ins, and a public-facing 30-day challenge with gamification. Built with Next.js 16, Refine, and Supabase.
 
-**Tagline**: "You Don't Need More Hustle, You Need Rhythm"
+## Tech Stack
 
-### Application Type
+| Category           | Technology             | Version | Purpose                                  |
+| ------------------ | ---------------------- | ------- | ---------------------------------------- |
+| Framework          | Next.js (App Router)   | 16.1.0  | SSR, routing, API routes                 |
+| UI Library         | React                  | 19.2.1  | Component rendering                      |
+| Language           | TypeScript             | 5.9.3   | Type safety (strict mode)                |
+| CRUD Framework     | Refine                 | 5.0.5   | Headless admin CRUD operations           |
+| Backend            | Supabase (PostgreSQL)  | 2.90.1  | Database, auth, storage, RLS             |
+| SSR Auth           | @supabase/ssr          | 0.8.0   | Cookie-based server auth                 |
+| Components         | shadcn/ui + Radix UI   | Various | Accessible UI primitives                 |
+| Styling            | Tailwind CSS           | 4.1.17  | Utility-first CSS (v4, CSS-first config) |
+| Forms              | React Hook Form        | 7.66.0  | Form state management                    |
+| Validation         | Zod                    | 4.1.12  | Schema validation                        |
+| Charts             | Recharts               | 3.3.0   | Data visualization                       |
+| Icons              | Lucide React           | 0.553.0 | Icon library (tree-shakeable)            |
+| Error Tracking     | Sentry                 | 10.35.0 | Error tracking + session replay          |
+| Analytics          | PostHog                | 1.336.1 | Product analytics (reverse-proxied)      |
+| Push Notifications | web-push (VAPID)       | 3.6.7   | Browser push notifications               |
+| Toasts             | Sonner                 | 2.0.7   | Toast notifications                      |
+| Drawers            | Vaul                   | 1.1.2   | Drawer component                         |
+| CSV                | PapaParse              | 5.5.3   | CSV import/export                        |
+| Testing            | Jest + Testing Library | 30.2.0  | Unit & integration tests                 |
+| E2E Testing        | Playwright             | 1.58.2  | Browser-based E2E tests                  |
+| Linting            | ESLint                 | 9.39.1  | Code quality (flat config)               |
+| Formatting         | Prettier               | 3.6.2   | Code formatting                          |
+| Git Hooks          | Husky + lint-staged    | 9.1.7   | Pre-commit enforcement                   |
+| Bundle Analysis    | @next/bundle-analyzer  | 16.1.6  | Bundle size debugging                    |
 
-- **Client Dashboard**: For plan participants to track diet, workouts, supplements, and lifestyle activities
-- **Admin Portal**: For coaches to manage clients, create personalized plans, and track progress
-- **Landing Page**: Public-facing site with assessment calculator and challenge hub
+## Architecture
 
-### Founder/Coach
+The codebase uses a **hybrid organization** — feature-based routing (Next.js App Router route groups) with layer-based shared code (lib, hooks, contexts, components).
 
-Shivashish Sinha - Science-backed metabolic health coaching
+**Key architectural patterns:**
 
----
+1. **Refine for all CRUD** — `useTable()`, `useForm()`, `useShow()`, `useList()` etc. Never custom fetch/axios
+2. **Supabase as backend** — Data provider, auth, RLS policies, storage
+3. **React Context for app state** — Auth, modals, plan cycles (split contexts to prevent re-renders)
+4. **Route groups** — `(public)`, `(auth)`, `(dashboard)`, `admin` for layout separation
+5. **PWA support** — Service worker, push notifications, iOS install prompts
 
-## 2. Tech Stack
-
-| Layer                  | Technology                     | Version |
-| ---------------------- | ------------------------------ | ------- |
-| **Framework**          | Next.js (App Router)           | 16.1.0  |
-| **Language**           | TypeScript                     | 5.9.3   |
-| **UI Framework**       | React                          | 19.2.1  |
-| **UI Components**      | shadcn/ui (Radix UI)           | Latest  |
-| **Styling**            | Tailwind CSS                   | 4.1.17  |
-| **Forms**              | React Hook Form                | 7.66.0  |
-| **Validation**         | Zod                            | 4.1.12  |
-| **Backend/Database**   | Supabase                       | 2.90.1  |
-| **Data Provider**      | Refine.dev + Supabase Provider | 6.0.1   |
-| **Routing**            | @refinedev/nextjs-router       | 7.0.4   |
-| **Charts**             | Recharts                       | 3.3.0   |
-| **Error Tracking**     | Sentry                         | 10.35.0 |
-| **Testing**            | Jest + Testing Library         | 30.2.0  |
-| **Push Notifications** | web-push                       | 3.6.7   |
-| **CSV Parsing**        | PapaParse                      | 5.5.3   |
-| **Toasts**             | Sonner                         | 2.0.7   |
-| **Swipe Gestures**     | react-swipeable                | 7.0.2   |
-| **Sheets/Drawers**     | Vaul                           | 1.1.2   |
-
-### Development Tools
-
-- **Package Manager**: npm
-- **CI/CD**: GitHub Actions
-- **Git Hooks**: Husky + lint-staged
-- **Deployment**: Vercel
-
----
-
-## 3. Directory Structure
+### Directory Structure
 
 ```
 metabolikal/
-├── app/                           # Next.js App Router
-│   ├── layout.tsx                # Root layout with Refine provider
-│   ├── globals.css               # Tailwind v4 theme
-│   │
-│   ├── (dashboard)/              # Client authenticated routes
-│   │   ├── layout.tsx            # Dashboard layout
-│   │   ├── page.tsx              # Home: ClientTimelineView
-│   │   ├── profile/              # Client profile
-│   │   ├── checkin/              # Check-in submission
-│   │   └── progress/             # Progress tracking
-│   │
-│   ├── admin/                    # Admin portal (role-gated)
-│   │   ├── layout.tsx            # Admin layout
-│   │   ├── page.tsx              # Admin dashboard
-│   │   ├── clients/              # Client management
-│   │   ├── config/               # Configuration CRUD
-│   │   │   ├── food-items/
-│   │   │   ├── supplements/
-│   │   │   ├── exercises/
-│   │   │   ├── lifestyle-activities/
-│   │   │   ├── meal-types/
-│   │   │   └── conditions/
-│   │   ├── challengers/          # Challenge hub
-│   │   └── pending-reviews/      # Check-in review queue
-│   │
-│   ├── auth/                     # Authentication
-│   │   └── callback/             # OAuth callbacks
-│   │
-│   ├── api/                      # Route handlers
-│   │   ├── health/               # Health check
-│   │   ├── admin/                # Admin operations
-│   │   │   ├── invite-client/
-│   │   │   ├── resend-invite/
-│   │   │   ├── deactivate-client/
-│   │   │   └── reactivate-client/
-│   │   └── push/                 # Push notifications
-│   │       ├── subscribe/
-│   │       ├── unsubscribe/
-│   │       ├── send/
-│   │       └── test/
-│   │
-│   └── (public)/                 # Landing page routes
-│
-├── components/                   # React components
-│   ├── ui/                       # shadcn/ui primitives
-│   ├── layout/                   # Navigation & layout
-│   ├── admin/                    # Admin components
-│   ├── dashboard/                # Client dashboard
-│   ├── landing/                  # Public landing page
-│   ├── push/                     # Push notification UI
-│   └── pwa/                      # PWA support
-│
-├── lib/                          # Utilities and services
-│   ├── refine.tsx                # Refine configuration
-│   ├── auth.ts                   # Client auth utilities
-│   ├── auth-server.ts            # Server auth functions
-│   ├── supabase.ts               # Supabase client setup
-│   ├── database.types.ts         # DB TypeScript types
-│   ├── validations.ts            # Zod schemas
-│   ├── constants.ts              # App constants
-│   ├── push-service.ts           # Push notification service
-│   ├── csv-parser.ts             # CSV import utilities
-│   ├── results-insights.ts       # Health score calculations
-│   └── utils/                    # Utility functions
-│       ├── lane-packing.ts       # Timeline layout algorithm
-│       ├── calorie-colors.ts     # Visual calorie indicators
-│       ├── completion-stats.ts   # Progress calculation
-│       ├── timeline.ts           # Timeline helpers
-│       └── plan-dates.ts         # Date calculation
-│
-├── hooks/                        # Custom React hooks
-│   ├── use-client-timeline.ts    # Client timeline data
-│   ├── use-daily-plan-data.ts    # Daily plan view
-│   ├── use-timeline-data.ts      # Admin timeline data
-│   ├── use-client-profile-data.ts
-│   ├── use-push-subscription.ts  # Push notification state
-│   ├── use-gamification.ts       # Streaks/achievements
-│   ├── use-assessment-storage.ts # Assessment persistence
-│   ├── use-calculator.ts         # Metabolic calculator
-│   └── use-swipe-navigation.ts   # Touch gestures
-│
-├── providers/                    # React context providers
-│   └── refine-provider.tsx       # Refine.dev provider
-│
-├── middleware.ts                 # Route protection
-│
-├── supabase/                     # Database
-│   ├── migrations/               # SQL migrations (22 total)
-│   ├── seed.sql                  # Library data seeding
-│   └── config.toml               # Supabase config
-│
-├── public/                       # Static assets
-│   ├── icons/                    # PWA icons
-│   ├── manifest.json             # PWA manifest
-│   └── sw.js                     # Service worker
-│
-├── docs/                         # Documentation
-│   ├── PRD.md
-│   └── SPECIFICATION.md
-│
-└── .session/                     # Solokit SDD
-    ├── specs/                    # Work item specs
-    ├── tracking/                 # Work items & learnings
-    └── guides/                   # Development guides
+├── app/                          # Next.js App Router
+│   ├── (public)/                 # Public landing pages
+│   ├── (auth)/                   # Login, register, password reset
+│   ├── (dashboard)/              # Unused route group (dashboard is at app/dashboard/)
+│   ├── dashboard/                # Client dashboard pages
+│   │   ├── profile/              # User profile
+│   │   ├── checkin/              # Check-in form + history
+│   │   ├── progress/             # Progress tracking
+│   │   └── challenge/            # 30-day challenge page
+│   ├── admin/                    # Admin portal
+│   │   ├── clients/              # Client list + detail + plans
+│   │   ├── challengers/          # Challenger management
+│   │   ├── pending-reviews/      # Check-in review queue
+│   │   └── config/               # CRUD for food, supplements, exercises, etc.
+│   ├── api/                      # API routes (health, admin, push)
+│   ├── auth/callback/            # OAuth callback handler
+│   └── thank-you/                # Post-registration thank you
+├── components/
+│   ├── ui/                       # shadcn/ui primitives (Button, Card, Input, etc.)
+│   ├── admin/                    # Admin-specific components
+│   ├── dashboard/                # Dashboard components
+│   ├── landing/                  # Landing page sections & modals
+│   ├── layout/                   # Header, sidebar, navigation
+│   └── forms/                    # Form components
+├── contexts/                     # React contexts (auth, modal, plan-cycle)
+├── hooks/                        # Custom hooks (gamification, calculator, timeline, etc.)
+├── lib/                          # Utilities, config, types, validations
+│   ├── refine.tsx                # Refine config (data provider, auth provider, resources)
+│   ├── auth.ts                   # Client-side auth utilities
+│   ├── auth-server.ts            # Server-only auth (getUser, isAdmin)
+│   ├── database.types.ts         # Auto-generated Supabase types
+│   ├── validations.ts            # Zod schemas for all forms
+│   ├── challenge-utils.ts        # Pure gamification calculations
+│   ├── constants.ts              # Feature flags, page sizes, hero variants
+│   ├── env.ts                    # Environment variable validation (Zod)
+│   ├── posthog.ts                # Analytics utilities
+│   ├── push-service.ts           # Web push notification service
+│   └── utils.ts                  # cn(), generateUUID()
+├── providers/                    # Framework providers (Refine, Auth)
+├── supabase/
+│   ├── migrations/               # 30+ timestamped SQL migrations
+│   ├── templates/                # Email templates (invite, reset)
+│   ├── seed.sql                  # Seed data
+│   └── config.toml               # Local Supabase config
+├── docs/                         # PRD, specs, stability plan, formulae guide
+├── tests/                        # Integration & E2E tests
+├── .github/workflows/            # 5 CI/CD workflows
+├── .session/                     # Solokit session-driven development
+└── public/                       # Static assets, manifest, service worker
 ```
 
----
+### Entry Points
 
-## 4. Key Features
+| File                            | Purpose                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `app/layout.tsx`                | Root layout — wraps with providers                                      |
+| `app/page.tsx`                  | Public landing page                                                     |
+| `app/dashboard/layout.tsx`      | Dashboard layout (AuthProvider + DeactivationGuard + PlanCycleProvider) |
+| `app/admin/layout.tsx`          | Admin layout (AuthProvider)                                             |
+| `providers/refine-provider.tsx` | Refine framework initialization                                         |
+| `contexts/auth-context.tsx`     | Auth state + session management                                         |
 
-### Client Features
+## Data Models
 
-- **Timeline Dashboard**: Real-time view of daily meals, supplements, workouts, lifestyle plans
-- **Plan Completion Tracking**: Mark items complete with progress visualization
-- **Food Swapping**: Swap foods with alternatives filtered by medical conditions
-- **Weekly Check-ins**: Submit measurements and compliance scores
-- **Progress Tracking**: Historical timeline with date navigation
-- **Push Notifications**: PWA notifications for updates and reminders
-- **Profile Management**: Plan info, medical conditions, macro targets
+### Core Entities & Relationships
 
-### Admin Features
+```
+profiles (users)
+├─ 1:M → diet_plans, workout_plans, supplement_plans, lifestyle_activity_plans
+├─ 1:M → food_logs, workout_logs, check_ins, challenge_progress
+├─ 1:M → plan_cycles, client_conditions, client_plan_limits
+├─ 1:M → plan_completions, notifications, push_subscriptions
+├─ 1:1 → notification_preferences
+├─ 1:M → assessment_results, calculator_results
+│
+food_items ←→ diet_plans (via food_item_id)
+food_items ←→ food_item_alternatives (self-referencing alternatives)
+food_items ←→ food_item_conditions (medical condition restrictions)
+│
+medical_conditions → client_conditions, food_item_conditions
+exercises → workout_plans
+supplements → supplement_plans
+lifestyle_activity_types → lifestyle_activity_plans
+meal_types (dynamic reference table for meal categories)
+│
+plan_templates → template_diet_items, template_supplement_items, etc.
+calculator_settings (singleton — configurable formulas/thresholds)
+```
 
-- **Client Management**: Invite, activate/deactivate, manage profiles
-- **Plan Building**: Visual timeline editor with drag-drop
-- **Check-in Review**: Queue of pending check-ins with flagging
-- **Configuration Management**: Food items, supplements, exercises, lifestyle activities, meal types, medical conditions
-- **Bulk Operations**: Multi-client invites, bulk push notifications
-- **Analytics Dashboard**: Client count, pending reviews, flagged clients
+### Key Model Details
 
-### Technical Features
+**Profile** — Central user entity. Key fields: `role`, `is_deactivated`, `plan_start_date`, `plan_duration_days`, `current_plan_cycle`, `challenge_start_date` (preserved on challenger→client upgrade).
 
-- **Role-based Access**: admin/client/challenger roles with middleware protection
-- **Invitation-based Onboarding**: Email invitations with password setup
-- **Flexible Time Scheduling**: Fixed time, relative anchors, time periods, all-day
-- **PWA Support**: Offline capability, push notifications, iOS standalone mode
-- **Mobile Optimization**: Safe areas, swipe gestures, bottom sheets
+**Diet Plans** — Per-client daily meal assignments with `food_item_id`, `serving_multiplier`, `meal_category`, quantity fields (`quantity_grams`, `quantity_type`: raw/cooked), and flexible timeline scheduling.
 
----
+**Check-ins** — Weekly progress submissions with measurements (weight, body composition, 8 body measurements), photos (front/side/back), wellness ratings (1-10), compliance percentages, and admin review fields (`admin_notes`, `flagged_for_followup`, `reviewed_at`).
 
-## 5. Database Schema
+**Challenge Progress** — Daily metrics for the 30-day challenge: `steps`, `water_liters`, `floors_climbed`, `protein_grams`, `sleep_hours`, `points_earned`. Supports both anonymous visitors (`visitor_id`) and authenticated users (`user_id`).
 
-### Core Tables
+**Plan Cycles** — Track individual plan periods per client. Fields: `cycle_number`, `start_date`, `duration_days`, `end_date` (generated), `status`. All data tables have `plan_cycle` column for historical segregation.
 
-**Authentication & Profiles**:
+**Timeline Scheduling** — Shared across all plan types. `time_type` ("fixed"|"relative"|"period"|"all_day"), with `time_start/end` (HH:MM), `time_period` (early_morning through before_sleep), `relative_anchor` (wake_up, pre_workout, etc.).
 
-- `profiles` - User profiles with role, contact, avatar, plan dates
-- `notification_preferences` - Push settings with quiet hours
-- `push_subscriptions` - Device push subscriptions
+### Enums & Constants
 
-**Planning**:
+| Enum                          | Values                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **UserRole**                  | `admin`, `client`, `challenger`                                                                                                             |
+| **Gender**                    | `male`, `female`                                                                                                                            |
+| **ProfileGender**             | `male`, `female`, `other`, `prefer_not_to_say`                                                                                              |
+| **Goal**                      | `fat_loss`, `maintain`, `muscle_gain`                                                                                                       |
+| **TimeType**                  | `fixed`, `relative`, `period`, `all_day`                                                                                                    |
+| **TimePeriod**                | `early_morning`, `morning`, `midday`, `afternoon`, `evening`, `night`, `before_sleep`                                                       |
+| **RelativeAnchor**            | `wake_up`, `pre_workout`, `post_workout`, `breakfast`, `lunch`, `evening_snack`, `dinner`, `sleep`                                          |
+| **WorkoutSection**            | `warmup`, `main`, `cooldown`                                                                                                                |
+| **SupplementCategory**        | `vitamin`, `mineral`, `protein`, `amino_acid`, `fatty_acid`, `herbal`, `probiotic`, `other`                                                 |
+| **ExerciseCategory**          | `strength`, `cardio`, `flexibility`, `balance`, `hiit`, `warmup`, `cooldown`, `other`                                                       |
+| **MuscleGroup**               | `chest`, `back`, `shoulders`, `biceps`, `triceps`, `forearms`, `core`, `quadriceps`, `hamstrings`, `glutes`, `calves`, `full_body`, `other` |
+| **LifestyleActivityCategory** | `movement`, `mindfulness`, `sleep`, `hydration`, `sunlight`, `social`, `recovery`, `other`                                                  |
+| **PlanCompletionType**        | `diet`, `supplement`, `workout`, `lifestyle`                                                                                                |
+| **PlanCycleStatus**           | `active`, `completed`, `cancelled`                                                                                                          |
+| **QuantityType**              | `raw`, `cooked`                                                                                                                             |
+| **NotificationType**          | `message`, `checkin_review`, `system`                                                                                                       |
+| **TestimonialVideoType**      | `short`, `landscape`                                                                                                                        |
+| **HeroVariant**               | `A`, `B`, `C`, `original`                                                                                                                   |
 
-- `diet_plans` - Meal assignments with scheduling
-- `supplement_plans` - Supplement assignments
-- `workout_plans` - Exercise assignments
-- `lifestyle_plans` - Lifestyle activity assignments
-- `plan_completions` - Item completion tracking
+| Constant                 | Value     | Usage                            |
+| ------------------------ | --------- | -------------------------------- |
+| `DEFAULT_CHALLENGE_DAYS` | 30        | Default challenge length         |
+| `WEEK_UNLOCK_THRESHOLD`  | 0.9 (90%) | % completion to unlock next week |
+| `MAX_DAILY_POINTS`       | 150       | Gamification cap per day         |
+| `ADMIN_PAGE_SIZE`        | 10        | Admin list pagination            |
 
-**Macros & Limits**:
+### State Machines & Lifecycle Flows
 
-- `client_plan_limits` - Daily calorie/macro targets (date ranges)
+**User Account Lifecycle:**
 
-**Master Data**:
+```
+Anonymous Visitor → (register) → Challenger (30-day free)
+                                    ↓ (admin upgrade)
+                              Client (custom plan, plan_cycle=1)
+                                    ↓ (cycle end)
+                              Client (plan_cycle=2, ...)
+                                    ↓ (admin deactivate)
+                              Deactivated (blocked login, data preserved)
+                                    ↓ (admin reactivate, rare)
+                              Client (new plan cycle)
+```
 
-- `food_items` - Nutrition database (calories, macros, conditions)
-- `food_item_alternatives` - Food swap mappings
-- `food_item_conditions` - Food-condition compatibility
-- `supplements` - Supplement library
-- `exercises` - Exercise database
-- `lifestyle_activities` - Lifestyle templates
-- `meal_types` - Meal categories
-- `medical_conditions` - Conditions with metabolic impact
+**Plan Cycle Lifecycle:**
 
-**Tracking**:
+```
+active → completed (plan period ends or admin marks)
+active → cancelled (early termination)
+```
 
-- `check_ins` - Weekly check-in submissions
-- `notifications` - Notification records
-- `assessment_results` - Assessment responses
-- `client_conditions` - Client medical conditions
-- `invitations` - Invite tracking
+**Check-in Review Lifecycle:**
 
----
+```
+Submitted (reviewed_at=null) → Reviewed (reviewed_at set, admin_notes optional)
+                              → Flagged (flagged_for_followup=true, notification sent)
+```
 
-## 6. API Routes
+### Frontend State Management
 
-### Health & Status
+- **AuthContext** — User session, profile, role. Module-level `authStateCache` for non-React consumers (Refine auth provider)
+- **PlanCycleContext** — Split into Data + Loading contexts. Reads `current_plan_cycle` from AuthContext; fetches `plan_cycles` table only when viewing history
+- **ModalContext** — Split into Actions + State contexts. 16+ modal types for landing page
+- **useGamification hook** — Challenge state: currentDay, totalDays, points, streak, weekUnlocked. Pure calculations in `challenge-utils.ts`
+- **React Query (via Refine)** — Global defaults: 2min staleTime, 5min gcTime, no refetchOnWindowFocus, 1 retry
 
-- `GET /api/health` - Application health check
+## API Surface
 
-### Admin Operations (require admin auth)
+### Authentication
 
-- `POST /api/admin/invite-client` - Create and invite client
-- `POST /api/admin/resend-invite` - Resend invitation
-- `POST /api/admin/deactivate-client` - Deactivate client
-- `POST /api/admin/reactivate-client` - Reactivate client
+| Method | Route            | Auth    | Purpose                                                          |
+| ------ | ---------------- | ------- | ---------------------------------------------------------------- |
+| GET    | `/auth/callback` | Session | OAuth callback, email confirm, password reset, invite acceptance |
 
-### Push Notifications
+### Health Check
 
-- `POST /api/push/subscribe` - Register device
-- `POST /api/push/unsubscribe` - Unregister device
-- `POST /api/push/send` - Send notification (admin)
-- `POST /api/push/test` - Test notification
+| Method | Route         | Auth | Purpose                                                       |
+| ------ | ------------- | ---- | ------------------------------------------------------------- |
+| GET    | `/api/health` | None | System health + database connectivity (200 ok / 503 degraded) |
 
-### Data Operations
+### Admin Endpoints
 
-All CRUD through Refine's Supabase data provider.
+| Method | Route                           | Auth  | Purpose                                                   |
+| ------ | ------------------------------- | ----- | --------------------------------------------------------- |
+| POST   | `/api/admin/invite-client`      | Admin | Create client user + send invite email                    |
+| POST   | `/api/admin/resend-invite`      | Admin | Resend invitation email                                   |
+| POST   | `/api/admin/deactivate-client`  | Admin | Deactivate client account                                 |
+| POST   | `/api/admin/reactivate-client`  | Admin | Reactivate client + new plan cycle                        |
+| POST   | `/api/admin/upgrade-challenger` | Admin | Upgrade challenger to client, preserve challenge progress |
+| POST   | `/api/admin/send-message`       | Admin | Send notification to client                               |
 
----
+### Push Notification Endpoints
 
-## 7. Authentication & Authorization
+| Method | Route                   | Auth  | Purpose                                |
+| ------ | ----------------------- | ----- | -------------------------------------- |
+| POST   | `/api/push/subscribe`   | User  | Subscribe device to push notifications |
+| POST   | `/api/push/verify`      | User  | Check if subscription exists           |
+| POST   | `/api/push/unsubscribe` | User  | Remove push subscription               |
+| POST   | `/api/push/test`        | User  | Send test push to own devices          |
+| POST   | `/api/push/send`        | Admin | Send push to specified users           |
 
-### Roles
+### Refine Data Provider (CRUD via Supabase)
 
-- **admin**: Full access to admin portal and client management
-- **client**: Access to dashboard, own plan, check-ins, profile
-- **challenger**: Landing page only (free 30-day challenge)
+All other data operations go through Refine hooks → Supabase data provider. No custom API routes for CRUD.
 
-### Key Auth Functions (lib/auth.ts, lib/auth-server.ts)
+**Configured Resources:** `calculator_settings` (singleton), `plan_templates`, `template_diet_items`, `template_supplement_items`, `template_workout_items`, `template_lifestyle_items`
+
+## Permissions & Access Control
+
+### Role-Permission Matrix
+
+| Capability                           | Admin | Client | Challenger |
+| ------------------------------------ | :---: | :----: | :--------: |
+| Admin portal (`/admin/*`)            |   ✓   |   ✗    |     ✗      |
+| Client dashboard (`/dashboard/*`)    |   ✓   |   ✓    |     ✗      |
+| Landing page + challenge             |   ✓   |   ✓    |     ✓      |
+| Manage clients (invite/deactivate)   |   ✓   |   ✗    |     ✗      |
+| Manage config (food/supplements/etc) |   ✓   |   ✗    |     ✗      |
+| Review check-ins                     |   ✓   |   ✗    |     ✗      |
+| Create/edit plan templates           |   ✓   |   ✗    |     ✗      |
+| Submit check-ins                     |   ✗   |   ✓    |     ✗      |
+| Log food/workouts                    |   ✗   |   ✓    |     ✗      |
+| Track challenge progress             |   ✗   |   ✓    |     ✓      |
+| Take assessment/calculator           |   ✓   |   ✓    |     ✓      |
+| Manage own push preferences          |   ✓   |   ✓    |     ✗      |
+
+### Authorization Layers
+
+1. **API Routes** — `isAdmin()` check from `lib/auth-server.ts` (server-side)
+2. **Supabase RLS** — Row-level security on all tables. Users see own data; admins see all
+3. **AuthContext** — Client-side role-based rendering and navigation
+4. **DeactivationGuard** — Polls `is_deactivated` every 120s on dashboard; signs out if deactivated
+5. **Login handler** — Blocks deactivated non-admin users from signing in
+
+**Note:** No middleware.ts — auth enforcement is at RLS + component + API layers. Deactivation is app-layer only (not RLS) to avoid recursive subquery issues.
+
+## Key Patterns & Conventions
+
+### Naming Conventions
+
+- **Components**: PascalCase (`ClientTable.tsx`, `AddClientModal.tsx`)
+- **Hooks**: kebab-case with `use-` prefix (`use-gamification.ts`)
+- **Utilities**: kebab-case (`challenge-utils.ts`, `csv-parser.ts`)
+- **API routes**: kebab-case directories (`/api/admin/invite-client`)
+- **Tests**: colocated in `__tests__/` folders with `.test.ts(x)` suffix
+- **Constants**: SCREAMING_SNAKE_CASE (`DEFAULT_CHALLENGE_DAYS`)
+- **Imports**: All use `@/` path alias
+
+### Common Code Patterns (with examples)
+
+**1. API Route Pattern** (`app/api/health/route.ts`):
 
 ```typescript
-canAccessDashboard(role); // Check if client/admin
-canAccessAdmin(role); // Check if admin only
-isChallenger(role); // Check if challenger
-createBrowserSupabaseClient(); // Client-side Supabase
-createServerSupabaseClient(); // Server-side Supabase
-getUser(); // Get current user
-getUserProfile(); // Get user with role
-isAdmin(); // Check if current user is admin
-```
+import { NextResponse } from "next/server";
 
-### Middleware Protection
-
-- Protects `/dashboard` and `/admin` routes
-- Blocks deactivated users
-- Blocks challengers from dashboard
-- Blocks non-admins from admin portal
-
----
-
-## 8. State Management
-
-### Approach
-
-- No Redux/Zustand - uses React Query via Refine
-- Server state via Refine hooks
-- Local state via useState
-- Context for authentication
-
-### Key Hooks
-
-**Refine Data Hooks**:
-
-- `useList()` - Fetch list
-- `useOne()` - Fetch single
-- `useCreate()` / `useUpdate()` / `useDelete()` - Mutations
-- `useForm()` - Form with validation
-
-**Custom Hooks**:
-
-- `useClientTimeline()` - Client's daily plan
-- `useDailyPlanData()` - All 4 plan types for a day
-- `useTimelineData()` - Admin plan data
-- `useClientProfileData()` - Client profile, plan, conditions
-- `usePushSubscription()` - Push notification state
-- `useGamification()` - Streaks and achievements
-
----
-
-## 9. UI System
-
-### Design System
-
-- shadcn/ui components (Radix UI primitives)
-- Tailwind CSS v4 with CSS variables
-- 16 semantic color tokens
-- Dark mode via `.dark` class
-- Athletic/sports-themed visuals
-
-### Key Component Categories
-
-**Layout**: Header, Sidebar, MobileNav, AdminSidebar, AdminHeader
-
-**Dashboard**: ClientTimelineView, MobileTimelineView, TimelineGrid, FoodAlternativesDrawer, ProfilePlanCard, TimelineDateNav
-
-**Admin**: TimelineEditor, ClientTable, StatsCards, BulkNotificationModal
-
-**Landing**: HeroSection, CalculatorModal, AssessmentModal, ResultsModal
-
-**PWA**: PushPermissionPrompt, NotificationSettings, IOSInstallPrompt
-
----
-
-## 10. Environment Variables
-
-```bash
-# Supabase
-SUPABASE_URL
-SUPABASE_ANON_KEY
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-
-# Next.js
-NEXT_PUBLIC_SITE_URL
-NODE_ENV
-
-# Sentry
-NEXT_PUBLIC_SENTRY_DSN
-SENTRY_ORG
-SENTRY_PROJECT
-SENTRY_AUTH_TOKEN
-
-# Push Notifications
-NEXT_PUBLIC_VAPID_PUBLIC_KEY
-VAPID_PRIVATE_KEY
-VAPID_CONTACT_EMAIL
-```
-
----
-
-## 11. Development Commands
-
-```bash
-# Development
-npm run dev           # Start dev server
-npm run build         # Production build
-npm start             # Start production
-
-# Quality
-npm test              # Run tests
-npm run test:coverage # Coverage report
-npm run lint          # Linting
-npm run type-check    # TypeScript check
-npm run format        # Prettier format
-
-# Solokit (Session-Driven Development)
-/start [id]           # Start session
-/status               # Check session status
-/validate             # Validate quality gates
-/end                  # End session
-/work-list            # List work items
-/work-new             # Create work item
-/learn                # Capture learning
-```
-
----
-
-## 12. Code Patterns
-
-### Component Pattern
-
-```typescript
-interface ComponentProps {
-  prop: string;
-}
-
-export function Component({ prop }: ComponentProps) {
-  return <div>{prop}</div>;
+export async function GET() {
+  const isConnected = await testDatabaseConnection();
+  return NextResponse.json(
+    { status: isConnected ? "ok" : "degraded", timestamp: new Date().toISOString() },
+    { status: isConnected ? 200 : 503 }
+  );
 }
 ```
 
-### Form Pattern (Refine + React Hook Form + Zod)
+**2. Dashboard Page with Refine** (`app/admin/clients/page.tsx` pattern):
 
 ```typescript
-const {
-  refineCore: { onFinish },
-  register,
-  handleSubmit,
-} = useForm({
-  refineCoreProps: {
-    resource: "resource",
-    action: "create",
-  },
-  resolver: zodResolver(schema),
+"use client";
+import { useList } from "@refinedev/core";
+import { useAuth } from "@/contexts/auth-context";
+
+export default function ClientsPage() {
+  const { userId } = useAuth();
+  const { query } = useList<Profile>({
+    resource: "profiles",
+    filters: [{ field: "role", operator: "eq", value: "client" }],
+    queryOptions: { enabled: !!userId },
+  });
+  return <ClientTable data={query.data?.data || []} isLoading={query.isLoading} />;
+}
+```
+
+**3. Test Pattern** (`hooks/__tests__/use-gamification.test.ts` pattern):
+
+```typescript
+import { calculateStepsPoints } from "../use-gamification";
+
+describe("calculateStepsPoints", () => {
+  it("returns 0 for steps below 7000", () => {
+    expect(calculateStepsPoints(6999)).toBe(0);
+  });
+  it("returns 45 for steps 15000+", () => {
+    expect(calculateStepsPoints(15000)).toBe(45);
+  });
 });
 ```
 
-### Data Fetching Pattern
+**4. Form Pattern** (React Hook Form + Zod):
 
 ```typescript
-const {
-  query: { data, isLoading },
-} = useList({
-  resource: "resource",
-  filters: [{ field: "id", operator: "eq", value: "123" }],
-});
+"use client";
+import { useForm } from "@refinedev/react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+export default function CreatePage() {
+  const { register, handleSubmit, formState: { errors }, refineCore: { onFinish } } = useForm({
+    resolver: zodResolver(mySchema),
+  });
+  return <form onSubmit={handleSubmit(onFinish)}>...</form>;
+}
 ```
 
----
+### How to Add a New Feature
 
-## 13. Special Features
+1. **Validation schema** → `lib/validations.ts` (Zod schema + inferred type)
+2. **Resource config** → `lib/refine.tsx` (add to `refineResources` array)
+3. **List page** → `app/admin/my-resource/page.tsx` (use `useList()`)
+4. **Create/Edit pages** → `app/admin/my-resource/create/page.tsx` (use `useForm()`)
+5. **Form component** → `components/admin/my-resource-form.tsx`
+6. **Tests** → `__tests__/` directories alongside each file
+7. **Navigation** → `components/layout/sidebar.tsx` (add link)
+8. **Quality check** → `npm run lint && npm run type-check && npm test`
 
-### Timeline Scheduling
+### Business Configuration
 
-- **Fixed time**: Specific clock time (e.g., 8:00 AM)
-- **Relative anchors**: wake-up, pre-workout, post-workout, meals, sleep
-- **Time periods**: early morning, morning, midday, afternoon, evening, night, before sleep
-- **Relative offset**: Minutes before/after anchor
+**Gamification Points (per day, max 150):**
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| Steps | ≥15,000 / ≥10,000 / ≥7,000 | 45 / 30 / 15 |
+| Water | ≥3.0L | 15 |
+| Floors | ≥14 / ≥4 | 45 / 15 |
+| Protein | ≥70g | 15 |
+| Sleep | ≥7h | 15 |
+| Check-in bonus | submitted | 15 |
 
-### Food Swap System
+**Challenge Duration:**
 
-- Clients can swap foods in timeline
-- Filtered by medical condition compatibility
-- Calorie comparison indicators (optimal/higher/lower)
-- Uses `food_item_alternatives` table
+- Challengers: Fixed 30 days from `created_at`
+- Clients: `plan_duration_days` (custom)
+- Upgraded challengers: `totalDays = gap(challenge_start_date → plan_start_date) + plan_duration_days`
 
-### Push Notification System
+**Week Unlock:** 90% completion of current week (6/7 days) unlocks next week. Visual only — all past + current day are always editable.
 
-- VAPID authentication with web-push
-- Notification type preferences (checkin, messages, system, plan updates)
-- Quiet hours support
-- iOS PWA installation guide
+**Hero A/B Testing:** Variant A (Problem-Solution), B (Results), C (Identity, current default), original (Founder quote). Set via `NEXT_PUBLIC_HERO_VARIANT` env var.
 
-### Mobile Timeline
+## Configuration
 
-- Swipe gestures for day navigation
-- Collapsible time periods
-- Bottom sheet for item details
-- Offline completion queue with localStorage
+### Required Environment Variables
 
-### Assessment & Calculator
+| Variable                        | Scope  | Purpose                   |
+| ------------------------------- | ------ | ------------------------- |
+| `SUPABASE_URL`                  | Server | Supabase project endpoint |
+| `SUPABASE_ANON_KEY`             | Server | Supabase anonymous key    |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Client | Public Supabase endpoint  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client | Public anonymous key      |
 
-- 7-point health assessment (sleep, body, nutrition, mental, stress, support, hydration)
-- TDEE calculation (Mifflin-St Jeor formula)
-- Medical condition impact on calories
-- localStorage persistence for visitors
+### Optional Environment Variables
 
----
+| Variable                                                                     | Scope  | Purpose                                |
+| ---------------------------------------------------------------------------- | ------ | -------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                  | Server | Admin operations (invite, upgrade)     |
+| `NEXT_PUBLIC_SENTRY_DSN`                                                     | Client | Error tracking                         |
+| `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN`                        | Build  | Sentry source maps                     |
+| `NEXT_PUBLIC_POSTHOG_KEY`                                                    | Client | Product analytics                      |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_CONTACT_EMAIL` | Both   | Web push notifications                 |
+| `NEXT_PUBLIC_HERO_VARIANT`                                                   | Client | A/B test hero section (A/B/C/original) |
+| `NEXT_PUBLIC_FACEBOOK_PIXEL_ID`                                              | Client | Facebook tracking                      |
+| `NEXT_PUBLIC_VERCEL_ANALYTICS_ID`                                            | Client | Vercel web vitals                      |
+| `ANALYZE`                                                                    | Build  | Enable bundle analyzer (true/false)    |
 
-## 14. Quality Requirements
+### Environment Validation
 
-- **Test Coverage Target**: 80%
-- **Pre-commit Hooks**: Husky + lint-staged
-- **Linting**: ESLint
-- **Type Checking**: TypeScript strict mode
-- **Formatting**: Prettier
-- **Error Tracking**: Sentry
+`lib/env.ts` uses Zod schemas for runtime validation. `validateEnv()` (server) and `validateClientEnv()` (client) ensure required vars are present.
 
----
+### Next.js Config Highlights
 
-## 15. Architecture Rules
+- **Security headers**: HSTS (2yr), X-Frame-Options SAMEORIGIN, nosniff, XSS protection, Permissions-Policy (no camera/mic/geo)
+- **PostHog reverse proxy**: `/ingest/*` → `us.i.posthog.com` (bypass ad blockers)
+- **Sentry tunnel**: `/monitoring` route (bypass ad blockers)
+- **Package optimization**: Tree-shaking for `lucide-react`, `recharts`
+- **Redirects**: `/admin/food-database` → `/admin/config/food-items`, `/admin/supplements` → `/admin/config/supplements`
 
-1. **Use Refine hooks for ALL CRUD operations** - Never implement custom CRUD logic
-2. **Data Provider Pattern** - All API communication through Supabase data provider
-3. **UI Components** - Use shadcn/ui from `components/ui/`
-4. **Route Protection** - Middleware enforces role-based access
-5. **Validation** - Zod schemas for all forms
-6. **Error Handling** - Try/catch + toast notifications (Sonner)
+## Testing
 
----
+### Test Counts
 
-## 16. File Reference
+| Category                  | Test Files | Test Cases |
+| ------------------------- | ---------- | ---------- |
+| Unit (hooks)              | 25         | 1,304      |
+| Unit (components)         | 93         | 1,935      |
+| Unit (lib/utils)          | 22         | 1,039      |
+| Unit (contexts/providers) | 4          | 127        |
+| Unit (pages)              | 11         | 222        |
+| Unit (API routes)         | 7          | 282        |
+| Unit (UI primitives)      | 3          | 68         |
+| Integration               | 3          | 91         |
+| E2E (Playwright)          | 3          | 180        |
+| **Total**                 | **172**    | **5,537**  |
 
-| File                    | Purpose                                 |
-| ----------------------- | --------------------------------------- |
-| `CLAUDE.md`             | AI guidance and project guidelines      |
-| `ARCHITECTURE.md`       | Stack architecture (detailed patterns)  |
-| `PROJECT_CONTEXT.md`    | This file - project overview for Claude |
-| `lib/refine.tsx`        | Refine configuration                    |
-| `lib/database.types.ts` | Database TypeScript types               |
-| `lib/validations.ts`    | Zod schemas                             |
-| `middleware.ts`         | Route protection                        |
-| `.session/specs/`       | Work item specifications                |
+### Testing Strategy
 
----
+- **Jest** (unit + integration): jsdom environment, v8 coverage, `@/` path alias support
+- **Playwright** (E2E): Chromium + Mobile Chrome, parallel locally, single worker in CI
+- **Test utilities**: `__tests__/test-utils.tsx` — `renderWithProviders()`, mock factories for auth profiles, Supabase client
+- **Jest setup**: Global mocks for Supabase (`@supabase/ssr`), ResizeObserver, PointerEvent
+- **Coverage target**: 80% (Standard tier)
 
-## 17. Recent Development
+### Running Tests
 
-### Latest Features
+```bash
+npm test                    # All unit tests
+npm run test:coverage       # With coverage report
+npm run test:integration    # Integration tests only
+npm run test:e2e            # Playwright E2E
+npm run lint                # ESLint check
+npm run type-check          # TypeScript strict
+```
 
-1. Push notification system with PWA support
-2. Food swap directly in timeline
-3. Bulk client notifications
-4. Mobile timeline with swipe navigation
-5. Timeline history view
-6. Enhanced admin client details
+## CI/CD & Deployment
 
-### Recent Fixes
+### GitHub Actions Workflows (5)
 
-- iPhone safe area handling
-- PWA icons
-- UUID validation
-- Invite client flow improvements
-- Calculator data persistence
+| Workflow            | Trigger                   | Jobs                                                                                                      |
+| ------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `test.yml`          | PR + push to main/develop | Unit tests + coverage (Codecov), integration (PostgreSQL 16), E2E (Playwright), smoke test, mutation test |
+| `quality-check.yml` | PR + push                 | Type-check, lint, format check, production build                                                          |
+| `security.yml`      | PR + push + weekly        | npm audit (critical), dependency review, Gitleaks secrets scan                                            |
+| `build.yml`         | PR + push                 | Bundle analysis (artifact upload)                                                                         |
+| `deploy.yml`        | Push to main only         | Build → Vercel webhook → Sentry release → optional Lighthouse CI                                          |
+
+### Deployment
+
+- **Platform**: Vercel (triggered via webhook from GitHub Actions)
+- **Database**: Supabase managed cloud (PostgreSQL 17 locally)
+- **Migrations**: `supabase/migrations/` — 30+ timestamped files, format `YYYYMMDDHHMMSS_description.sql`
+
+### Pre-commit Hooks (Husky + lint-staged)
+
+- JS/TS files: `eslint --fix` + `prettier --write`
+- JSON/MD/CSS: `prettier --write`
+
+## Development Setup
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy environment template
+cp .env.local.example .env.local
+# Edit .env.local with Supabase credentials
+
+# 3. Start development server
+npm run dev
+# Visit http://localhost:3000
+
+# 4. Health check
+curl http://localhost:3000/api/health
+```
+
+### Supabase Local Development
+
+- PostgreSQL 17 on port 54322
+- API (PostgREST) on port 54321
+- Studio on port 54323
+- Email testing (Inbucket) on port 54324
+- Max 1000 rows per query
+- Custom email templates in `supabase/templates/`
+
+## Documentation & Resources
+
+| Document                          | Location         | Purpose                                                             |
+| --------------------------------- | ---------------- | ------------------------------------------------------------------- |
+| README.md                         | Root             | Quick start guide                                                   |
+| ARCHITECTURE.md                   | Root             | 712 lines — detailed code patterns, conventions, troubleshooting    |
+| CLAUDE.md                         | Root             | 689 lines — AI development guidelines, quality gates, Solokit usage |
+| PRD.md                            | docs/            | 2,256 lines — complete product requirements                         |
+| SPECIFICATION.md                  | docs/            | 1,568 lines — technical specifications                              |
+| STABILITY_AND_PERFORMANCE_PLAN.md | docs/            | 6-phase performance optimization roadmap                            |
+| COMPLETE-FORMULAE-GUIDE.md        | docs/            | Metabolic formula reference                                         |
+| TEST_USERS.md                     | docs/            | Test account credentials                                            |
+| KNOWN_ISSUES.md                   | docs/            | Current known issues                                                |
+| PRD_WRITING_GUIDE.md              | .session/guides/ | Mandatory guide for PRD authoring                                   |
+| STACK_GUIDE.md                    | .session/guides/ | Stack selection documentation                                       |
+| .session/specs/                   | .session/        | 20+ work item specification files                                   |
+
+### Solokit Session-Driven Development
+
+The project uses Solokit for structured development sessions. Key commands: `/start`, `/end`, `/validate`, `/status`, `/work-new`, `/work-list`, `/learn`. Work items tracked in `.session/tracking/work_items.json` (always use `sk` CLI, never edit directly).
+
+## Security & Performance
+
+### Authentication
+
+- **Supabase Auth** with JWT sessions stored in HTTP-only cookies
+- Singleton browser client prevents connection exhaustion
+- Custom mutex-based lock for token refresh (avoids "signal aborted" errors)
+- Module-level `authStateCache` eliminates redundant `getUser()` calls
+
+### Security Patterns
+
+- **RLS on all tables** — Users see own data, admins see all
+- **Server-side admin checks** — `isAdmin()` on every admin API route
+- **Input validation** — Zod schemas on all API inputs and forms
+- **Sentry data redaction** — password, token, secret, authorization fields redacted
+- **Session replay privacy** — All text masked, media blocked
+- **Gitleaks** — Weekly + PR secrets scanning
+- **npm audit** — Critical-level dependency scanning
+
+### Performance Patterns
+
+- **React Query defaults** — 2min staleTime, 5min gcTime (avoid over-fetching)
+- **Auth state cache** — Module-level cache eliminates getUser()/profile queries per page
+- **Package tree-shaking** — `optimizePackageImports` for lucide-react, recharts
+- **PostHog deferred init** — Uses `requestIdleCallback` to avoid blocking hydration
+- **Sentry sampling** — 10% transactions, 10% session replay (100% on error)
+- **HSTS preload** — 2-year max-age with preload flag
+- **Service worker** — PWA offline support, no-cache policy on sw.js

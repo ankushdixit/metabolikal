@@ -1,154 +1,159 @@
-# metabolikal
+# Metabolikal
 
-A Internal Dashboard (Refine) project built with Session-Driven Development.
+A metabolic health transformation platform — an internal coaching dashboard for managing client diet plans, workout programs, supplement schedules, and lifestyle activities. Includes a public-facing 30-day challenge with gamification.
 
 ## Tech Stack
 
-- **Framework**: Refine (latest) + Next.js 16.0.7
-- **Language**: TypeScript 5.9.3
-- **Ui**: React 19.2.1 + shadcn/ui components
-- **Forms**: React Hook Form 7.66.0 + Zod 4.1.12
-- **Styling**: Tailwind CSS 4.1.17
+| Layer          | Technology                                | Version         |
+| -------------- | ----------------------------------------- | --------------- |
+| Framework      | Next.js (App Router)                      | 16.1.0          |
+| Language       | TypeScript (strict)                       | 5.9.3           |
+| UI             | React + shadcn/ui + Radix UI              | 19.2.1          |
+| CRUD           | Refine (headless)                         | 5.0.5           |
+| Backend        | Supabase (PostgreSQL, Auth, Storage, RLS) | 2.90.1          |
+| Styling        | Tailwind CSS v4                           | 4.1.17          |
+| Forms          | React Hook Form + Zod                     | 7.66.0 / 4.1.12 |
+| Charts         | Recharts                                  | 3.3.0           |
+| Error Tracking | Sentry                                    | 10.35.0         |
+| Analytics      | PostHog (reverse-proxied)                 | 1.336.1         |
+| Push           | Web Push (VAPID)                          | 3.6.7           |
+| Testing        | Jest + Testing Library + Playwright       | 30.2.0 / 1.58.2 |
 
-## Quality Gates: Standard
+## User Roles
 
-- ✓ Linting (ESLint/Ruff)
-- ✓ Formatting (Prettier/Ruff)
-- ✓ Type checking (TypeScript strict/Pyright)
-- ✓ Basic unit tests (Jest/pytest)
-- ✓ 80% test coverage minimum
-- ✓ Pre-commit hooks (Husky + lint-staged)
-- ✓ Secret scanning (git-secrets, detect-secrets)
-- ✓ Dependency vulnerability scanning
-- ✓ Basic SAST (ESLint security/bandit)
-- ✓ License compliance checking
-
-**Test Coverage Target**: 80%
+| Role           | Access                                                        |
+| -------------- | ------------------------------------------------------------- |
+| **Admin**      | Full access — manage clients, config, plans, review check-ins |
+| **Client**     | Dashboard — track meals, workouts, check-ins, progress        |
+| **Challenger** | Landing page — 30-day challenge with gamification             |
 
 ## Getting Started
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 npm install
 
-# Run development server
-npm run dev
-```
-
-Visit http://localhost:3000
-
-### Environment Setup
-
-```bash
-# Copy environment template
+# 2. Set up environment
 cp .env.local.example .env.local
-# Edit .env.local with your Supabase credentials
+# Edit .env.local with your Supabase credentials (see below)
+
+# 3. Start dev server
+npm run dev
+# Visit http://localhost:3000
 ```
 
-### Supabase Configuration
+### Required Environment Variables
 
-This project uses [Supabase](https://supabase.com) as the backend. You need to configure the following environment variables:
+Get these from your [Supabase project dashboard](https://supabase.com) > Project Settings > API:
 
 ```bash
-# Required - Get these from your Supabase project dashboard
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Optional - For admin operations
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-To get these values:
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to Project Settings > API
-3. Copy the Project URL and anon public key
+Optional: `SUPABASE_SERVICE_ROLE_KEY` (admin operations), `NEXT_PUBLIC_SENTRY_DSN` (error tracking), `NEXT_PUBLIC_POSTHOG_KEY` (analytics), `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` (push notifications). See `.env.production.example` for all options.
 
 ### Health Check
 
-The application exposes a health check endpoint at `/api/health`:
-
 ```bash
-# Check application health
 curl http://localhost:3000/api/health
+# {"status":"ok","timestamp":"...","database":"connected"}
 ```
 
-Response when healthy:
+## Project Structure
 
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-01-19T10:00:00.000Z",
-  "database": "connected"
-}
+```
+app/
+├── (public)/              # Landing pages
+├── (auth)/                # Login, register, password reset
+├── dashboard/             # Client dashboard (profile, checkin, progress, challenge)
+├── admin/                 # Admin portal (clients, challengers, config, pending-reviews)
+├── api/                   # API routes (health, admin/*, push/*)
+└── auth/callback/         # OAuth callback
+components/
+├── ui/                    # shadcn/ui primitives
+├── admin/                 # Admin components
+├── dashboard/             # Dashboard components
+├── landing/               # Landing page + modals
+└── layout/                # Header, sidebar, nav
+contexts/                  # AuthContext, ModalContext, PlanCycleContext
+hooks/                     # useGamification, useCalculator, useTimeline, etc.
+lib/                       # refine.tsx, validations.ts, auth.ts, challenge-utils.ts, etc.
+providers/                 # RefineProvider
+supabase/migrations/       # 30+ SQL migrations
 ```
 
-Response when database is unreachable (HTTP 503):
+## Commands
 
-```json
-{
-  "status": "degraded",
-  "timestamp": "2026-01-19T10:00:00.000Z",
-  "database": "disconnected"
-}
-```
-
-## Testing
+### Development
 
 ```bash
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run linting
-npm run lint
-
-# Run type checking
-npm run type-check
+npm run dev          # Dev server
+npm run build        # Production build
+npm start            # Production server
 ```
 
-## Additional Features
+### Quality
 
-- ✓ **GitHub Actions CI/CD**: Automated testing and deployment workflows
-- ✓ **Environment Templates**: .env files and .editorconfig for all editors
+```bash
+npm test             # Unit tests (Jest)
+npm run test:coverage  # Coverage report (target: 80%)
+npm run test:e2e     # E2E tests (Playwright)
+npm run lint         # ESLint
+npm run type-check   # TypeScript strict
+npm run format       # Prettier
+```
+
+### Pre-commit Hooks
+
+Husky + lint-staged run automatically on `git commit`:
+
+- JS/TS: `eslint --fix` + `prettier --write`
+- JSON/MD/CSS: `prettier --write`
+
+## CI/CD
+
+5 GitHub Actions workflows on PR/push to main:
+
+| Workflow            | Purpose                                    |
+| ------------------- | ------------------------------------------ |
+| `test.yml`          | Unit + integration + E2E + smoke tests     |
+| `quality-check.yml` | Type-check, lint, format, build            |
+| `security.yml`      | npm audit, dependency review, Gitleaks     |
+| `build.yml`         | Bundle analysis                            |
+| `deploy.yml`        | Vercel deploy + Sentry release (main only) |
+
+**Deployment**: Vercel (triggered via webhook). Database: Supabase managed cloud.
 
 ## Documentation
 
-See `ARCHITECTURE.md` for detailed technical documentation including:
+| File                                     | Purpose                                                                                                                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `PROJECT_CONTEXT.md`                     | Comprehensive project context — data models, API surface, permissions, enums, state machines, testing counts, business config |
+| `ARCHITECTURE.md`                        | Stack architecture patterns, code examples, Tailwind v4 config, troubleshooting                                               |
+| `CLAUDE.md`                              | AI development guidelines, critical rules, quality gates                                                                      |
+| `docs/PRD.md`                            | Product requirements document                                                                                                 |
+| `docs/SPECIFICATION.md`                  | Technical specifications                                                                                                      |
+| `docs/STABILITY_AND_PERFORMANCE_PLAN.md` | 6-phase optimization roadmap                                                                                                  |
+| `docs/COMPLETE-FORMULAE-GUIDE.md`        | Metabolic formula reference                                                                                                   |
+| `docs/TEST_USERS.md`                     | Test account credentials                                                                                                      |
 
-- Architecture decisions and trade-offs
-- Project structure reference
-- Code patterns and examples
-- Database workflow
-- Troubleshooting guides
+## Session-Driven Development (Solokit)
 
-## Session-Driven Development
+This project uses Solokit for structured AI-augmented development sessions.
 
-This project uses Session-Driven Development (Solokit) for organized, AI-augmented development.
+```bash
+/work-new              # Create work item
+/work-list             # List work items
+/start [id]            # Start session
+/status                # Session status
+/validate              # Check quality gates
+/end                   # Complete session
+/learn                 # Capture learning
+```
 
-### Commands
-
-- `/sk:work-new` - Create a new work item
-- `/sk:work-list` - List all work items
-- `/sk:start` - Start working on a work item
-- `/sk:status` - Check current session status
-- `/sk:validate` - Validate quality gates
-- `/sk:end` - Complete current session
-- `/sk:learn` - Capture a learning
-
-### Documentation
-
-See `.session/` directory for:
-
-- Work item specifications (`.session/specs/`)
-- Session briefings (`.session/briefings/`)
-- Session summaries (`.session/history/`)
-- Captured learnings (`.session/tracking/learnings.json`)
-
----
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Work items: `.session/tracking/work_items.json` (use `sk` CLI, never edit directly)
+Specs: `.session/specs/`
+History: `.session/history/`

@@ -767,7 +767,7 @@ describe("ClientTimelineView", () => {
         expect.objectContaining({
           resource: "diet_plans",
           id: "diet-plan-1",
-          values: { food_item_id: "alt-food-1" },
+          values: { food_item_id: "alt-food-1", serving_multiplier: 1 },
         }),
         expect.any(Object)
       );

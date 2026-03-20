@@ -155,11 +155,11 @@ export function TemplateGroupedMealModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg bg-card p-0">
+      <DialogContent className="sm:max-w-lg bg-card p-0 flex flex-col overflow-hidden max-h-[85vh]">
         {/* Top accent */}
-        <div className="h-1 bg-gradient-to-r from-orange-500 to-orange-600" />
+        <div className="h-1 bg-gradient-to-r from-orange-500 to-orange-600 shrink-0" />
 
-        <DialogHeader className="p-6 pb-4 border-b border-border">
+        <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
           <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
             <Utensils className="h-5 w-5 text-orange-400" />
             {item.title}
@@ -172,7 +172,7 @@ export function TemplateGroupedMealModal({
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 flex-1 overflow-y-auto">
           {/* Totals Summary */}
           <div className="grid grid-cols-4 gap-2 p-3 bg-orange-500/10 rounded border border-orange-500/30">
             <div className="text-center">
@@ -268,7 +268,7 @@ export function TemplateGroupedMealModal({
         </div>
 
         {/* Close Button */}
-        <div className="p-6 pt-0">
+        <div className="p-6 pt-4 border-t border-border shrink-0">
           <button
             onClick={onClose}
             className="btn-athletic w-full px-4 py-3 bg-secondary text-foreground"

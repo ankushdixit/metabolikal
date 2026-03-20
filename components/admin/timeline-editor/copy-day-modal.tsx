@@ -323,11 +323,11 @@ export function CopyDayModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md bg-card p-0">
+      <DialogContent className="sm:max-w-md bg-card p-0 flex flex-col overflow-hidden max-h-[85vh]">
         {/* Top accent */}
-        <div className="h-1 gradient-electric" />
+        <div className="h-1 gradient-electric shrink-0" />
 
-        <DialogHeader className="p-6 pb-4 border-b border-border">
+        <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
           <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
             <Copy className="h-5 w-5 text-primary" />
             Copy Day <span className="gradient-athletic">{sourceDay}</span> To...
@@ -342,7 +342,7 @@ export function CopyDayModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
           {/* Day Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -525,7 +525,7 @@ export function CopyDayModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="p-6 pt-0 flex gap-3">
+        <div className="p-6 pt-4 border-t border-border flex gap-3 shrink-0">
           <button
             type="button"
             onClick={handleClose}

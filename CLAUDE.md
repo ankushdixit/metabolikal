@@ -1,688 +1,193 @@
-# CLAUDE.md - Project Guidelines for metabolikal
+# CLAUDE.md — Metabolikal
 
-## Project Configuration
+## Project Overview
 
-- **Stack**: Internal Dashboard (Refine)
-- **Quality Tier**: Standard
-- **Test Coverage Target**: 80%
-- **Package Manager**: npm
-- **Additional Options**: GitHub Actions CI/CD, Environment Templates
-- **Initialized With**: Solokit v0.1.2
+Metabolikal is a metabolic health coaching dashboard. Three user roles: **admin** (coaches), **client** (paying clients with custom plans), **challenger** (free 30-day challenge participants). Backend is Supabase (PostgreSQL + Auth + RLS). Frontend is Next.js 16 + Refine + React 19 + shadcn/ui + Tailwind CSS v4.
 
-This project was initialized with Solokit Session-Driven Development.
+**Read these files for context:**
 
-For detailed architecture patterns and code examples, see **ARCHITECTURE.md**.
+- **PROJECT_CONTEXT.md** — Data models, API surface, permissions, enums, state machines, business config, test counts
+- **ARCHITECTURE.md** — Code patterns, Tailwind v4 config, troubleshooting
 
 ---
 
-## Building From Scratch
+## Critical Rules
 
-This project uses minimal scaffolding. You'll create files from scratch following the patterns in ARCHITECTURE.md:
+### 1. Refine hooks for ALL CRUD operations
 
-1. **Read the PRD** at `docs/PRD.md` (if it exists)
-2. **Understand the requirements** from the work item spec
-3. **Create necessary files** following ARCHITECTURE.md patterns
-4. **Write tests** alongside implementation
-5. **Run quality gates** before completing with `/validate`
+Use `useList()`, `useOne()`, `useCreate()`, `useUpdate()`, `useDelete()`, `useForm()`, `useShow()`, `useTable()`. NEVER write custom fetch/axios calls for data operations. All CRUD goes through the Supabase data provider configured in `lib/refine.tsx`.
 
-### Quick Pattern Reference
+### 2. File organization
 
-**Adding a New Resource:**
+| What                          | Where                                    |
+| ----------------------------- | ---------------------------------------- |
+| Client dashboard pages        | `app/dashboard/`                         |
+| Admin pages                   | `app/admin/`                             |
+| Admin config CRUD             | `app/admin/config/[resource]/`           |
+| Public pages                  | `app/(public)/`                          |
+| Auth pages                    | `app/(auth)/`                            |
+| API routes                    | `app/api/`                               |
+| Shared components             | `components/`                            |
+| UI primitives (shadcn)        | `components/ui/`                         |
+| Custom hooks                  | `hooks/`                                 |
+| React contexts                | `contexts/`                              |
+| Refine + data provider config | `lib/refine.tsx`                         |
+| Zod validation schemas        | `lib/validations.ts`                     |
+| Supabase types                | `lib/database.types.ts`                  |
+| Pure utility functions        | `lib/challenge-utils.ts`, `lib/utils.ts` |
+| Auth (client-side)            | `lib/auth.ts`                            |
+| Auth (server-only)            | `lib/auth-server.ts`                     |
+| Constants & feature flags     | `lib/constants.ts`                       |
+| Environment validation        | `lib/env.ts`                             |
 
-1. Configure data provider in `lib/refine.tsx`
-2. Add resource definition to `lib/refine.tsx`
-3. Create list page at `app/(dashboard)/[resource]/page.tsx`
-4. Create forms at `app/(dashboard)/[resource]/create/page.tsx`
-5. Add validation schema to `lib/validations.ts`
-6. Add navigation link to `components/layout/sidebar.tsx`
-7. Add tests alongside each file
+### 3. UI components
 
-**Data Provider Setup:**
+Use shadcn/ui from `components/ui/`. Follow the existing CSS variable theming in `app/globals.css`. Use Tailwind CSS for styling. Don't install competing UI libraries.
 
-```typescript
-// lib/refine.tsx - Choose your backend:
+### 4. Validation
 
-// REST API
-import dataProvider from "@refinedev/simple-rest";
-export const refineDataProvider = dataProvider("https://api.example.com");
+All form data and API inputs must use Zod schemas from `lib/validations.ts`. Use `zodResolver` with `useForm()` for forms. Use `.parse()` or `.safeParse()` in API routes.
 
-// Supabase
-import { dataProvider } from "@refinedev/supabase";
-export const refineDataProvider = dataProvider(supabaseClient);
+### 5. Auth patterns
 
-// GraphQL
-import dataProvider, { GraphQLClient } from "@refinedev/graphql";
-export const refineDataProvider = dataProvider(client);
-```
+- Server-side admin checks: `isAdmin()` from `lib/auth-server.ts`
+- Client-side auth: `useAuth()` from `contexts/auth-context.tsx`
+- RLS on all Supabase tables — users see own data, admins see all
+- Deactivation enforced at app layer (not RLS) to avoid recursive subqueries
 
-**Resource Definition:**
+### 6. Tests alongside implementation
 
-```typescript
-// lib/refine.tsx
-export const refineResources = [
-  {
-    name: "users",
-    list: "/users",
-    create: "/users/create",
-    edit: "/users/edit/:id",
-    show: "/users/show/:id",
-  },
-];
-```
-
-See ARCHITECTURE.md for complete code patterns and examples.
+Tests go in `__tests__/` directories colocated with source files. Use Jest + React Testing Library for unit tests. Test utilities in `__tests__/test-utils.tsx` provide `renderWithProviders()`, mock factories. 80% coverage target.
 
 ---
 
-## Stack Architecture Rules
+## How to Add a New Feature
 
-### Critical Rules
-
-1. **Use Refine hooks for ALL CRUD operations**
-   - `useTable()` for list pages
-   - `useForm()` for create/edit pages
-   - `useShow()` for detail pages
-   - `useList()`, `useOne()`, `useCreate()`, `useUpdate()`, `useDelete()` for data fetching
-   - NEVER implement custom CRUD logic
-
-2. **Data Provider Pattern**
-   - All API communication goes through the data provider
-   - Configure data provider in `lib/refine.tsx`
-   - **IMPORTANT**: The template includes a placeholder data provider that throws helpful errors
-   - You MUST configure a real data provider before building features
-
-3. **UI Components**
-   - Use shadcn/ui components from `components/ui/`
-   - Follow the existing theming system (CSS variables)
-   - Use Tailwind CSS for styling
-
-### File Organization
-
-| New Code Type      | Location             |
-| ------------------ | -------------------- |
-| Resource pages     | `app/(dashboard)/`   |
-| Shared components  | `components/`        |
-| UI primitives      | `components/ui/`     |
-| Form components    | `components/forms/`  |
-| Refine config      | `lib/refine.tsx`     |
-| Validation schemas | `lib/validations.ts` |
-
-### Code Patterns
-
-**List Page with useTable:**
-
-```typescript
-"use client";
-import { useTable } from "@refinedev/core";
-import { DataTable } from "@/components/ui/data-table";
-
-export default function ProductList() {
-  const { tableQueryResult } = useTable({
-    resource: "products",
-  });
-
-  return <DataTable data={tableQueryResult.data?.data ?? []} />;
-}
-```
-
-**Form Page with useForm:**
-
-```typescript
-"use client";
-import { useForm } from "@refinedev/react-hook-form";
-
-export default function ProductCreate() {
-  const { refineCore: { onFinish }, register, handleSubmit } = useForm({
-    resource: "products",
-  });
-
-  return (
-    <form onSubmit={handleSubmit(onFinish)}>
-      <input {...register("name")} />
-      <button type="submit">Create</button>
-    </form>
-  );
-}
-```
-
-### Common Mistakes to Avoid
-
-- Writing custom fetch/axios calls for CRUD operations
-- Not configuring a real data provider before building features
-- Creating custom table components instead of using Refine's integration
-- Not defining resources in the Refine configuration
-- Bypassing the data provider for API calls
+1. **Zod schema** → `lib/validations.ts`
+2. **Resource config** → `lib/refine.tsx` (add to `refineResources`)
+3. **List page** → `app/admin/my-resource/page.tsx` using `useList()`
+4. **Create/Edit pages** → `app/admin/my-resource/create/page.tsx` using `useForm()`
+5. **Form component** → `components/admin/my-resource-form.tsx`
+6. **Tests** → `__tests__/` alongside each file
+7. **Navigation link** → `components/layout/sidebar.tsx`
+8. **Quality check** → `npm run lint && npm run type-check && npm test`
 
 ---
 
-## Solokit Usage Guide
+## Quality Gates
 
-This project uses Solokit for Session-Driven Development. Follow these guidelines for consistent and effective usage.
+**Coverage target**: 80%
 
-### Understanding Solokit Commands
+All changes must pass before completion:
 
-Solokit commands are available as **slash commands** in Claude Code (e.g., `/start`, `/end`, `/work-new`) or via the `sk` CLI in terminal. **Slash commands are preferred** as they provide interactive prompts.
-
-For CLI usage with specific arguments, use `--help` to discover options:
-
-```bash
-sk <command> --help
-```
-
-### Work Item Management
-
-#### Creating Work Items
-
-**When asked to create a work item, ALWAYS use the CLI:**
+- [ ] All tests pass (`npm test`)
+- [ ] No linting errors (`npm run lint`)
+- [ ] Type checking passes (`npm run type-check`)
+- [ ] Coverage meets 80% (`npm run test:coverage`)
+- [ ] Pre-commit hooks pass (Husky + lint-staged)
 
 ```bash
-# First, check available options
-sk work-new --help
-
-# Create with required fields
-sk work-new --type feature --title "Add user authentication" --priority high
-
-# With dependencies
-sk work-new --type feature --title "Add OAuth" --priority high --dependencies feat_user_auth
-
-# Mark as urgent
-sk work-new --type bug --title "Fix critical login error" --priority critical --urgent
-```
-
-**NEVER create work items by directly editing `work_items.json`.**
-
-**Valid Types**: feature, bug, refactor, security, integration_test, deployment
-**Valid Priorities**: critical, high, medium, low
-
-#### Listing Work Items
-
-```bash
-# List all work items
-sk work-list
-
-# Filter by status
-sk work-list --status not_started
-sk work-list --status in_progress
-
-# Filter by type
-sk work-list --type bug
-
-# Filter by milestone
-sk work-list --milestone "v1.0"
-```
-
-#### Viewing Work Item Details
-
-```bash
-sk work-show <work_item_id>
-```
-
-#### Updating Work Items
-
-```bash
-# Check available update options
-sk work-update --help
-
-# Update status
-sk work-update feat_001 --status in_progress
-
-# Update priority
-sk work-update feat_001 --priority critical
-
-# Add dependency
-sk work-update feat_001 --add-dependency feat_002
-
-# Mark as urgent
-sk work-update feat_001 --set-urgent
-```
-
-#### Deleting Work Items
-
-```bash
-sk work-delete <work_item_id>
-```
-
-### Spec File Guidelines
-
-**CRITICAL: When creating work items, spec files are automatically created from templates.**
-
-#### Spec File Location
-
-- Spec files are stored in `.session/specs/`
-- Each work item gets a spec file: `.session/specs/{work_item_id}.md`
-
-#### When to Update Spec Files
-
-1. **After creating a work item** - Fill in the template placeholders
-2. **Before starting work** - Ensure spec is complete
-3. **During implementation** - Update with any changes or discoveries
-
-#### Spec File Best Practices
-
-1. **Always use the template structure**
-   - Don't create spec files from scratch
-   - Use the existing template in `.session/specs/`
-   - Fill in ALL sections, don't leave placeholders
-
-2. **Be thorough and consistent**
-   - If creating multiple work items, give EQUAL attention to each spec file
-   - Don't write detailed specs for the first few and brief specs for the rest
-   - Each spec file should have the same level of detail
-
-3. **Include acceptance criteria**
-   - Every spec must have clear, testable acceptance criteria
-   - These will be used during `/validate` and `/end`
-
-4. **Link related work items**
-   - Reference dependencies in the spec
-   - Note any blocking or blocked-by relationships
-
-#### Spec File Template Structure
-
-```markdown
-# Work Item: {title}
-
-## Overview
-
-[Clear description of what this work item accomplishes]
-
-## Acceptance Criteria
-
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-## Technical Approach
-
-[How will this be implemented?]
-
-## Dependencies
-
-[List any work items this depends on]
-
-## Testing Requirements
-
-[What tests need to be written?]
-
-## Notes
-
-[Any additional context]
-```
-
-### Session Workflow
-
-#### Starting a Session
-
-Use `/start` to begin a session:
-
-```bash
-/start                    # Interactive - select from available work items
-/start <work_item_id>     # Start specific work item
-```
-
-The start command:
-
-- Updates work item status to `in_progress`
-- Generates a session briefing in `.session/briefings/`
-- Provides context about the work item and dependencies
-
-#### Checking Session Status
-
-Use `/status` to check current session:
-
-```bash
-/status
-```
-
-Shows:
-
-- Current work item
-- Session duration
-- Quality gate status
-- Pending tasks
-
-#### Validating Without Ending
-
-Use `/validate` to check quality gates:
-
-```bash
-/validate
-```
-
-Runs quality gates without ending the session:
-
-- Test coverage check
-- Linting
-- Type checking
-- Spec completion status
-
-Use this frequently during development to catch issues early.
-
-#### Ending a Session
-
-Use `/end` to complete a session:
-
-```bash
-/end
-```
-
-The end command:
-
-- Runs all quality gate validations
-- Prompts for session summary
-- Updates work item status if complete
-- Generates session history in `.session/history/`
-- Prompts for learning capture
-
-**IMPORTANT**: Always end sessions properly. Don't abandon sessions.
-
-### Learning Capture
-
-#### When to Capture Learnings
-
-Capture learnings when you:
-
-- Solve a tricky problem
-- Discover a better pattern
-- Find an important gotcha
-- Learn something about the codebase
-
-#### How to Capture Learnings
-
-**Method 1: During Session End (Preferred)**
-When running `/end`, you'll be prompted to capture learnings. This is the preferred method as it links learnings to the session context.
-
-**Method 2: Explicit Command**
-
-```bash
-/learn
-```
-
-This will prompt for:
-
-- Learning title
-- Description
-- Category
-- Tags
-
-#### Learning Storage
-
-- Learnings are stored in `.session/tracking/learnings.json`
-- They are indexed and searchable
-- They persist across sessions
-
-#### Searching Learnings
-
-```bash
-/learn-search "authentication"
-```
-
-#### Viewing Learnings
-
-```bash
-/learn-show                           # Show all learnings
-/learn-show --category debugging      # Filter by category
-/learn-show --tag authentication      # Filter by tag
-```
-
-**IMPORTANT**:
-
-- Always capture learnings through Solokit commands, not by editing JSON directly
-- Don't put learnings in commit messages - use the learning system
-- Learnings should be reusable knowledge, not task-specific notes
-
-### Dependency Graph
-
-Visualize work item dependencies:
-
-```bash
-/work-graph                       # Generate dependency graph
-/work-graph --focus feat_001      # Focus on specific work item
-/work-graph --critical-path       # Show critical path
-/work-graph --bottlenecks         # Show bottlenecks
+npm test                 # Unit tests
+npm run test:coverage    # Coverage report
+npm run test:integration # Integration tests
+npm run test:e2e         # Playwright E2E
+npm run lint             # ESLint
+npm run type-check       # TypeScript strict
 ```
 
 ---
 
-## Claude Behavior Guidelines
+## Anti-Patterns
 
-### Be Thorough
+- **Don't** write custom fetch/axios for CRUD — use Refine hooks
+- **Don't** bypass the Supabase data provider for API calls
+- **Don't** skip Zod validation on form data or API inputs
+- **Don't** bypass pre-commit hooks with `--no-verify`
+- **Don't** commit code that fails linting or type checking
+- **Don't** hardcode magic numbers — put them in `lib/constants.ts`
+- **Don't** use `console.log()` for diagnostics — only `console.error()` for errors
+- **Don't** edit `.session/tracking/work_items.json` or `learnings.json` directly — use `sk` CLI
 
-1. **Complete all tasks fully**
-   - Don't rush through multiple items
-   - Give equal attention to each task
-   - If creating 5 work items, each spec file should be equally detailed
+---
 
-2. **Don't make assumptions**
-   - Ask clarifying questions when requirements are ambiguous
-   - Confirm understanding before making significant changes
-   - When in doubt, ask rather than guess
+## Behavior Guidelines
 
-3. **Follow established patterns**
-   - Check existing code for patterns before writing new code
-   - Maintain consistency with the codebase style
-   - Reference ARCHITECTURE.md for stack-specific patterns
-
-4. **Validate your work**
-   - Run `/validate` after making changes
-   - Ensure tests pass before considering work complete
-   - Check that linting and type checking pass
-
-### Ask Clarifying Questions When
-
-- Requirements are vague or could be interpreted multiple ways
-- You're unsure which of several approaches to take
-- The task might affect other parts of the codebase
-- You need to make architectural decisions
-- The user's request conflicts with existing patterns
+1. **Check existing patterns first** — read similar files before writing new code. Maintain consistency.
+2. **Ask when ambiguous** — don't guess requirements, architectural decisions, or when a task could affect other areas.
+3. **Validate your work** — run `/validate` after changes. Ensure tests, linting, and type checking pass.
+4. **Give equal attention** — if creating multiple work items, each spec file should be equally detailed.
 
 ### Writing PRDs
 
-When asked to create or write a PRD:
-
-1. **Always read `.session/guides/PRD_WRITING_GUIDE.md` first** - This guide is mandatory
-2. Follow the structure and best practices defined there
-3. Use vertical slices, not horizontal layers (see guide for details)
-4. Include all required sections: technical constraints, acceptance criteria, error cases
-5. Reference `.session/guides/STACK_GUIDE.md` for stack-specific considerations
-6. Save the PRD at `docs/PRD.md`
-
-**IMPORTANT**: Do NOT write PRDs from memory or general knowledge. The PRD_WRITING_GUIDE.md contains Solokit-specific patterns that ensure PRDs translate correctly into work items.
-
-### Reference Documentation
-
-- **ARCHITECTURE.md** - For stack-specific patterns, conventions, and code examples
-- **README.md** - For project-specific configuration and getting started
-- **.session/specs/** - For work item requirements and acceptance criteria
-- **.session/guides/PRD_WRITING_GUIDE.md** - **MUST follow when writing PRDs**
-- **.session/guides/STACK_GUIDE.md** - For understanding stack choice and capabilities
-- **sk <command> --help** - For Solokit command options
+1. **Always read `.session/guides/PRD_WRITING_GUIDE.md` first** — mandatory
+2. Use vertical slices, not horizontal layers
+3. Include technical constraints, acceptance criteria, error cases
+4. Reference `.session/guides/STACK_GUIDE.md` for stack considerations
+5. Save at `docs/PRD.md`
 
 ---
 
-## What NOT to Do
+## Solokit (Session-Driven Development)
 
-### Never Do These
+Commands available as slash commands (`/start`, `/end`) or via `sk` CLI. Slash commands preferred.
 
-1. **Don't edit tracking files directly**
-   - NEVER edit `.session/tracking/work_items.json` manually
-   - NEVER edit `.session/tracking/learnings.json` manually
-   - Always use `sk` commands to modify these files
+### Core Workflow
 
-2. **Don't skip the spec file template**
-   - NEVER create spec files from scratch
-   - ALWAYS use the template structure in `.session/specs/`
-   - ALWAYS fill in all sections of the template
+```bash
+/start [work_item_id]    # Start session (generates briefing)
+/status                  # Check session progress
+/validate                # Run quality gates without ending
+/end                     # Complete session (runs validations, captures learnings)
+```
 
-3. **Don't be inconsistent with multiple items**
-   - If creating multiple work items, don't write detailed specs for the first few and brief specs for the rest
-   - Each item deserves equal attention and thoroughness
+### Work Items
 
-4. **Don't put learnings in wrong places**
-   - NEVER add learnings to commit messages
-   - NEVER create random learning files outside the system
-   - ALWAYS use `/learn` or capture during `/end`
+```bash
+/work-new                # Create work item (interactive)
+/work-list               # List all (filter: --status, --type, --milestone)
+/work-show <id>          # Show details
+/work-update <id>        # Update (--status, --priority, --add-dependency, --set-urgent)
+/work-delete <id>        # Delete
+/work-next               # Next recommended item
+/work-graph              # Dependency visualization
+```
 
-5. **Don't ignore the architecture**
-   - NEVER violate stack-specific rules (see Stack Architecture Rules above)
-   - NEVER use patterns that contradict ARCHITECTURE.md
-   - NEVER skip validation steps
+Valid types: `feature`, `bug`, `refactor`, `security`, `integration_test`, `deployment`
+Valid priorities: `critical`, `high`, `medium`, `low`
 
-6. **Don't guess command options**
-   - NEVER assume you know all options for an `sk` command
-   - ALWAYS run `sk <command> --help` first if unsure
-   - NEVER pass invalid arguments to commands
+NEVER create work items by editing `work_items.json` directly. Always use `sk` commands.
 
-7. **Don't abandon sessions**
-   - NEVER leave a session without running `/end`
-   - NEVER start a new session without ending the current one
-   - ALWAYS complete the session workflow properly
+### Specs
 
-8. **Don't skip quality gates**
-   - NEVER commit code that fails linting
-   - NEVER commit code that fails type checking
-   - NEVER commit code without running tests
-   - NEVER bypass pre-commit hooks with `--no-verify`
+- Stored in `.session/specs/{work_item_id}.md` (auto-created from templates)
+- Fill in ALL sections: Overview, Acceptance Criteria, Technical Approach, Dependencies, Testing Requirements
+- If creating multiple items, give equal detail to each
 
-### Stack-Specific Anti-Patterns
+### Learnings
 
-#### dashboard_refine
+```bash
+/learn                          # Capture a learning
+/learn-show                     # View all (--category, --tag filters)
+/learn-search "query"           # Search
+```
 
-- DON'T write custom CRUD logic - use Refine hooks
-- DON'T deploy without configuring a real data provider
-- DON'T bypass the data provider for API calls
+Capture during `/end` (preferred) or via `/learn`. Never add learnings to commit messages or random files.
+
+**Rules**: Always end sessions with `/end`. Never start a new session without ending the current one. Never abandon sessions.
 
 ---
 
-## Quality Requirements
+## Key Files
 
-**Quality Tier**: Standard
-**Test Coverage Target**: 80%
-
-### Required Quality Gates
-
-All code changes must pass these quality gates before completion:
-
-#### All Tiers
-
-- [ ] All tests pass
-- [ ] Code is formatted (run formatter before commit)
-- [ ] No linting errors
-- [ ] Type checking passes
-- [ ] Test coverage meets 80% target
-
-#### Additional Requirements by Tier
-
-**Tier 2+ (Standard and above)**:
-
-- [ ] Pre-commit hooks pass
-- [ ] No secrets in code (git-secrets)
-- [ ] No dependency vulnerabilities
-
-### Running Quality Checks
-
-```bash
-# Run all quality validations
-/validate
-
-# Manual checks for dashboard_refine:
-npm test                 # Run tests
-npm run test:coverage    # Check coverage
-npm run lint             # Run linting
-npm run type-check       # Run type checking
-```
-
-### Pre-Commit Hooks
-
-This project has pre-commit hooks installed. They run automatically on `git commit`.
-
-If hooks fail:
-
-1. Fix the issues reported
-2. Stage the fixes: `git add .`
-3. Commit again
-
-To bypass hooks (NOT RECOMMENDED):
-
-```bash
-git commit --no-verify
-```
-
----
-
-## Quick Reference
-
-### Solokit Commands (Slash Commands)
-
-| Command                 | Description                    |
-| ----------------------- | ------------------------------ |
-| `/work-list`            | List all work items            |
-| `/work-show <id>`       | Show work item details         |
-| `/work-new`             | Create new work item           |
-| `/work-update <id>`     | Update work item               |
-| `/work-delete <id>`     | Delete work item               |
-| `/work-graph`           | Visualize dependencies         |
-| `/work-next`            | Get next recommended work item |
-| `/start [id]`           | Start a session                |
-| `/status`               | Check session status           |
-| `/validate`             | Validate quality gates         |
-| `/end`                  | End session                    |
-| `/learn`                | Capture a learning             |
-| `/learn-show`           | View learnings                 |
-| `/learn-search <query>` | Search learnings               |
-
-### Key Files
-
-| File                                   | Purpose                                      |
-| -------------------------------------- | -------------------------------------------- |
-| `CLAUDE.md`                            | AI guidance (this file)                      |
-| `ARCHITECTURE.md`                      | Stack architecture guide (detailed patterns) |
-| `README.md`                            | Project quick start                          |
-| `.session/guides/PRD_WRITING_GUIDE.md` | PRD authoring guide (MUST follow for PRDs)   |
-| `.session/guides/STACK_GUIDE.md`       | Stack selection and capabilities guide       |
-| `.session/tracking/work_items.json`    | Work item data (use `sk` commands)           |
-| `.session/tracking/learnings.json`     | Captured learnings (use `sk` commands)       |
-| `.session/specs/`                      | Work item specifications                     |
-| `.session/briefings/`                  | Session briefings                            |
-| `.session/history/`                    | Session summaries                            |
-
-### Development Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-### Testing Commands
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run linting
-npm run lint
-
-# Run type checking
-npm run type-check
-
-# Run E2E tests (tier-3+)
-npm run test:e2e
-
-# Run accessibility tests (tier-4)
-npm run test:a11y
-
-# Run Lighthouse CI (tier-4)
-npm run lighthouse
-```
+| File                                     | Purpose                                                                |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `PROJECT_CONTEXT.md`                     | Comprehensive project context (models, API, permissions, enums, tests) |
+| `ARCHITECTURE.md`                        | Stack patterns, code examples, Tailwind v4, troubleshooting            |
+| `docs/PRD.md`                            | Product requirements                                                   |
+| `docs/SPECIFICATION.md`                  | Technical specifications                                               |
+| `docs/STABILITY_AND_PERFORMANCE_PLAN.md` | 6-phase performance roadmap                                            |
+| `docs/COMPLETE-FORMULAE-GUIDE.md`        | Metabolic formula reference                                            |
+| `docs/TEST_USERS.md`                     | Test account credentials                                               |
+| `.session/guides/PRD_WRITING_GUIDE.md`   | PRD authoring guide (MUST follow for PRDs)                             |
+| `.session/guides/STACK_GUIDE.md`         | Stack selection guide                                                  |
+| `.session/specs/`                        | Work item specifications                                               |

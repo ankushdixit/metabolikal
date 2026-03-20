@@ -8,7 +8,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useOne, useList } from "@refinedev/core";
 import {
@@ -95,10 +95,11 @@ type ModalType =
  */
 export default function UnifiedTimelinePlanEditorPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const clientId = params.id as string;
 
   // UI State
-  const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedDay, setSelectedDay] = useState(parseInt(searchParams.get("day") || "1", 10));
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [typeFilters, setTypeFilters] = useState<TypeFilters>({
     meal: true,

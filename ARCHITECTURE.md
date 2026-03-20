@@ -1,633 +1,406 @@
-# Dashboard Refine Architecture Guide
+# Metabolikal Architecture Guide
 
-This document describes the architecture, patterns, and conventions used in this Refine.dev dashboard application.
+Architecture patterns, code conventions, and reference for the Metabolikal coaching dashboard.
 
-## Overview
+For comprehensive project context (data models, API surface, permissions, enums, state machines), see **PROJECT_CONTEXT.md**.
 
-This stack is optimized for building admin dashboards and data-intensive CRUD applications:
+## Stack Overview
 
-| Component           | Purpose                         |
-| ------------------- | ------------------------------- |
-| **Refine.dev**      | Headless CRUD framework         |
-| **Next.js 16**      | React framework with App Router |
-| **shadcn/ui**       | High-quality UI components      |
-| **Tailwind CSS**    | Utility-first styling           |
-| **React Hook Form** | Form state management           |
-| **Zod**             | Schema validation               |
-
-## Building From Scratch
-
-This is a minimal scaffolding project. You'll create files from scratch following the patterns below.
-
-### Adding a New Resource
-
-1. **Data Provider**: Configure your backend connection in `lib/refine.tsx`
-2. **Resource Config**: Add resource definition to `lib/refine.tsx`
-3. **List Page**: Create `app/(dashboard)/[resource]/page.tsx`
-4. **Create Page**: Create `app/(dashboard)/[resource]/create/page.tsx`
-5. **Edit Page**: Create `app/(dashboard)/[resource]/edit/[id]/page.tsx`
-6. **Show Page**: Create `app/(dashboard)/[resource]/show/[id]/page.tsx`
-7. **Navigation**: Add route to `components/layout/sidebar.tsx`
-8. **Tests**: Create `__tests__/` alongside each page
-
-### Example: Adding a "Products" Resource
-
-These are files you will CREATE (not existing template files):
-
-```
-lib/refine.tsx              # UPDATE: Add resource definition + data provider
-lib/validations.ts          # CREATE: Zod schemas for Product validation
-app/(dashboard)/products/
-├── page.tsx                # CREATE: List products (useList/useTable)
-├── create/page.tsx         # CREATE: Create form (useForm)
-├── edit/[id]/page.tsx      # CREATE: Edit form (useForm)
-├── show/[id]/page.tsx      # CREATE: Detail view (useShow)
-└── __tests__/              # CREATE: Tests for each page
-components/layout/sidebar.tsx  # UPDATE: Add Products nav link
-```
+| Component                 | Purpose                                               |
+| ------------------------- | ----------------------------------------------------- |
+| **Refine 5**              | Headless CRUD framework — all data ops via hooks      |
+| **Next.js 16**            | App Router, SSR, API routes                           |
+| **Supabase**              | PostgreSQL database, Auth (JWT/cookies), RLS, Storage |
+| **shadcn/ui + Radix**     | Accessible UI primitives                              |
+| **Tailwind CSS v4**       | CSS-first utility styling                             |
+| **React Hook Form + Zod** | Form state + schema validation                        |
+| **Recharts**              | Data visualization                                    |
+| **Sentry**                | Error tracking + session replay                       |
+| **PostHog**               | Product analytics (reverse-proxied via `/ingest`)     |
 
 ## Architecture Decisions
 
-### Decision 1: Refine.dev for CRUD Operations
+### 1. Refine for all CRUD
 
-**What**: All data operations (Create, Read, Update, Delete) go through Refine's data provider system.
+All data operations go through Refine hooks → Supabase data provider. Never write custom fetch/axios for CRUD.
 
-**Why**:
+**Hooks used throughout the codebase:**
 
-- Standardized data layer abstraction
-- Built-in hooks for common patterns (useTable, useForm, useShow)
-- Easy backend switching (REST, GraphQL, Supabase, etc.)
-- Automatic caching and refetching
+- `useList()` — fetch collections (admin client lists, food items, etc.)
+- `useOne()` — fetch single record
+- `useForm()` — create/edit forms with React Hook Form integration
+- `useShow()` — detail pages
+- `useCreate()`, `useUpdate()`, `useDelete()` — mutations
 
-**Trade-offs**:
+**Data provider**: `@refinedev/supabase` configured in `lib/refine.tsx` with `createBrowserSupabaseClient()`.
 
-- Learning curve for Refine concepts
-- Some custom scenarios need workarounds
+**React Query defaults** (in `providers/refine-provider.tsx`):
 
-**Implication**: Never write custom fetch/axios calls for CRUD operations. Always use Refine hooks.
+- `staleTime: 2min` — data considered fresh, no refetch on mount
+- `gcTime: 5min` — cached data persists
+- `refetchOnWindowFocus: false`
+- `retry: 1`
 
-### Decision 2: Data Provider Required
+### 2. Supabase as backend
 
-**What**: You must configure a data provider to connect to your backend.
+- **Auth**: JWT sessions in HTTP-only cookies via `@supabase/ssr`
+- **RLS**: Row-level security on all tables — users see own data, admins see all
+- **Storage**: `checkin-photos` (private), `avatars` (public) buckets
+- **Migrations**: `supabase/migrations/` — 30+ timestamped SQL files
 
-**Why**:
+**Two Supabase clients:**
 
-- Refine needs a data provider to function
-- The placeholder provider throws helpful errors guiding you to configure it
+- `createBrowserSupabaseClient()` in `lib/auth.ts` — singleton for client-side
+- `createServerSupabaseClient()` in `lib/auth-server.ts` — per-request for server components/API routes
 
-**Configuration** (in `lib/refine.tsx`):
-
-```typescript
-// Option 1: REST API
-import dataProvider from "@refinedev/simple-rest";
-export const refineDataProvider = dataProvider("https://api.example.com");
-
-// Option 2: GraphQL
-import dataProvider, { GraphQLClient } from "@refinedev/graphql";
-const client = new GraphQLClient("https://api.example.com/graphql");
-export const refineDataProvider = dataProvider(client);
-
-// Option 3: Supabase
-import { dataProvider } from "@refinedev/supabase";
-import { supabaseClient } from "./supabase";
-export const refineDataProvider = dataProvider(supabaseClient);
-```
-
-See [Refine Data Provider Documentation](https://refine.dev/docs/data/data-provider/) for all options.
-
-### Decision 3: shadcn/ui Component System
-
-**What**: Use shadcn/ui components with the built-in theming system.
-
-**Why**:
-
-- High-quality, accessible components
-- Full customization via CSS variables
-- Dark mode support built-in
-- Consistent design language
-
-**Theme Configuration**:
-
-- CSS variables defined in `app/globals.css`
-- 16 semantic color tokens (background, foreground, primary, etc.)
-- Automatic light/dark mode switching
-
-**Implication**: Always use components from `@/components/ui/`. Don't install competing UI libraries.
-
-### Decision 4: Route Groups for Layout
-
-**What**: Dashboard pages live in the `(dashboard)` route group.
-
-**Why**:
-
-- Shared layout without URL prefix
-- Clear separation of dashboard vs public pages
-- Layout components applied automatically
-
-**Structure**:
+### 3. Route organization
 
 ```
 app/
-├── (dashboard)/           # Dashboard route group
-│   ├── layout.tsx        # Dashboard layout (sidebar, header)
-│   ├── page.tsx          # Dashboard home
-│   └── [resource]/       # Resource pages
-└── layout.tsx            # Root layout
+├── (public)/              # Landing pages (no auth)
+├── (auth)/                # Login, register, password reset
+├── dashboard/             # Client portal (AuthProvider + DeactivationGuard + PlanCycleProvider)
+│   ├── profile/
+│   ├── checkin/ + checkin/history/
+│   ├── progress/
+│   └── challenge/
+├── admin/                 # Admin portal (AuthProvider)
+│   ├── clients/ + clients/[id]/ + clients/[id]/plans/
+│   ├── challengers/
+│   ├── pending-reviews/
+│   └── config/            # CRUD for food-items, supplements, exercises, etc.
+│       ├── food-items/ + food-items/create/ + food-items/edit/[id]/
+│       ├── supplements/ + supplements/create/ + supplements/edit/[id]/
+│       ├── exercises/, meal-types/, conditions/, lifestyle-activities/
+│       ├── testimonial-photos/, testimonial-videos/
+│       ├── templates/ + templates/create/ + templates/[id]/edit/
+│       └── calculator-settings/
+├── api/
+│   ├── health/            # GET — health check
+│   ├── admin/             # POST — invite-client, deactivate, reactivate, upgrade, send-message, resend-invite
+│   └── push/              # POST — subscribe, unsubscribe, verify, send, test
+└── auth/callback/         # OAuth callback handler
 ```
 
-### Decision 5: Resource-Based Routing
+**Key layout wrappers:**
 
-**What**: Each Refine resource maps to a folder in `(dashboard)/`.
+- `app/dashboard/layout.tsx` — AuthProvider + DeactivationGuard + PlanCycleProvider
+- `app/admin/layout.tsx` — AuthProvider
+- `app/layout.tsx` — Root layout with RefineProvider
 
-**Why**:
+### 4. shadcn/ui component system
 
-- Predictable URL structure
-- Co-located resource pages
-- Refine's routing integration
+Components in `components/ui/`. Theme via CSS variables in `app/globals.css`. Don't install competing UI libraries.
 
-**Pattern**:
+### 5. Context architecture (split to prevent re-renders)
 
-```typescript
-// lib/refine.tsx
-export const refineResources = [
-  {
-    name: "users",
-    list: "/users",
-    create: "/users/create",
-    edit: "/users/edit/:id",
-    show: "/users/show/:id",
-  },
-];
-```
-
-## Project Structure
-
-```
-.
-├── app/
-│   ├── (dashboard)/              # Dashboard route group
-│   │   ├── layout.tsx           # Dashboard layout with sidebar/header
-│   │   └── page.tsx             # Dashboard home page
-│   │
-│   ├── api/
-│   │   └── health/route.ts      # Health check endpoint
-│   │
-│   ├── layout.tsx               # Root layout (Refine provider)
-│   ├── globals.css              # Global styles & theme variables
-│   ├── error.tsx                # Error boundary
-│   └── loading.tsx              # Loading UI
-│
-├── components/
-│   ├── client-refine-wrapper.tsx  # Client-side Refine wrapper
-│   │
-│   ├── layout/                  # Layout components
-│   │   ├── header.tsx          # Top navigation
-│   │   └── sidebar.tsx         # Side navigation
-│   │
-│   └── ui/                      # shadcn/ui components
-│       ├── button.tsx
-│       ├── card.tsx
-│       └── table.tsx
-│
-├── lib/
-│   ├── refine.tsx              # Refine configuration and data provider
-│   └── utils.ts                # Utility functions
-│
-├── providers/
-│   └── refine-provider.tsx     # Refine context provider
-│
-└── components.json             # shadcn/ui configuration
-```
-
-**Note**: The template provides a minimal starting point. As you build, add:
-
-- `app/(dashboard)/[resource]/` for resource pages
-- `components/forms/` for form components
-- `lib/validations.ts` for Zod schemas
-
-## Key Files Reference
-
-| File                            | Purpose                            | When to Modify                     |
-| ------------------------------- | ---------------------------------- | ---------------------------------- |
-| `lib/refine.tsx`                | Refine resources and data provider | Adding resources, changing backend |
-| `providers/refine-provider.tsx` | Refine context provider            | Changing provider config           |
-| `app/(dashboard)/layout.tsx`    | Dashboard layout                   | Changing sidebar/header            |
-| `components/ui/*`               | UI primitives                      | Rarely (customize via CSS)         |
-| `app/globals.css`               | Theme variables                    | Changing colors/theming            |
+- **AuthContext** (`contexts/auth-context.tsx`) — session, profile, role. Module-level `authStateCache` for non-React consumers
+- **PlanCycleContext** (`contexts/plan-cycle-context.tsx`) — split into Data + Loading contexts
+- **ModalContext** (`contexts/modal-context.tsx`) — split into Actions + State contexts (16+ modal types)
 
 ## Code Patterns
 
-### List Page with useList
+### Admin list page with useList
 
 ```typescript
-// app/(dashboard)/users/page.tsx
+// app/admin/clients/page.tsx (simplified)
 "use client";
 
 import { useList } from "@refinedev/core";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/auth-context";
+import { ClientTable } from "@/components/admin/client-table";
+import type { Profile } from "@/lib/database.types";
 
-interface User {
-  id: number | string;
-  name: string;
-  email: string;
-}
+export default function ClientsPage() {
+  const { userId } = useAuth();
 
-export default function UsersPage() {
-  const {
-    query: { data, isLoading },
-  } = useList<User>({
-    resource: "users",
+  const { query } = useList<Profile>({
+    resource: "profiles",
+    filters: [{ field: "role", operator: "eq", value: "client" }],
+    sorters: [{ field: "full_name", order: "asc" }],
+    pagination: { pageSize: 500 },
+    meta: { select: "id, full_name, email, phone, avatar_url, role, created_at" },
+    queryOptions: { enabled: !!userId },
   });
 
-  const users = data?.data ?? [];
-
-  if (isLoading) return <div>Loading...</div>;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Users</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+  return <ClientTable data={query.data?.data || []} isLoading={query.isLoading} />;
 }
 ```
 
-**Alternative: useTable for pagination**
-
-For pages that need built-in pagination, use `useTable`:
+### Admin config CRUD with useForm
 
 ```typescript
-import { useTable } from "@refinedev/core";
-
-const {
-  tableQueryResult: { data, isLoading },
-  current,
-  setCurrent,
-  pageCount,
-} = useTable({
-  resource: "users",
-  pagination: { pageSize: 10 },
-});
-```
-
-### Create/Edit Form with useForm
-
-```typescript
-// app/(dashboard)/users/create/page.tsx
+// app/admin/config/food-items/create/page.tsx (simplified)
 "use client";
 
 import { useForm } from "@refinedev/react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { foodItemSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-});
-
-export default function UserCreate() {
+export default function FoodItemCreate() {
   const {
     refineCore: { onFinish, formLoading },
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    refineCoreProps: {
-      resource: "users",
-      action: "create",
-      redirect: "list",
-    },
-    resolver: zodResolver(userSchema),
+    refineCoreProps: { resource: "food_items", action: "create", redirect: "list" },
+    resolver: zodResolver(foodItemSchema),
   });
 
   return (
-    <div className="max-w-md">
-      <h1 className="text-2xl font-bold mb-4">Create User</h1>
-
-      <form onSubmit={handleSubmit(onFinish)} className="space-y-4">
-        <div>
-          <label htmlFor="name">Name</label>
-          <input id="name" {...register("name")} className="w-full border p-2" />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-        </div>
-
-        <div>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" {...register("email")} className="w-full border p-2" />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-        </div>
-
-        <Button type="submit" disabled={formLoading}>
-          {formLoading ? "Creating..." : "Create User"}
-        </Button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit(onFinish)} className="space-y-4">
+      <div>
+        <label htmlFor="name">Name</label>
+        <Input id="name" {...register("name")} />
+        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="calories">Calories</label>
+        <Input id="calories" type="number" {...register("calories", { valueAsNumber: true })} />
+      </div>
+      <Button type="submit" disabled={formLoading}>
+        {formLoading ? "Creating..." : "Create Food Item"}
+      </Button>
+    </form>
   );
 }
 ```
 
-### Detail Page with useShow
+### API route pattern
 
 ```typescript
-// app/(dashboard)/users/show/[id]/page.tsx
-"use client";
+// app/api/admin/invite-client/route.ts (simplified)
+import { NextResponse } from "next/server";
+import { isAdmin } from "@/lib/auth-server";
+import { inviteClientSchema } from "@/lib/validations";
 
-import { useShow } from "@refinedev/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+export async function POST(request: Request) {
+  try {
+    const adminCheck = await isAdmin();
+    if (!adminCheck) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
 
-export default function UserShow({ params }: { params: { id: string } }) {
-  const { queryResult } = useShow({
-    resource: "users",
-    id: params.id,
-  });
+    const body = await request.json();
+    const validated = inviteClientSchema.parse(body);
 
-  const { data, isLoading } = queryResult;
-  const user = data?.data;
-
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <div>User not found</div>;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{user.name}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <dl className="space-y-2">
-          <div>
-            <dt className="font-medium">Email</dt>
-            <dd>{user.email}</dd>
-          </div>
-          <div>
-            <dt className="font-medium">Created At</dt>
-            <dd>{new Date(user.createdAt).toLocaleDateString()}</dd>
-          </div>
-        </dl>
-      </CardContent>
-    </Card>
-  );
+    // ... business logic with Supabase service role client
+    return NextResponse.json({ success: true, data: result }, { status: 200 });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ success: false, error: "Validation failed" }, { status: 400 });
+    }
+    console.error("Unexpected error:", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
 }
 ```
 
-### Configuring Resources
+**API route conventions:**
+
+- Check auth/permissions first (`isAdmin()`)
+- Validate with Zod `.parse()` (throws on error)
+- Catch `ZodError` separately for 400 responses
+- Return `{ success: boolean, error?: string }` structure
+- Log unexpected errors with `console.error()`
+
+### Custom hook pattern (Supabase direct)
 
 ```typescript
-// lib/refine.tsx
+// hooks/use-my-hook.ts (pattern)
+export function useMyHook() {
+  const auth = useOptionalAuth();
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data, error } = await supabase.from("table").select();
+      if (cancelled) return;
+      setData(data);
+      setIsLoading(false);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
+  return { data, isLoading };
+}
+```
+
+**Hook conventions:**
+
+- `useMemo()` for Supabase client (prevent recreation)
+- Cancellation flag to prevent state updates after unmount
+- Support `useAuth()` inside AuthProvider, fallback to `getUser()` outside
+
+### Test pattern
+
+```typescript
+// hooks/__tests__/use-gamification.test.ts (simplified)
+import { calculateStepsPoints, calculateWaterPoints } from "../use-gamification";
+
+describe("Points Calculation", () => {
+  describe("calculateStepsPoints", () => {
+    it("returns 0 for steps below 7000", () => {
+      expect(calculateStepsPoints(6999)).toBe(0);
+    });
+    it("returns 15 for steps between 7000-9999", () => {
+      expect(calculateStepsPoints(7000)).toBe(15);
+    });
+    it("returns 45 for steps 15000+", () => {
+      expect(calculateStepsPoints(15000)).toBe(45);
+    });
+  });
+});
+```
+
+```typescript
+// app/api/admin/invite-client/__tests__/route.test.ts (simplified)
+import { POST } from "../route";
+import * as authServerModule from "@/lib/auth-server";
+
+jest.mock("@/lib/auth-server", () => ({ isAdmin: jest.fn(), getUser: jest.fn() }));
+
+describe("POST /api/admin/invite-client", () => {
+  it("returns 401 when not admin", async () => {
+    (authServerModule.isAdmin as jest.Mock).mockResolvedValue(false);
+    const request = new Request("http://localhost/api/admin/invite-client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "test@example.com" }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(401);
+  });
+});
+```
+
+**Test conventions:**
+
+- Colocated in `__tests__/` directories alongside source
+- Mock external deps (Supabase, auth) with `jest.mock()`
+- Test shared utilities in `__tests__/test-utils.tsx` — `renderWithProviders()`, mock factories
+- Test behavior and edge cases, not implementation
+- Global mocks in `jest.setup.ts`: Supabase client, ResizeObserver, PointerEvent
+
+### Validation schemas
+
+```typescript
+// lib/validations.ts (examples from actual project)
+import { z } from "zod";
+
+export const foodItemSchema = z.object({
+  name: z.string().min(1).max(100),
+  calories: z.number().min(0).max(5000),
+  protein: z.number().min(0).max(500),
+  serving_size: z.number().min(1).max(5000),
+  is_vegetarian: z.boolean(),
+  avoid_for_conditions: z.array(z.string()).optional().nullable(),
+});
+
+export const checkInSchema = z.object({
+  weight: z.number().min(20).max(300),
+  energy_rating: z.number().min(1).max(10),
+  sleep_rating: z.number().min(1).max(10),
+  diet_adherence: z.number().min(0).max(100),
+  workout_adherence: z.number().min(0).max(100),
+  challenges: z.string().max(1000).optional().nullable(),
+});
+
+export type FoodItemFormData = z.infer<typeof foodItemSchema>;
+export type CheckInFormData = z.infer<typeof checkInSchema>;
+```
+
+### Configuring Refine resources
+
+```typescript
+// lib/refine.tsx (actual configuration pattern)
 export const refineResources = [
   {
-    name: "users",
-    list: "/users",
-    create: "/users/create",
-    edit: "/users/edit/:id",
-    show: "/users/show/:id",
-    meta: {
-      label: "Users",
-      canDelete: true,
-    },
+    name: "calculator_settings",
+    list: "/admin/config/calculator-settings",
+    // Singleton — no create/delete
   },
   {
-    name: "products",
-    list: "/products",
-    create: "/products/create",
-    edit: "/products/edit/:id",
-    meta: {
-      label: "Products",
-    },
+    name: "plan_templates",
+    list: "/admin/config/templates",
+    create: "/admin/config/templates/create",
+    edit: "/admin/config/templates/:id/edit",
+    meta: { canDelete: true },
   },
+  // Template child resources
+  { name: "template_diet_items" },
+  { name: "template_supplement_items" },
+  { name: "template_workout_items" },
+  { name: "template_lifestyle_items" },
 ];
 ```
 
-### Validation Schemas
+## Key Files Reference
 
-```typescript
-// lib/validations.ts
-import { z } from "zod";
-
-export const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  role: z.enum(["admin", "user", "guest"]).optional(),
-});
-
-export const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  price: z.number().positive("Price must be positive"),
-  description: z.string().optional(),
-});
-
-export type UserFormData = z.infer<typeof userSchema>;
-export type ProductFormData = z.infer<typeof productSchema>;
-```
-
-## Data Provider Options
-
-### REST API
-
-```typescript
-import dataProvider from "@refinedev/simple-rest";
-
-const API_URL = "https://api.example.com";
-
-<Refine dataProvider={dataProvider(API_URL)} />
-```
-
-### GraphQL
-
-```typescript
-import dataProvider, { GraphQLClient } from "@refinedev/graphql";
-
-const client = new GraphQLClient("https://api.example.com/graphql");
-
-<Refine dataProvider={dataProvider(client)} />
-```
-
-### Supabase
-
-```typescript
-import { dataProvider } from "@refinedev/supabase";
-import { supabaseClient } from "@/lib/supabase";
-
-<Refine dataProvider={dataProvider(supabaseClient)} />
-```
-
-### Custom Data Provider
-
-```typescript
-import type { DataProvider } from "@refinedev/core";
-
-const customDataProvider: DataProvider = {
-  getList: async ({ resource, pagination, filters, sorters }) => {
-    const response = await fetch(`/api/${resource}`);
-    const data = await response.json();
-    return { data, total: data.length };
-  },
-  getOne: async ({ resource, id }) => {
-    const response = await fetch(`/api/${resource}/${id}`);
-    const data = await response.json();
-    return { data };
-  },
-  create: async ({ resource, variables }) => {
-    const response = await fetch(`/api/${resource}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(variables),
-    });
-    const data = await response.json();
-    return { data };
-  },
-  update: async ({ resource, id, variables }) => {
-    const response = await fetch(`/api/${resource}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(variables),
-    });
-    const data = await response.json();
-    return { data };
-  },
-  deleteOne: async ({ resource, id }) => {
-    await fetch(`/api/${resource}/${id}`, { method: "DELETE" });
-    return { data: { id } };
-  },
-  getApiUrl: () => "/api",
-};
-```
-
-## Theming
-
-### CSS Variables
-
-```css
-/* app/globals.css */
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  /* ... more variables */
-}
-
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  /* ... dark mode overrides */
-}
-```
-
-### Using Theme Colors
-
-```typescript
-// In components
-<div className="bg-background text-foreground">
-  <Button className="bg-primary text-primary-foreground">
-    Click me
-  </Button>
-</div>
-```
-
-## Troubleshooting
-
-### Data Provider Not Configured
-
-**Symptom**: Error "Data provider not configured"
-
-**Solution**: Configure a real data provider in `lib/refine.tsx`. See the Data Provider Options section above.
-
-### Form Validation Not Working
-
-**Symptom**: Form submits without validation
-
-**Solutions**:
-
-1. Ensure `zodResolver` is passed to `useForm`
-2. Check that schema matches form fields
-3. Verify error messages are displayed
-
-### Styling Issues
-
-**Symptom**: Components unstyled or wrong colors
-
-**Solutions**:
-
-1. Verify `globals.css` is imported in root layout
-2. Check CSS variable definitions
-3. Ensure Tailwind is processing your files
-
-### Type Errors
-
-**Symptom**: TypeScript errors with Refine hooks
-
-**Solutions**:
-
-1. Check resource type definitions
-2. Ensure proper typing for data responses
-3. Use generics with hooks: `useTable<User>()`
+| File                              | Purpose                                                | When to Modify                       |
+| --------------------------------- | ------------------------------------------------------ | ------------------------------------ |
+| `lib/refine.tsx`                  | Refine config, data provider, auth provider, resources | Adding resources, changing auth flow |
+| `lib/validations.ts`              | All Zod schemas                                        | Adding/changing forms                |
+| `lib/database.types.ts`           | Auto-generated Supabase types                          | After migration changes              |
+| `lib/auth.ts`                     | Client-side auth (role helpers, browser client)        | Auth flow changes                    |
+| `lib/auth-server.ts`              | Server-only auth (isAdmin, getUser, signIn/Out)        | API route auth changes               |
+| `lib/challenge-utils.ts`          | Pure gamification calculations                         | Challenge logic changes              |
+| `lib/constants.ts`                | Feature flags, page sizes, hero variants               | Config changes                       |
+| `lib/env.ts`                      | Environment variable validation                        | Adding env vars                      |
+| `contexts/auth-context.tsx`       | AuthProvider + authStateCache                          | Auth state changes                   |
+| `contexts/plan-cycle-context.tsx` | Plan cycle state (split contexts)                      | Plan cycle logic                     |
+| `contexts/modal-context.tsx`      | Modal state (split contexts)                           | Adding modals                        |
+| `hooks/use-gamification.ts`       | Challenge state hook                                   | Gamification changes                 |
+| `providers/refine-provider.tsx`   | Refine context provider                                | React Query config changes           |
+| `app/globals.css`                 | Theme variables + Tailwind v4 config                   | Colors, theming                      |
+| `components/ui/*`                 | shadcn/ui primitives                                   | Rarely (customize via CSS)           |
 
 ## Tailwind CSS v4 Configuration
 
-This template uses **Tailwind CSS v4** with CSS-first configuration. The comprehensive shadcn/ui theming system is implemented via `@theme` blocks in CSS.
+This project uses **Tailwind CSS v4** with CSS-first configuration via `@theme` blocks.
 
 ### Configuration Files
 
-| File                 | Purpose                                                                           |
-| -------------------- | --------------------------------------------------------------------------------- |
-| `app/globals.css`    | Main CSS with `@import "tailwindcss"`, `@theme` block, and shadcn/ui color tokens |
-| `tailwind.config.ts` | Minimal config (only needed for plugins)                                          |
-| `postcss.config.mjs` | PostCSS configuration with `@tailwindcss/postcss`                                 |
+| File                 | Purpose                                                                   |
+| -------------------- | ------------------------------------------------------------------------- |
+| `app/globals.css`    | Main CSS: `@import "tailwindcss"`, `@theme` block, shadcn/ui color tokens |
+| `tailwind.config.ts` | Minimal config (only needed for plugins)                                  |
+| `postcss.config.mjs` | PostCSS configuration with `@tailwindcss/postcss`                         |
 
 ### Color System
 
-The template includes a complete shadcn/ui color system defined in `globals.css`:
+Complete shadcn/ui color system defined in `globals.css`:
 
 ```css
 @import "tailwindcss";
 
 @theme {
-  /* Color tokens - generates utilities like bg-primary, text-muted-foreground */
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
   --color-primary: hsl(222.2 47.4% 11.2%);
   --color-primary-foreground: hsl(210 40% 98%);
   --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
   --color-muted: hsl(210 40% 96.1%);
   --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-card: hsl(0 0% 100%);
+  --color-popover: hsl(0 0% 100%);
   /* ... more tokens */
 }
 ```
 
 ### Available Color Utilities
-
-The theme generates these utility classes:
 
 | Utility                                         | Usage                 |
 | ----------------------------------------------- | --------------------- |
@@ -643,7 +416,7 @@ The theme generates these utility classes:
 
 ### Dark Mode
 
-Dark mode is implemented via the `.dark` class on the `<html>` or `<body>` element:
+Via `.dark` class on `<html>`:
 
 ```css
 .dark {
@@ -653,21 +426,10 @@ Dark mode is implemented via the `.dark` class on the `<html>` or `<body>` eleme
 }
 ```
 
-To toggle dark mode programmatically:
-
-```typescript
-document.documentElement.classList.toggle("dark");
-```
-
 ### Adding Custom Colors
-
-Add new colors to the `@theme` block:
 
 ```css
 @theme {
-  /* Existing colors... */
-
-  /* Custom additions */
   --color-success: hsl(142.1 76.2% 36.3%);
   --color-success-foreground: hsl(355.7 100% 97.3%);
   --color-warning: hsl(47.9 95.8% 53.1%);
@@ -677,8 +439,6 @@ Add new colors to the `@theme` block:
 
 ### Border Radius
 
-Custom radius tokens are defined in `@theme`:
-
 ```css
 @theme {
   --radius-lg: 0.5rem;
@@ -687,25 +447,48 @@ Custom radius tokens are defined in `@theme`:
 }
 ```
 
-Use via utilities: `rounded-lg`, `rounded-md`, `rounded-sm`.
-
 ### Key Differences from Tailwind v3
 
-| v3 Pattern                               | v4 Pattern                                  |
-| ---------------------------------------- | ------------------------------------------- |
-| `@tailwind base/components/utilities`    | `@import "tailwindcss"`                     |
-| `tailwind.config.ts` theme.extend.colors | `@theme { --color-*: value }` in CSS        |
-| `hsl(var(--primary))` in config          | `--color-primary: hsl(...)` directly in CSS |
-| `content: [...]` in config               | Automatic content detection                 |
-| `darkMode: "class"` in config            | `.dark { }` CSS overrides                   |
+| v3                                       | v4                                   |
+| ---------------------------------------- | ------------------------------------ |
+| `@tailwind base/components/utilities`    | `@import "tailwindcss"`              |
+| `tailwind.config.ts` theme.extend.colors | `@theme { --color-*: value }` in CSS |
+| `hsl(var(--primary))` in config          | `--color-primary: hsl(...)` directly |
+| `content: [...]` in config               | Automatic content detection          |
+| `darkMode: "class"` in config            | `.dark { }` CSS overrides            |
 
-## Resources
+## Troubleshooting
+
+### Form Validation Not Working
+
+1. Ensure `zodResolver` is passed to `useForm`
+2. Check that schema field names match form field names
+3. Verify error messages are displayed (`errors.fieldName?.message`)
+
+### Styling Issues
+
+1. Verify `globals.css` is imported in root layout
+2. Check CSS variable definitions in `@theme` block
+3. Ensure `@tailwindcss/postcss` is in `postcss.config.mjs`
+
+### Type Errors with Refine Hooks
+
+1. Use generics: `useList<Profile>()`, `useForm<FoodItemFormData>()`
+2. Check types match `lib/database.types.ts`
+3. Access data as `query.data?.data` (Refine wraps results)
+
+### Auth Issues
+
+1. Check `authStateCache` population in `contexts/auth-context.tsx`
+2. Server-side: use `createServerSupabaseClient()` (not browser client)
+3. Deactivation blocks login for non-admins — check `is_deactivated` on profile
+
+## External References
 
 - [Refine.dev Documentation](https://refine.dev/docs/)
-- [Refine Hooks Reference](https://refine.dev/docs/api-reference/core/hooks/)
 - [Next.js App Router](https://nextjs.org/docs/app)
 - [shadcn/ui Components](https://ui.shadcn.com/)
+- [Supabase Documentation](https://supabase.com/docs)
 - [React Hook Form](https://react-hook-form.com/)
 - [Zod Documentation](https://zod.dev/)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)
-- [Tailwind CSS v4 Upgrade Guide](https://tailwindcss.com/docs/upgrade-guide)

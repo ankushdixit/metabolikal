@@ -76,11 +76,11 @@ export function AddItemModal({ isOpen, onClose, onSelectType }: AddItemModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-card p-0">
+      <DialogContent className="sm:max-w-md bg-card p-0 flex flex-col overflow-hidden max-h-[85vh]">
         {/* Top accent */}
-        <div className="h-1 gradient-electric" />
+        <div className="h-1 gradient-electric shrink-0" />
 
-        <DialogHeader className="p-6 pb-4">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle className="text-xl font-black uppercase tracking-tight">
             Add <span className="gradient-athletic">Item</span>
           </DialogTitle>
@@ -89,7 +89,7 @@ export function AddItemModal({ isOpen, onClose, onSelectType }: AddItemModalProp
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 pt-0 grid grid-cols-2 gap-3">
+        <div className="p-6 pt-0 grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
           {ITEM_TYPES.map(({ type, label, description, icon: Icon, colorClasses }) => (
             <button
               key={type}
@@ -109,7 +109,7 @@ export function AddItemModal({ isOpen, onClose, onSelectType }: AddItemModalProp
           ))}
         </div>
 
-        <div className="p-4 pt-0">
+        <div className="p-4 pt-0 shrink-0">
           <button
             onClick={onClose}
             className="w-full btn-athletic px-4 py-2 bg-secondary text-foreground text-sm font-bold"

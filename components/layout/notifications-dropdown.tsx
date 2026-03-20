@@ -137,7 +137,7 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-card border border-border shadow-xl z-50">
+        <div className="fixed inset-x-0 top-[60px] mx-2 sm:absolute sm:inset-x-auto sm:top-full sm:mx-0 sm:right-0 sm:mt-2 sm:w-96 bg-card border border-border shadow-xl z-50">
           {/* Header */}
           <div className="h-1 gradient-electric" />
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -161,7 +161,7 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[70vh] sm:max-h-[28rem] overflow-y-auto">
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-pulse">
@@ -188,12 +188,12 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
                     <div className="shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-sm truncate">{notification.title}</h4>
+                        <h4 className="font-bold text-sm">{notification.title}</h4>
                         {!notification.read_at && (
                           <span className="shrink-0 h-2 w-2 bg-primary mt-1.5" />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-2 font-bold">
