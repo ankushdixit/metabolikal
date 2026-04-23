@@ -75,11 +75,17 @@ export async function POST(request: Request) {
     const siteUrl =
       process.env.NEXT_PUBLIC_SITE_URL || origin?.replace(/\/$/, "") || "http://localhost:3000";
 
+    // Pass invited_at through user_metadata so the on_auth_user_created
+    // trigger writes it into profiles atomically at user creation, closing
+    // the race where a fast-clicked invite link could arrive at
+    // /auth/callback/client before the separate profile update below runs.
+    const invitedAt = new Date().toISOString();
     const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {
         data: {
           full_name,
+          invited_at: invitedAt,
         },
         redirectTo: `${siteUrl}/auth/callback`,
       }
@@ -112,7 +118,7 @@ export async function POST(request: Request) {
     const profileUpdateData: Record<string, unknown> = {
       full_name, // Update in case it differs from what the trigger set
       role: "client", // Ensure role is set to client (trigger may set different default)
-      invited_at: new Date().toISOString(), // Track when admin invited this user
+      invited_at: invitedAt, // Trigger writes this atomically; update keeps it consistent when the row already existed
     };
 
     // Add optional fields if they have values

@@ -155,24 +155,38 @@ export default function LandingPage() {
   // Track if we're redirecting to auth callback (to show loading state)
   const [isAuthRedirecting, setIsAuthRedirecting] = useState(false);
 
-  // Check for auth tokens in URL hash (invite/magic link redirects)
-  // Supabase sends invite links to the Site URL, which may be the homepage
-  // If we detect auth tokens, redirect to the proper auth callback handler
+  // Check for auth artifacts in URL and forward to the real callback handler.
+  // Supabase's Redirect URLs allow-list sometimes falls back to the Site URL
+  // (i.e. here) instead of the path the app requested. Two variants arrive:
+  //   - Implicit flow: tokens in hash (#access_token=...&refresh_token=...)
+  //   - PKCE flow:     code in query string (?code=...)
+  // We also forward ?error=... so Supabase error messages surface in /login.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const hash = window.location.hash;
-    if (!hash) return;
+    const search = window.location.search;
 
-    const hashParams = new URLSearchParams(hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    const refreshToken = hashParams.get("refresh_token");
+    if (hash) {
+      const hashParams = new URLSearchParams(hash.substring(1));
+      if (hashParams.get("access_token") && hashParams.get("refresh_token")) {
+        setIsAuthRedirecting(true);
+        router.replace(`/auth/callback/client${hash}`);
+        return;
+      }
+    }
 
-    // If auth tokens are present in hash, redirect to auth callback to process them
-    if (accessToken && refreshToken) {
-      setIsAuthRedirecting(true);
-      // Preserve the hash fragment when redirecting
-      router.replace(`/auth/callback/client${hash}`);
+    if (search) {
+      const searchParams = new URLSearchParams(search);
+      const code = searchParams.get("code");
+      const errorCode = searchParams.get("error");
+      if (code || errorCode) {
+        setIsAuthRedirecting(true);
+        // Server route at /auth/callback handles both `code` (PKCE exchange)
+        // and error redirects, including directing invited users onward to
+        // /reset-password?invited=true.
+        router.replace(`/auth/callback${search}`);
+      }
     }
   }, [router]);
 

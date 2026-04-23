@@ -136,6 +136,13 @@ const fallbackLock = (() => {
  *
  * Uses singleton pattern to prevent creating multiple connections.
  * Configured with lock settings to prevent "signal is aborted" errors.
+ *
+ * detectSessionInUrl is disabled so the client does not silently consume
+ * `#access_token=...` / `?code=...` on page load — those are handled
+ * explicitly by /auth/callback (server) and /auth/callback/client. Leaving
+ * it on creates a race with the homepage auth-forwarder where the client
+ * can strip the hash before the forwarder reads it, dropping the user on
+ * the landing page without a session.
  */
 export function createBrowserSupabaseClient() {
   if (browserClientInstance) {
@@ -149,6 +156,7 @@ export function createBrowserSupabaseClient() {
       auth: {
         // Use mutex fallback instead of Navigator Locks to prevent "signal is aborted" errors
         lock: fallbackLock,
+        detectSessionInUrl: false,
       },
     }
   );
