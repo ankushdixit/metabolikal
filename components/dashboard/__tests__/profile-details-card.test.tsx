@@ -171,7 +171,7 @@ describe("ProfileDetailsCard", () => {
 
       await waitFor(() => {
         expect(mockResetPasswordForEmail).toHaveBeenCalledWith("test@example.com", {
-          redirectTo: expect.stringContaining("/reset-password"),
+          redirectTo: expect.stringContaining("/auth/callback?type=recovery"),
         });
       });
     });
@@ -246,7 +246,7 @@ describe("ProfileDetailsCard", () => {
 
       await waitFor(() => {
         expect(mockResetPasswordForEmail).toHaveBeenCalledWith("test@example.com", {
-          redirectTo: expect.stringContaining("/reset-password"),
+          redirectTo: expect.stringContaining("/auth/callback?type=recovery"),
         });
       });
     });
