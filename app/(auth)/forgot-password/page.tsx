@@ -37,8 +37,13 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createBrowserSupabaseClient();
 
+      // Route through /auth/callback so the server route can exchange the
+      // PKCE code (browser client has detectSessionInUrl disabled to avoid
+      // racing the homepage forwarder). type=recovery tells /auth/callback
+      // to forward the newly-authenticated user to /reset-password so they
+      // must set a new password before anything else.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
 
       if (resetError) {

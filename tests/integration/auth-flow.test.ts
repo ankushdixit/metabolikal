@@ -627,12 +627,12 @@ describe("Integration: Password reset flow", () => {
 
     const resetRequestResult = await supabase.client.auth.resetPasswordForEmail(
       "reset@example.com",
-      { redirectTo: "http://localhost:3000/reset-password" }
+      { redirectTo: "http://localhost:3000/auth/callback?type=recovery" }
     );
 
     expect(resetRequestResult.error).toBeNull();
     expect(supabase.client.auth.resetPasswordForEmail).toHaveBeenCalledWith("reset@example.com", {
-      redirectTo: "http://localhost:3000/reset-password",
+      redirectTo: "http://localhost:3000/auth/callback?type=recovery",
     });
 
     // Step 2: Simulate token receipt (Supabase handles this via email link)
@@ -701,7 +701,7 @@ describe("Integration: Password reset flow", () => {
     });
 
     const result = await supabase.client.auth.resetPasswordForEmail("reset@example.com", {
-      redirectTo: "http://localhost:3000/reset-password",
+      redirectTo: "http://localhost:3000/auth/callback?type=recovery",
     });
 
     expect(result.error).toBeDefined();
@@ -831,7 +831,7 @@ describe("Integration: Password reset flow", () => {
 
     await expect(
       supabase.client.auth.resetPasswordForEmail("reset@example.com", {
-        redirectTo: "http://localhost:3000/reset-password",
+        redirectTo: "http://localhost:3000/auth/callback?type=recovery",
       })
     ).rejects.toThrow("Network error");
   });
@@ -939,7 +939,7 @@ describe("Integration: Cross-flow state consistency", () => {
       error: null,
     });
     await supabase.client.auth.resetPasswordForEmail("persist@example.com", {
-      redirectTo: "http://localhost:3000/reset-password",
+      redirectTo: "http://localhost:3000/auth/callback?type=recovery",
     });
 
     supabase.client.auth.updateUser.mockResolvedValueOnce({
@@ -994,7 +994,7 @@ describe("Integration: Cross-flow state consistency", () => {
       error: null,
     });
     await supabase.client.auth.resetPasswordForEmail("deactivated-reset@example.com", {
-      redirectTo: "http://localhost:3000/reset-password",
+      redirectTo: "http://localhost:3000/auth/callback?type=recovery",
     });
 
     supabase.client.auth.updateUser.mockResolvedValueOnce({

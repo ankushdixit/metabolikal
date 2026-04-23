@@ -67,7 +67,9 @@ describe("ForgotPasswordPage", () => {
       expect(mockResetPasswordForEmail).toHaveBeenCalledWith(
         "test@example.com",
         expect.objectContaining({
-          redirectTo: expect.stringContaining("/reset-password"),
+          // Route through /auth/callback so the server can exchange the PKCE
+          // code and forward to /reset-password with a valid session.
+          redirectTo: expect.stringContaining("/auth/callback?type=recovery"),
         })
       );
     });
