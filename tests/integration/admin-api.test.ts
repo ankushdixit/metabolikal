@@ -211,7 +211,10 @@ describe("Admin API Integration Tests", () => {
       expect(inviteUserMock).toHaveBeenCalledWith(
         "newclient@example.com",
         expect.objectContaining({
-          data: { full_name: "New Client" },
+          data: expect.objectContaining({
+            full_name: "New Client",
+            invited_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          }),
           redirectTo: "http://localhost:3000/auth/callback",
         })
       );

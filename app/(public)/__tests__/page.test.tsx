@@ -660,6 +660,45 @@ describe("Landing Page", () => {
     });
   });
 
+  describe("Auth redirect on PKCE query code", () => {
+    const origSearch = window.location.search;
+
+    afterEach(() => {
+      // Restore the URL search between tests; assigning to .search isn't
+      // reliable across jsdom versions, so rewrite via history.replaceState.
+      window.history.replaceState({}, "", `/${origSearch}`);
+    });
+
+    it("forwards ?code=... to /auth/callback for PKCE exchange", () => {
+      window.history.replaceState({}, "", "/?code=abcdef-pkce-code");
+
+      render(<LandingPage />);
+
+      expect(screen.getByText("Processing authentication...")).toBeInTheDocument();
+      expect(mockReplace).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/callback?code=abcdef-pkce-code")
+      );
+    });
+
+    it("forwards ?error=... to /auth/callback so errors surface in /login", () => {
+      window.history.replaceState({}, "", "/?error=access_denied&error_description=foo");
+
+      render(<LandingPage />);
+
+      expect(mockReplace).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/callback?error=access_denied")
+      );
+    });
+
+    it("does not redirect when there are no auth params", () => {
+      window.history.replaceState({}, "", "/");
+
+      render(<LandingPage />);
+
+      expect(mockReplace).not.toHaveBeenCalledWith(expect.stringContaining("/auth/callback"));
+    });
+  });
+
   describe("Modal query parameter", () => {
     it("opens assessment modal when ?modal=assessment is in URL", () => {
       mockSearchParams = new URLSearchParams("modal=assessment");

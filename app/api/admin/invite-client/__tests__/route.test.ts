@@ -445,7 +445,12 @@ describe("POST /api/admin/invite-client", () => {
       expect(inviteUserMock).toHaveBeenCalledWith(
         "john@example.com",
         expect.objectContaining({
-          data: { full_name: "John Doe" },
+          data: expect.objectContaining({
+            full_name: "John Doe",
+            // invited_at is now passed through metadata so the
+            // on_auth_user_created trigger can write it atomically.
+            invited_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          }),
         })
       );
     });
