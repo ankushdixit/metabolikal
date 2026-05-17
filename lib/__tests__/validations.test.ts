@@ -813,8 +813,8 @@ describe("checkInSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects weight above 300", () => {
-    const result = checkInSchema.safeParse({ ...validData, weight: 301 });
+  it("rejects weight above 500", () => {
+    const result = checkInSchema.safeParse({ ...validData, weight: 501 });
     expect(result.success).toBe(false);
   });
 
@@ -839,22 +839,22 @@ describe("checkInSchema", () => {
   it("validates measurement bounds", () => {
     // body_fat min/max
     expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 0 }).success).toBe(false);
-    expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 61 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 76 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, body_fat_percent: 15 }).success).toBe(true);
 
     // chest_cm min/max
-    expect(checkInSchema.safeParse({ ...validData, chest_cm: 49 }).success).toBe(false);
-    expect(checkInSchema.safeParse({ ...validData, chest_cm: 201 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, chest_cm: 29 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, chest_cm: 251 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, chest_cm: 100 }).success).toBe(true);
 
     // neck_cm min/max
-    expect(checkInSchema.safeParse({ ...validData, neck_cm: 19 }).success).toBe(false);
-    expect(checkInSchema.safeParse({ ...validData, neck_cm: 61 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, neck_cm: 14 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, neck_cm: 101 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, neck_cm: 38 }).success).toBe(true);
 
     // calves_cm min/max
-    expect(checkInSchema.safeParse({ ...validData, calves_cm: 19 }).success).toBe(false);
-    expect(checkInSchema.safeParse({ ...validData, calves_cm: 71 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, calves_cm: 14 }).success).toBe(false);
+    expect(checkInSchema.safeParse({ ...validData, calves_cm: 101 }).success).toBe(false);
     expect(checkInSchema.safeParse({ ...validData, calves_cm: 40 }).success).toBe(true);
   });
 

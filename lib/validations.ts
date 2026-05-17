@@ -110,53 +110,53 @@ export const checkInSchema = z.object({
       error: "Weight is required and must be a number",
     })
     .min(20, { message: "Weight must be at least 20 kg" })
-    .max(300, { message: "Weight must be 300 kg or less" }),
+    .max(500, { message: "Weight must be 500 kg or less" }),
   body_fat_percent: z
     .number()
     .min(1, { message: "Body fat must be at least 1%" })
-    .max(60, { message: "Body fat must be 60% or less" })
+    .max(75, { message: "Body fat must be 75% or less" })
     .optional()
     .nullable(),
   chest_cm: z
     .number()
-    .min(50, { message: "Chest must be at least 50 cm" })
-    .max(200, { message: "Chest must be 200 cm or less" })
+    .min(30, { message: "Chest must be at least 30 cm" })
+    .max(250, { message: "Chest must be 250 cm or less" })
     .optional()
     .nullable(),
   waist_cm: z
     .number()
-    .min(40, { message: "Waist must be at least 40 cm" })
-    .max(200, { message: "Waist must be 200 cm or less" })
+    .min(30, { message: "Waist must be at least 30 cm" })
+    .max(250, { message: "Waist must be 250 cm or less" })
     .optional()
     .nullable(),
   hips_cm: z
     .number()
-    .min(50, { message: "Hips must be at least 50 cm" })
-    .max(200, { message: "Hips must be 200 cm or less" })
+    .min(30, { message: "Hips must be at least 30 cm" })
+    .max(250, { message: "Hips must be 250 cm or less" })
     .optional()
     .nullable(),
   arms_cm: z
     .number()
-    .min(15, { message: "Arms must be at least 15 cm" })
-    .max(60, { message: "Arms must be 60 cm or less" })
+    .min(10, { message: "Arms must be at least 10 cm" })
+    .max(100, { message: "Arms must be 100 cm or less" })
     .optional()
     .nullable(),
   thighs_cm: z
     .number()
-    .min(30, { message: "Thighs must be at least 30 cm" })
-    .max(100, { message: "Thighs must be 100 cm or less" })
+    .min(20, { message: "Thighs must be at least 20 cm" })
+    .max(150, { message: "Thighs must be 150 cm or less" })
     .optional()
     .nullable(),
   neck_cm: z
     .number()
-    .min(20, { message: "Neck must be at least 20 cm" })
-    .max(60, { message: "Neck must be 60 cm or less" })
+    .min(15, { message: "Neck must be at least 15 cm" })
+    .max(100, { message: "Neck must be 100 cm or less" })
     .optional()
     .nullable(),
   calves_cm: z
     .number()
-    .min(20, { message: "Calves must be at least 20 cm" })
-    .max(70, { message: "Calves must be 70 cm or less" })
+    .min(15, { message: "Calves must be at least 15 cm" })
+    .max(100, { message: "Calves must be 100 cm or less" })
     .optional()
     .nullable(),
 

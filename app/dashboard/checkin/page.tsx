@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreate, useList } from "@refinedev/core";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Calendar,
   Flame,
@@ -47,6 +48,30 @@ interface CheckIn {
 }
 
 const STEPS = ["Measurements", "Photos", "Ratings", "Notes"];
+
+const FIELD_TO_STEP: Record<keyof CheckInFormData, number> = {
+  weight: 0,
+  body_fat_percent: 0,
+  chest_cm: 0,
+  waist_cm: 0,
+  hips_cm: 0,
+  arms_cm: 0,
+  thighs_cm: 0,
+  neck_cm: 0,
+  calves_cm: 0,
+  photo_front: 1,
+  photo_side: 1,
+  photo_back: 1,
+  energy_rating: 2,
+  sleep_rating: 2,
+  stress_rating: 2,
+  mood_rating: 2,
+  diet_adherence: 3,
+  workout_adherence: 3,
+  challenges: 3,
+  progress_notes: 3,
+  questions: 3,
+};
 
 /**
  * Check-In Page
@@ -219,10 +244,33 @@ export default function CheckInPage() {
               router.push("/dashboard/checkin/history");
             }, 1500);
           },
+          onError: (error) => {
+            console.error("Check-in submission failed:", error);
+            toast.error(error?.message || "Failed to submit check-in. Please try again.");
+          },
         }
       );
     },
     [userId, currentStep, hasExistingCheckIn, showDuplicateWarning, createMutation, router]
+  );
+
+  // Surface validation errors that would otherwise silently block submission
+  const onInvalid = useCallback(
+    (formErrors: FieldErrors<CheckInFormData>) => {
+      const firstField = Object.keys(formErrors)[0] as keyof CheckInFormData | undefined;
+      if (!firstField) return;
+      const targetStep = FIELD_TO_STEP[firstField];
+      if (typeof targetStep === "number" && targetStep !== currentStep) {
+        setCurrentStep(targetStep);
+      }
+      const message = formErrors[firstField]?.message;
+      toast.error(
+        typeof message === "string" && message
+          ? message
+          : "Please review your entries before submitting."
+      );
+    },
+    [currentStep]
   );
 
   // Watch photo values for the photos step
@@ -392,7 +440,7 @@ export default function CheckInPage() {
 
       {/* Form Content */}
       {!isError && !isLoading && !submitSuccess && (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <div className="athletic-card p-6 pl-8">{renderStep()}</div>
 
           {/* Navigation Buttons */}
@@ -470,7 +518,7 @@ export default function CheckInPage() {
             </button>
             <button
               type="button"
-              onClick={() => handleSubmit(onSubmit)()}
+              onClick={() => handleSubmit(onSubmit, onInvalid)()}
               className="btn-athletic px-5 py-3 gradient-electric text-black"
             >
               Submit Anyway
