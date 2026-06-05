@@ -93,7 +93,7 @@ export default function CheckInPage() {
     watch,
     setValue,
     trigger,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<CheckInFormData>({
     resolver: zodResolver(checkInSchema),
     defaultValues: {
@@ -301,6 +301,7 @@ export default function CheckInPage() {
             setValue={setValue}
             errors={errors}
             currentDate={formattedDate}
+            isSubmitted={isSubmitted}
           />
         );
       case 1:

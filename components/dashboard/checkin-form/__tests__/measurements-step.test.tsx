@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MeasurementsStep } from "../measurements-step";
 import { checkInSchema, type CheckInFormData } from "@/lib/validations";
+import { CM_PER_INCH } from "@/lib/constants";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 
 // Helper to render with form methods
@@ -286,6 +287,89 @@ describe("MeasurementsStep Component", () => {
       fireEvent.click(screen.getByRole("button", { name: "in" }));
       // 10 cm -> 3.9 in (displayed, rounded to 1 decimal)
       expect(neck).toHaveValue(3.9);
+    });
+  });
+
+  // Integration tests against a real useForm instance — these exercise the actual
+  // RHF registration + setValue path and inspect the payload the form would submit,
+  // so they detect display/form divergence that the stubbed setValue cannot.
+  describe("cm / inches unit toggle (RHF integration)", () => {
+    function renderWithSubmit() {
+      const onValid = jest.fn();
+      const Wrapper = () => {
+        const {
+          register,
+          setValue,
+          handleSubmit,
+          formState: { errors },
+        } = useForm<CheckInFormData>({
+          resolver: zodResolver(checkInSchema),
+          defaultValues: {
+            energy_rating: 5,
+            sleep_rating: 5,
+            stress_rating: 5,
+            mood_rating: 5,
+            diet_adherence: 80,
+            workout_adherence: 80,
+          },
+        });
+        return (
+          <form onSubmit={handleSubmit(onValid)}>
+            <MeasurementsStep
+              register={register}
+              setValue={setValue}
+              errors={errors}
+              currentDate={currentDate}
+            />
+            <button type="submit">Submit</button>
+          </form>
+        );
+      };
+      render(<Wrapper />);
+      return onValid;
+    }
+
+    it("submits inch entries converted to cm", async () => {
+      const onValid = renderWithSubmit();
+      fireEvent.change(screen.getByLabelText(/Current Weight/i), { target: { value: "80" } });
+      fireEvent.click(screen.getByRole("button", { name: "in" }));
+      // 13 in would fail the >= 15 cm rule pre-conversion; converted it is ~33 cm.
+      fireEvent.change(screen.getByLabelText(/Neck/i), { target: { value: "13" } });
+      fireEvent.click(screen.getByText("Submit"));
+
+      await waitFor(() => expect(onValid).toHaveBeenCalled());
+      const payload = onValid.mock.calls[0][0] as CheckInFormData;
+      expect(payload.weight).toBe(80);
+      expect(payload.neck_cm).toBeCloseTo(13 * CM_PER_INCH, 5);
+    });
+
+    it("submits the displayed value after a round-trip unit toggle (no divergence)", async () => {
+      const onValid = renderWithSubmit();
+      fireEvent.change(screen.getByLabelText(/Current Weight/i), { target: { value: "80" } });
+      const neck = screen.getByLabelText(/Neck/i);
+      fireEvent.change(neck, { target: { value: "38" } }); // 38 cm
+      fireEvent.click(screen.getByRole("button", { name: "in" })); // cm -> in
+      fireEvent.click(screen.getByRole("button", { name: "cm" })); // in -> cm
+      fireEvent.click(screen.getByText("Submit"));
+
+      await waitFor(() => expect(onValid).toHaveBeenCalled());
+      const payload = onValid.mock.calls[0][0] as CheckInFormData;
+      const displayed = parseFloat((neck as HTMLInputElement).value);
+      // What the form submits must match what the input shows.
+      expect(payload.neck_cm).toBeCloseTo(displayed, 5);
+    });
+
+    it("omits a measurement that is cleared after entry", async () => {
+      const onValid = renderWithSubmit();
+      fireEvent.change(screen.getByLabelText(/Current Weight/i), { target: { value: "80" } });
+      const neck = screen.getByLabelText(/Neck/i);
+      fireEvent.change(neck, { target: { value: "38" } });
+      fireEvent.change(neck, { target: { value: "" } });
+      fireEvent.click(screen.getByText("Submit"));
+
+      await waitFor(() => expect(onValid).toHaveBeenCalled());
+      const payload = onValid.mock.calls[0][0] as CheckInFormData;
+      expect(payload.neck_cm).toBeUndefined();
     });
   });
 });

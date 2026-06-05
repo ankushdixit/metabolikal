@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
 import { Scale, Ruler, AlertCircle } from "lucide-react";
 import type { CheckInFormData } from "@/lib/validations";
+import { CM_PER_INCH } from "@/lib/constants";
 
 interface MeasurementsStepProps {
   register: UseFormRegister<CheckInFormData>;
   setValue: UseFormSetValue<CheckInFormData>;
   errors: FieldErrors<CheckInFormData>;
   currentDate: string;
+  /**
+   * Whether the form has been submitted at least once. Once true, measurement
+   * edits revalidate live so a corrected value clears its error immediately.
+   */
+  isSubmitted?: boolean;
 }
 
 /**
@@ -30,8 +36,6 @@ const parseRequiredNumber = (value: string) => {
 
 /** Length unit the client is entering body measurements in. Storage is always cm. */
 type LengthUnit = "cm" | "in";
-
-const CM_PER_INCH = 2.54;
 
 /**
  * Body measurement fields, in display order. Placeholders are unit-specific so the
@@ -61,6 +65,7 @@ export function MeasurementsStep({
   setValue,
   errors,
   currentDate,
+  isSubmitted = false,
 }: MeasurementsStepProps) {
   const [unit, setUnit] = useState<LengthUnit>("cm");
   // Display strings keyed by field — what the client sees, in the selected unit.
@@ -72,15 +77,16 @@ export function MeasurementsStep({
     MEASUREMENT_FIELDS.forEach(({ field }) => register(field));
   }, [register]);
 
-  // Store the canonical cm value for a field given the raw display text + current unit.
+  // Store the canonical cm value for a field given the raw display text + unit.
+  // Once the form has been submitted, edits revalidate so corrections clear errors.
   const commitCm = (field: MeasurementField, display: string, activeUnit: LengthUnit) => {
     const num = parseOptionalNumber(display);
     if (num === undefined) {
-      setValue(field, undefined, { shouldValidate: false });
+      setValue(field, undefined, { shouldValidate: isSubmitted });
       return;
     }
     const cm = activeUnit === "in" ? num * CM_PER_INCH : num;
-    setValue(field, cm, { shouldValidate: false });
+    setValue(field, cm, { shouldValidate: isSubmitted });
   };
 
   const handleMeasurementChange = (field: MeasurementField, raw: string) => {
@@ -88,20 +94,22 @@ export function MeasurementsStep({
     commitCm(field, raw, unit);
   };
 
-  // Switching units converts the displayed numbers to the new unit. The stored cm
-  // values represent the same physical measurement and so are left untouched.
+  // Switching units converts the displayed numbers to the new unit, then re-commits
+  // each one so the cm value stored in the form always matches what the client sees
+  // (avoids display/form divergence from rounding across repeated toggles).
   const handleUnitChange = (next: LengthUnit) => {
     if (next === unit) return;
-    setDisplayValues((prev) => {
-      const converted = { ...prev };
-      MEASUREMENT_FIELDS.forEach(({ field }) => {
-        const num = parseOptionalNumber(prev[field] ?? "");
-        if (num === undefined) return;
-        converted[field] =
-          next === "in" ? (num / CM_PER_INCH).toFixed(1) : (num * CM_PER_INCH).toFixed(1);
-      });
-      return converted;
+    const converted = { ...displayValues };
+    MEASUREMENT_FIELDS.forEach(({ field }) => {
+      const num = parseOptionalNumber(displayValues[field] ?? "");
+      if (num === undefined) return;
+      const display =
+        next === "in" ? (num / CM_PER_INCH).toFixed(1) : (num * CM_PER_INCH).toFixed(1);
+      converted[field] = display;
+      // Re-commit so the stored cm value matches the (re-rounded) displayed number.
+      commitCm(field, display, next);
     });
+    setDisplayValues(converted);
     setUnit(next);
   };
 
