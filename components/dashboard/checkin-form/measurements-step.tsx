@@ -1,13 +1,21 @@
 "use client";
 
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { UseFormRegister, UseFormSetValue, FieldErrors } from "react-hook-form";
 import { Scale, Ruler, AlertCircle } from "lucide-react";
 import type { CheckInFormData } from "@/lib/validations";
+import { CM_PER_INCH } from "@/lib/constants";
 
 interface MeasurementsStepProps {
   register: UseFormRegister<CheckInFormData>;
+  setValue: UseFormSetValue<CheckInFormData>;
   errors: FieldErrors<CheckInFormData>;
   currentDate: string;
+  /**
+   * Whether the form has been submitted at least once. Once true, measurement
+   * edits revalidate live so a corrected value clears its error immediately.
+   */
+  isSubmitted?: boolean;
 }
 
 /**
@@ -26,11 +34,85 @@ const parseRequiredNumber = (value: string) => {
   return num;
 };
 
+/** Length unit the client is entering body measurements in. Storage is always cm. */
+type LengthUnit = "cm" | "in";
+
+/**
+ * Body measurement fields, in display order. Placeholders are unit-specific so the
+ * example value reads naturally whether the client is entering cm or inches.
+ */
+const MEASUREMENT_FIELDS = [
+  { field: "neck_cm", label: "Neck", placeholderCm: "38", placeholderIn: "15" },
+  { field: "chest_cm", label: "Chest", placeholderCm: "100", placeholderIn: "40" },
+  { field: "waist_cm", label: "Waist", placeholderCm: "80", placeholderIn: "32" },
+  { field: "hips_cm", label: "Hips", placeholderCm: "95", placeholderIn: "37" },
+  { field: "arms_cm", label: "Arms", placeholderCm: "35", placeholderIn: "14" },
+  { field: "thighs_cm", label: "Thighs", placeholderCm: "55", placeholderIn: "22" },
+  { field: "calves_cm", label: "Calves", placeholderCm: "40", placeholderIn: "16" },
+] as const;
+
+type MeasurementField = (typeof MEASUREMENT_FIELDS)[number]["field"];
+
 /**
  * Step 1: Measurements
- * Collects weight (required) and optional body measurements
+ * Collects weight (required, always kg) and optional body measurements. Body
+ * measurements can be entered in cm or inches via a unit toggle — whatever the
+ * client picks, the value is converted to and stored as cm so the database and
+ * all downstream calculations stay in a single canonical unit.
  */
-export function MeasurementsStep({ register, errors, currentDate }: MeasurementsStepProps) {
+export function MeasurementsStep({
+  register,
+  setValue,
+  errors,
+  currentDate,
+  isSubmitted = false,
+}: MeasurementsStepProps) {
+  const [unit, setUnit] = useState<LengthUnit>("cm");
+  // Display strings keyed by field — what the client sees, in the selected unit.
+  const [displayValues, setDisplayValues] = useState<Record<string, string>>({});
+
+  // Register the measurement fields so RHF tracks them and surfaces validation
+  // errors; their values are written via setValue (always in cm), not the input ref.
+  useEffect(() => {
+    MEASUREMENT_FIELDS.forEach(({ field }) => register(field));
+  }, [register]);
+
+  // Store the canonical cm value for a field given the raw display text + unit.
+  // Once the form has been submitted, edits revalidate so corrections clear errors.
+  const commitCm = (field: MeasurementField, display: string, activeUnit: LengthUnit) => {
+    const num = parseOptionalNumber(display);
+    if (num === undefined) {
+      setValue(field, undefined, { shouldValidate: isSubmitted });
+      return;
+    }
+    const cm = activeUnit === "in" ? num * CM_PER_INCH : num;
+    setValue(field, cm, { shouldValidate: isSubmitted });
+  };
+
+  const handleMeasurementChange = (field: MeasurementField, raw: string) => {
+    setDisplayValues((prev) => ({ ...prev, [field]: raw }));
+    commitCm(field, raw, unit);
+  };
+
+  // Switching units converts the displayed numbers to the new unit, then re-commits
+  // each one so the cm value stored in the form always matches what the client sees
+  // (avoids display/form divergence from rounding across repeated toggles).
+  const handleUnitChange = (next: LengthUnit) => {
+    if (next === unit) return;
+    const converted = { ...displayValues };
+    MEASUREMENT_FIELDS.forEach(({ field }) => {
+      const num = parseOptionalNumber(displayValues[field] ?? "");
+      if (num === undefined) return;
+      const display =
+        next === "in" ? (num / CM_PER_INCH).toFixed(1) : (num * CM_PER_INCH).toFixed(1);
+      converted[field] = display;
+      // Re-commit so the stored cm value matches the (re-rounded) displayed number.
+      commitCm(field, display, next);
+    });
+    setDisplayValues(converted);
+    setUnit(next);
+  };
+
   return (
     <div className="space-y-6">
       {/* Step Indicator */}
@@ -106,141 +188,67 @@ export function MeasurementsStep({ register, errors, currentDate }: Measurements
 
       {/* Body Measurements Section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-secondary">
-            <Ruler className="h-4 w-4 text-primary" />
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-secondary">
+              <Ruler className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
+              Body Measurements ({unit}) - Optional
+            </span>
           </div>
-          <span className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">
-            Body Measurements (cm) - Optional
-          </span>
+
+          {/* Unit toggle (cm / in) */}
+          <div
+            role="group"
+            aria-label="Measurement unit"
+            className="flex items-center bg-secondary p-1"
+          >
+            {(["cm", "in"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={unit === option}
+                onClick={() => handleUnitChange(option)}
+                className={`px-3 py-1 text-xs font-black uppercase tracking-wider transition-colors ${
+                  unit === option
+                    ? "gradient-electric text-black"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {/* Neck */}
-          <div>
-            <label
-              htmlFor="neck_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Neck
-            </label>
-            <input
-              id="neck_cm"
-              type="number"
-              step="0.1"
-              placeholder="38"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("neck_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Chest */}
-          <div>
-            <label
-              htmlFor="chest_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Chest
-            </label>
-            <input
-              id="chest_cm"
-              type="number"
-              step="0.1"
-              placeholder="100"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("chest_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Waist */}
-          <div>
-            <label
-              htmlFor="waist_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Waist
-            </label>
-            <input
-              id="waist_cm"
-              type="number"
-              step="0.1"
-              placeholder="80"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("waist_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Hips */}
-          <div>
-            <label
-              htmlFor="hips_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Hips
-            </label>
-            <input
-              id="hips_cm"
-              type="number"
-              step="0.1"
-              placeholder="95"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("hips_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Arms */}
-          <div>
-            <label
-              htmlFor="arms_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Arms
-            </label>
-            <input
-              id="arms_cm"
-              type="number"
-              step="0.1"
-              placeholder="35"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("arms_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Thighs */}
-          <div>
-            <label
-              htmlFor="thighs_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Thighs
-            </label>
-            <input
-              id="thighs_cm"
-              type="number"
-              step="0.1"
-              placeholder="55"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("thighs_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
-
-          {/* Calves */}
-          <div>
-            <label
-              htmlFor="calves_cm"
-              className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
-            >
-              Calves
-            </label>
-            <input
-              id="calves_cm"
-              type="number"
-              step="0.1"
-              placeholder="40"
-              className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register("calves_cm", { setValueAs: parseOptionalNumber })}
-            />
-          </div>
+          {MEASUREMENT_FIELDS.map(({ field, label, placeholderCm, placeholderIn }) => (
+            <div key={field}>
+              <label
+                htmlFor={field}
+                className="block text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2"
+              >
+                {label}
+              </label>
+              <input
+                id={field}
+                type="number"
+                step="0.1"
+                inputMode="decimal"
+                placeholder={unit === "in" ? placeholderIn : placeholderCm}
+                value={displayValues[field] ?? ""}
+                onChange={(e) => handleMeasurementChange(field, e.target.value)}
+                className="w-full px-4 py-3 bg-card border border-border text-foreground font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {errors[field] && (
+                <div className="flex items-center gap-2 mt-2 text-red-500 text-sm font-bold">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{errors[field]?.message}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

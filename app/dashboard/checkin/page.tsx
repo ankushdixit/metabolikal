@@ -93,7 +93,7 @@ export default function CheckInPage() {
     watch,
     setValue,
     trigger,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<CheckInFormData>({
     resolver: zodResolver(checkInSchema),
     defaultValues: {
@@ -295,7 +295,15 @@ export default function CheckInPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <MeasurementsStep register={register} errors={errors} currentDate={formattedDate} />;
+        return (
+          <MeasurementsStep
+            register={register}
+            setValue={setValue}
+            errors={errors}
+            currentDate={formattedDate}
+            isSubmitted={isSubmitted}
+          />
+        );
       case 1:
         return userId ? (
           <PhotosStep

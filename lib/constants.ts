@@ -14,6 +14,16 @@
  */
 export const ADMIN_PAGE_SIZE = 10;
 
+// =============================================================================
+// Measurements
+// =============================================================================
+
+/**
+ * Centimetres per inch. Body measurements are stored canonically in cm; this is
+ * the conversion factor used when a client enters measurements in inches.
+ */
+export const CM_PER_INCH = 2.54;
+
 /**
  * Hero section variant type.
  * - 'A': Problem-Solution Focus - Addresses visitor's frustration, positions Metabolikal as solution
