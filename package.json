@@ -89,6 +89,8 @@
     "glob": "^10.4.5",
     "rimraf": "^5.0.10",
     "inflight": "npm:@nothing/inflight@^1.0.0",
-    "diff": "^7.0.0"
+    "diff": "^7.0.0",
+    "handlebars": "^4.7.9",
+    "protobufjs": "^8.0.1"
   }
 }
