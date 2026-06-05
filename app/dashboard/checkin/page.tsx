@@ -295,7 +295,14 @@ export default function CheckInPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <MeasurementsStep register={register} errors={errors} currentDate={formattedDate} />;
+        return (
+          <MeasurementsStep
+            register={register}
+            setValue={setValue}
+            errors={errors}
+            currentDate={formattedDate}
+          />
+        );
       case 1:
         return userId ? (
           <PhotosStep

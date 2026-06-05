@@ -10,6 +10,7 @@ function renderWithForm(currentDate: string) {
   const FormWrapper = () => {
     const {
       register,
+      setValue,
       formState: { errors },
     } = useForm<CheckInFormData>({
       resolver: zodResolver(checkInSchema),
@@ -23,7 +24,14 @@ function renderWithForm(currentDate: string) {
       },
     });
 
-    return <MeasurementsStep register={register} errors={errors} currentDate={currentDate} />;
+    return (
+      <MeasurementsStep
+        register={register}
+        setValue={setValue}
+        errors={errors}
+        currentDate={currentDate}
+      />
+    );
   };
 
   return render(<FormWrapper />);
@@ -118,7 +126,12 @@ describe("MeasurementsStep Component", () => {
     };
 
     render(
-      <MeasurementsStep register={mockRegister} errors={mockErrors} currentDate={currentDate} />
+      <MeasurementsStep
+        register={mockRegister}
+        setValue={jest.fn()}
+        errors={mockErrors}
+        currentDate={currentDate}
+      />
     );
 
     expect(screen.getByText("Weight is required and must be a number")).toBeInTheDocument();
@@ -139,7 +152,12 @@ describe("MeasurementsStep Component", () => {
     };
 
     render(
-      <MeasurementsStep register={mockRegister} errors={mockErrors} currentDate={currentDate} />
+      <MeasurementsStep
+        register={mockRegister}
+        setValue={jest.fn()}
+        errors={mockErrors}
+        currentDate={currentDate}
+      />
     );
 
     expect(screen.getByText("Body fat must be between 1 and 70")).toBeInTheDocument();
@@ -194,6 +212,80 @@ describe("MeasurementsStep Component", () => {
       const weightInput = screen.getByLabelText(/Current Weight/i);
       fireEvent.change(weightInput, { target: { value: "75.5" } });
       expect(weightInput).toHaveValue(75.5);
+    });
+  });
+
+  describe("cm / inches unit toggle", () => {
+    // Stub register/setValue so we can render the step in isolation and inspect
+    // the canonical (cm) values written to the form.
+    const stubRegister = () =>
+      jest.fn(() => ({
+        onChange: jest.fn(),
+        onBlur: jest.fn(),
+        ref: jest.fn(),
+        name: "field" as const,
+      })) as unknown as UseFormRegister<CheckInFormData>;
+
+    it("renders a cm/in toggle that defaults to cm", () => {
+      renderWithForm(currentDate);
+      const cmButton = screen.getByRole("button", { name: "cm" });
+      const inButton = screen.getByRole("button", { name: "in" });
+      expect(cmButton).toHaveAttribute("aria-pressed", "true");
+      expect(inButton).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("updates the section label when switching units", () => {
+      renderWithForm(currentDate);
+      expect(screen.getByText(/Body Measurements \(cm\) - Optional/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "in" }));
+      expect(screen.getByText(/Body Measurements \(in\) - Optional/i)).toBeInTheDocument();
+    });
+
+    it("stores a measurement as cm when entered in cm mode", () => {
+      const setValue = jest.fn();
+      render(
+        <MeasurementsStep
+          register={stubRegister()}
+          setValue={setValue}
+          errors={{}}
+          currentDate={currentDate}
+        />
+      );
+      fireEvent.change(screen.getByLabelText(/Neck/i), { target: { value: "38" } });
+      expect(setValue).toHaveBeenCalledWith("neck_cm", 38, { shouldValidate: false });
+    });
+
+    it("converts inches to cm before storing when in inch mode", () => {
+      const setValue = jest.fn();
+      render(
+        <MeasurementsStep
+          register={stubRegister()}
+          setValue={setValue}
+          errors={{}}
+          currentDate={currentDate}
+        />
+      );
+      fireEvent.click(screen.getByRole("button", { name: "in" }));
+      fireEvent.change(screen.getByLabelText(/Neck/i), { target: { value: "13" } });
+      // 13 in = 33.02 cm — comfortably inside the >= 15 cm range that previously rejected "13"
+      expect(setValue).toHaveBeenCalledWith("neck_cm", 13 * 2.54, { shouldValidate: false });
+    });
+
+    it("converts the displayed value when the unit is switched", () => {
+      const setValue = jest.fn();
+      render(
+        <MeasurementsStep
+          register={stubRegister()}
+          setValue={setValue}
+          errors={{}}
+          currentDate={currentDate}
+        />
+      );
+      const neck = screen.getByLabelText(/Neck/i);
+      fireEvent.change(neck, { target: { value: "10" } }); // 10 cm
+      fireEvent.click(screen.getByRole("button", { name: "in" }));
+      // 10 cm -> 3.9 in (displayed, rounded to 1 decimal)
+      expect(neck).toHaveValue(3.9);
     });
   });
 });
