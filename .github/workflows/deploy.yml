@@ -1,51 +1,60 @@
-name: Deploy
+name: Deploy (database migrations)
+
+# Vercel builds and deploys the Next.js app via its native Git integration on
+# push to main. This workflow's only job is to apply Supabase database
+# migrations so schema changes ship with the code instead of being run by hand
+# in the SQL editor.
+#
+# Required GitHub Actions secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN  - personal access token (supabase.com/dashboard/account/tokens)
+#   SUPABASE_DB_PASSWORD   - database password (Project Settings -> Database)
+# The project ref below is public (it is the subdomain of NEXT_PUBLIC_SUPABASE_URL).
 
 on:
   push:
     branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch: {}
+
+# Never let two migration runs race against the same database.
+concurrency:
+  group: db-migrations
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  migrate:
+    name: Apply Supabase migrations
     runs-on: ubuntu-latest
-    environment: production
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
-          node-version: '20'
-          cache: 'npm'
+          version: latest
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
         env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: lbydgfvvsklxeebwnnfg
 
-      - name: Deploy to Vercel
-        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
-
-      - name: Create Sentry release
-        if: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
-        uses: getsentry/action-release@v1
+      # Surface exactly which migrations are pending vs already applied on the
+      # remote, so the first run (after migrations that were applied by hand and
+      # aren't in the remote history) is auditable in the logs before anything
+      # is written. Run `supabase migration repair --status applied <version>`
+      # to mark a hand-applied migration as done so it isn't re-pushed.
+      - name: Show migration status
+        run: supabase migration list
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        with:
-          environment: production
-          version: ${{ github.sha }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      - name: Run Lighthouse CI
-        if: ${{ secrets.LHCI_GITHUB_APP_TOKEN != '' }}
-        run: npm run lighthouse
+      - name: Push migrations
+        run: supabase db push
         env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
