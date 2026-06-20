@@ -5,16 +5,20 @@
 /**
  * Regression guard for the handle_new_user() signup trigger.
  *
- * Background: migration 20260423000000 rewrote handle_new_user() to persist
- * invited_at but accidentally hardcoded role='client', which mis-stamped every
- * self-registered challenger as a client (they then showed up as "Active
- * clients" in the admin Clients list). Fixed in 20260620000000.
+ * Two regressions this guards against:
+ *  1. Role mis-stamping (the original bug): migration 20260423000000 rewrote
+ *     handle_new_user() and hardcoded role='client', mis-stamping every
+ *     self-registered challenger as a client (they showed up as "Active
+ *     clients" in the admin Clients list). The default role must be 'challenger'.
+ *  2. Privilege escalation: user_metadata is client-controllable via
+ *     supabase.auth.signUp({ options: { data: {...} } }) with the public anon
+ *     key. The trigger must NEVER derive `role` from raw_user_meta_data, or a
+ *     self-registrant could pass role='admin' and gain admin access (admin is
+ *     gated solely on profiles.role). Role must be a hardcoded literal.
  *
  * The Postgres trigger can't be exercised by the mocked-Supabase integration
- * suite, so this guards the migration contract statically: whichever migration
- * defines handle_new_user() LAST must (a) default the role to 'challenger' via
- * COALESCE over user_metadata, and (b) keep persisting invited_at. Either being
- * dropped by a future edit is the exact class of regression that caused the bug.
+ * suite, so this guards the migration contract statically against whichever
+ * migration defines handle_new_user() LAST (by timestamp-prefixed filename).
  */
 
 import { readdirSync, readFileSync } from "fs";
@@ -23,13 +27,11 @@ import { join } from "path";
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 const DEFINES_TRIGGER = /CREATE OR REPLACE FUNCTION public\.handle_new_user/;
 
-/** The migration file (latest by timestamp-prefixed name) that last defines handle_new_user(). */
+/** The migration (latest by timestamp-prefixed name) that last defines handle_new_user(). */
 function latestTriggerMigration(): { file: string; sql: string } {
-  const files = readdirSync(MIGRATIONS_DIR)
+  const defining = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
-    .sort(); // timestamp prefix => lexical sort is chronological
-
-  const defining = files
+    .sort() // timestamp prefix => lexical sort is chronological
     .map((file) => ({ file, sql: readFileSync(join(MIGRATIONS_DIR, file), "utf8") }))
     .filter(({ sql }) => DEFINES_TRIGGER.test(sql));
 
@@ -40,26 +42,25 @@ function latestTriggerMigration(): { file: string; sql: string } {
 }
 
 describe("handle_new_user() trigger migration contract", () => {
-  // Whitespace-normalized SQL of the winning definition, so the assertions
-  // are robust to formatting/indentation changes.
-  const { file, sql } = latestTriggerMigration();
-  const normalized = sql.replace(/\s+/g, " ");
-
-  it("is defined by the expected latest migration", () => {
-    expect(file).toBe("20260620000000_restore_challenger_default_role_in_trigger.sql");
-  });
+  // Executable SQL of the winning definition with `--` line comments stripped
+  // (so assertions inspect the actual logic, not prose in comments) and
+  // whitespace normalized (so they're robust to formatting/indentation).
+  const { sql } = latestTriggerMigration();
+  const normalized = sql
+    .replace(/--.*$/gm, "") // drop SQL line comments
+    .replace(/\s+/g, " ");
 
   it("defaults new self-signups to the challenger role", () => {
-    // The whole point: a signup with no role in metadata must become a challenger.
-    expect(normalized).toContain("COALESCE(NEW.raw_user_meta_data->>'role', 'challenger')");
+    // A signup with no role in metadata must become a challenger, not a client.
+    // The role argument is the 4th column (after id, email, full_name) in the INSERT.
+    expect(normalized).toMatch(/raw_user_meta_data->>'full_name', 'User'\s*\),?\s*'challenger'/);
   });
 
-  it("does not pass a hardcoded role literal as the inserted role", () => {
-    // Guards against a future rewrite reintroducing `..., 'client',` (or
-    // `'challenger'`) as the role argument instead of the COALESCE default.
-    expect(normalized).not.toMatch(
-      /raw_user_meta_data->>'full_name', 'User'\s*\),?\s*'(client|challenger)'/
-    );
+  it("never derives role from client-controllable user_metadata (no privilege escalation)", () => {
+    // user_metadata is attacker-controllable at signup; reading role from it
+    // would let a self-registrant claim role='admin'. The role must be a
+    // hardcoded literal, so raw_user_meta_data->>'role' must NOT appear.
+    expect(normalized).not.toContain("raw_user_meta_data->>'role'");
   });
 
   it("still persists invited_at from user_metadata (keeps the invite-race fix)", () => {

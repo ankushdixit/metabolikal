@@ -10,15 +10,24 @@
 --   2026-04-23 — so they surface in the admin Clients list as "Active" instead
 --   of under Challengers.
 --
---   This restores the challenger-aware default that 20260128000000 and
---   20260207000000 used (`COALESCE(... ->>'role', 'challenger')`) while KEEPING
---   the invited_at persistence added in 20260423000000. It also restores the
+--   This sets the default role for new signups back to 'challenger' while KEEPING
+--   the invited_at persistence added in 20260423000000, and restores the
 --   `unique_violation` guard that the same regression dropped.
 --
---   Safe for admin-invited clients: app/api/admin/invite-client/route.ts:120
---   explicitly sets role='client' on the profile after the trigger runs, and the
---   /auth/callback routing branches on `invited_at` (not `role`), so the brief
---   window where an invited profile reads role='challenger' has no effect.
+--   SECURITY: role is deliberately HARDCODED to 'challenger' and NOT read from
+--   NEW.raw_user_meta_data. user_metadata is fully client-controllable via
+--   supabase.auth.signUp({ options: { data: {...} } }) with the public anon key,
+--   so trusting raw_user_meta_data->>'role' would let any self-registrant create
+--   themselves as role='admin' (admin access is gated solely on profiles.role —
+--   see lib/auth-server.ts:isAdmin and proxy.ts). Earlier "correct" versions
+--   (20260128, 20260207) used COALESCE(...->>'role', 'challenger') and carried
+--   this latent privilege-escalation hole; we do not restore that behaviour.
+--
+--   Admin-invited clients are unaffected: app/api/admin/invite-client/route.ts
+--   sets role='client' on the profile (via the service-role key) right after the
+--   trigger runs, and /auth/callback routing branches on `invited_at` (not
+--   `role`), so the brief window where an invited profile reads role='challenger'
+--   has no effect.
 --
 --   Note: existing mis-stamped rows (role='client', invited_at IS NULL,
 --   plan_start_date IS NULL) are corrected separately/manually and are not
@@ -32,7 +41,7 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'challenger'),  -- default self-signups to challenger; admin invite overrides to client
+    'challenger',  -- hardcoded; do NOT trust client-controlled metadata for role. Admin invite sets role=client post-insert via the service key.
     CASE
       WHEN NEW.raw_user_meta_data ? 'invited_at'
         THEN (NEW.raw_user_meta_data->>'invited_at')::timestamptz
@@ -47,4 +56,4 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION public.handle_new_user() IS 'Creates a profile when a new user signs up. Defaults role to challenger (overridable via user_metadata.role) and persists invited_at from user_metadata atomically.';
+COMMENT ON FUNCTION public.handle_new_user() IS 'Creates a profile when a new user signs up. Role is always challenger (NOT read from client-controlled user_metadata, to prevent self-signup privilege escalation); the admin invite flow promotes to client post-insert. Persists invited_at from user_metadata atomically.';
